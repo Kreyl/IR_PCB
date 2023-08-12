@@ -19,7 +19,7 @@
 
 // Ch timer
 #define STM32_ST_IRQ_PRIORITY   2
-#define STM32_ST_USE_TIMER      2
+#define STM32_ST_USE_TIMER      14
 #define SYS_TIM_CLK             (Clk.APBFreqHz)
 
 #define SIMPLESENSORS_ENABLED   TRUE
@@ -58,6 +58,18 @@
 
 // Green LED
 #define LUMOS_PIN       { GPIOA, 0, TIM2, 1, invNotInverted, omPushPull, 255 }
+
+// Front LEDs
+#define LED_FRONT1      { GPIOA, 1, TIM2, 2, invNotInverted, omPushPull, 255 }
+#define LED_FRONT2      { GPIOA, 2, TIM2, 3, invNotInverted, omPushPull, 255 }
+#define FRONT_LEDS_CNT  2
+
+// Side LEDs
+#define LED_PWM1        { GPIOC, 6, TIM3, 1, invInverted, omPushPull, 255 }
+#define LED_PWM2        { GPIOC, 7, TIM3, 2, invInverted, omPushPull, 255 }
+#define LED_PWM3        { GPIOC, 8, TIM3, 3, invInverted, omPushPull, 255 }
+#define LED_PWM4        { GPIOC, 9, TIM3, 4, invInverted, omPushPull, 255 }
+#define SIDE_LEDS_CNT   4
 
 // IR Rcvr
 #define IR_WKUP         GPIOC, 13

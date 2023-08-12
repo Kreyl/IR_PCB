@@ -22,6 +22,8 @@ void OnCmd(Shell_t *PShell);
 void ITask();
 
 LedSmooth_t Lumos{LUMOS_PIN};
+LedSmooth_t SideLEDs[SIDE_LEDS_CNT] = { {LED_PWM1}, {LED_PWM2}, {LED_PWM3}, {LED_PWM4} };
+LedSmooth_t FrontLEDs[FRONT_LEDS_CNT] = { {LED_FRONT1}, {LED_FRONT2} };
 
 //Settings_t Settings;
 
@@ -49,11 +51,15 @@ void main() {
 #endif
     // ==== Init Clock system ====
     Clk.EnablePrefetch();
-    Clk.SetupFlashLatency(16);
-    Clk.SetupPLLSrc(plsHSIdiv2); // 4MHz
-    Clk.SetupPLLDividers(2, pllMul4); // 8 / 2 * 4 = 16MHz
-    Clk.SetupBusDividers(ahbDiv1, apbDiv1);
-    Clk.SwitchTo(csPLL);
+    Clk.SetupFlashLatency(20);
+    bool QuartzIsOk = false;
+    if(Clk.EnableHSE() == retvOk) {
+        Clk.SetupPLLSrc(plsHSEdivPREDIV); // 4MHz
+        if(Clk.SetupPLLDividers(3, pllMul5) == retvOk) { // 12 / 3 * 5 = 20MHz
+            Clk.SetupBusDividers(ahbDiv1, apbDiv1);
+            QuartzIsOk = Clk.SwitchTo(csPLL) == retvOk;
+        }
+    }
     Clk.UpdateFreqValues();
 
     // === Init OS ===
@@ -63,15 +69,33 @@ void main() {
     // ==== Init hardware ====
     EvtQMain.Init();
     Uart.Init();
-    Printf("\r%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
+    Printf("\r%S %S\r\n", APP_NAME, XSTRINGIFY(BUILD_TIME));
+    if(!QuartzIsOk) Printf("Quartz fail\r\n");
     Clk.PrintFreqs();
+
+    // LEDs
+    for(auto &Led : SideLEDs) {
+        Led.Init();
+        Led.StartOrRestart(lsqFadeInOut);
+        chThdSleepMilliseconds(207);
+    }
+    for(auto &Led : FrontLEDs) {
+        Led.Init();
+        Led.StartOrRestart(lsqFadeInOut);
+        chThdSleepMilliseconds(207);
+    }
+
+    Lumos.Init();
+    Lumos.StartOrRestart(lsqFadeIn);
 
 //    Settings.Load();
 
 //    SimpleSensors::Init();
 
-    Lumos.Init();
-    Lumos.StartOrRestart(lsqStart);
+
+
+//    PinSetupOut(GPIOA, 0, omPushPull);
+//    PinSetHi(GPIOA, 0);
 
     ITask(); // Main cycle
 }
@@ -101,7 +125,7 @@ void OnCmd(Shell_t *PShell) {
     // Handle command
     if(PCmd->NameIs("Ping")) PShell->Ok();
     else if(PCmd->NameIs("Version")) PShell->Print("Version: %S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
-    else if(PCmd->NameIs("mem")) PrintMemoryInfo();
+//    else if(PCmd->NameIs("mem")) PrintMemoryInfo();
 
 
 #if 0 // ==== FW Update ====

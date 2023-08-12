@@ -280,7 +280,7 @@
 
 #define ST_HANDLER                          STM32_TIM14_HANDLER
 #define ST_NUMBER                           STM32_TIM14_NUMBER
-#define ST_CLOCK_SRC                        STM32_TIMCLK1
+#define ST_CLOCK_SRC                        SYS_TIM_CLK
 #define ST_ENABLE_CLOCK()                   rccEnableTIM14(true)
 #if defined(STM32F1XX)
 #define ST_ENABLE_STOP()                    DBGMCU->CR |= DBGMCU_CR_DBG_TIM14_STOP

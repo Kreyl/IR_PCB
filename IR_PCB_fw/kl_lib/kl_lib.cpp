@@ -126,6 +126,7 @@ uordblks;  total allocated space
 fordblks;  total non-inuse space
 keepcost;  top-most, releasable (via malloc_trim) space
 **********************************************/
+/*
 void PrintMemoryInfo() {
     struct mallinfo info = mallinfo();
     Printf(
@@ -139,7 +140,7 @@ void PrintMemoryInfo() {
             info.arena, info.ordblks, info.hblks, info.hblkhd,
             info.uordblks, info.fordblks, info.keepcost);
 }
-
+*/
 
 
 #ifdef DMA_MEM2MEM
@@ -405,6 +406,7 @@ void PinOutputPWM_t::Init() const {
             break;
         default: break;
     }
+    Timer_t::GenerateUpdateEvt();
     Enable();
 #if defined STM32L4XX
     } // if LPTIM
@@ -417,7 +419,7 @@ void PinOutputPWM_t::Init() const {
     else if(ANY_OF_3(ITmr, TIM9, TIM10, TIM11)) AF = AF3;
     PinSetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType, pudNone, AF);
 #elif defined STM32F0XX
-    if     (ITmr == TIM1)  PinSetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType, pudNone, AF2);
+    if     (ITmr == TIM1 or ITmr == TIM2)  PinSetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType, pudNone, AF2);
     else if(ITmr == TIM3) {
         if(ISetup.PGpio == GPIOA or ISetup.PGpio == GPIOB) PinSetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType, pudNone, AF1);
         else PinSetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType, pudNone, AF0);
