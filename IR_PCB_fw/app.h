@@ -9,17 +9,19 @@
 #define APP_H_
 
 #include <inttypes.h>
+#include "MsgQ.h"
 
-enum class FirEvt { Reset, StartFire, EndOfFiring };
+
+namespace Firing {
 
 
-class Firing_h {
 
-public:
+void Init();
 
-};
 
-extern Firing_h Firing;
+
+}
+
 
 namespace Controls {
 
