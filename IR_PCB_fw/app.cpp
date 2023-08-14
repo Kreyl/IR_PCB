@@ -9,12 +9,28 @@
 #include "Settings.h"
 #include "kl_lib.h"
 #include "shell.h"
+#include "ir_pkt.h"
+
+enum class FirEvt { Reset, StartFire, EndOfFiring, MagazineReloadDone };
+EvtMsgQ_t<FirEvt, 9> FirEvtQ; // Evt queue
 
 #if 1 // ============================== Controls ===============================
-namespace Controls {
+namespace CtrlPins {
+
+uint32_t In[3];
+
+void SetInputs(uint32_t AIn[3]) {
+    if(In[0] == 0 and AIn[0] == 1) FirEvtQ.SendNowOrExit(FirEvt::StartFire);
+    if(In[1] == 0 and AIn[1] == 1) FirEvtQ.SendNowOrExit(FirEvt::StartFire);
+    for(int i=0; i<3; i++) In[i] = AIn[i];
+}
 
 bool DoBurstFire() {
-    return false;
+    return In[1] == 1;
+}
+
+void Init() {
+
 }
 
 }
@@ -51,7 +67,7 @@ void Fire() {
 
 }
 
-void Reset() {
+void ResetI() {
     // Stop TX, disable and reset IRQ
 }
 
@@ -61,38 +77,35 @@ void Reset() {
 #if 1 // =============================== Firing ================================
 namespace Firing {
 
-enum class FirEvt { Reset, StartFire, EndOfFiring, MagazineReloadDone };
-enum class FirState { Idle, Firing, };
-
-
-EvtMsgQ_t<FirEvt, 9> EvtQ; // Evt queue
 virtual_timer_t Tmr;
 
-FirState State = FirState::Idle;
 int32_t RoundsCnt = 9, MagazinesCnt = 4;
-
-void Reset() {
-    Gun::Reset();
-    State = FirState::Idle;
-    RoundsCnt = Settings.RoundsInMagazine;
-    MagazinesCnt = Settings.MagazinesCnt;
-}
 
 // ==== Delay subsystem ====
 void TmrCallback(virtual_timer_t *vtp, void *p) {
     chSysLockFromISR();
     FirEvt Evt = (FirEvt)((uint32_t)p);
-    EvtQ.SendNowOrExitI(Evt);
+    FirEvtQ.SendNowOrExitI(Evt);
     chSysUnlockFromISR();
 }
 
 void StartDelay(uint32_t ADelay_s, FirEvt AEvt) {
-    if(ADelay_s == 0) EvtQ.SendNowOrExit(AEvt); // Do it immediately
+    if(ADelay_s == 0) FirEvtQ.SendNowOrExit(AEvt); // Do it immediately
     else chVTSet(&Tmr, TIME_S2I(ADelay_s), TmrCallback, (void*)((uint32_t)AEvt));
+}
+// ====
+
+
+void Reset() {
+    chSysLock();
+    Gun::ResetI();
+    RoundsCnt = Settings.RoundsInMagazine;
+    MagazinesCnt = Settings.MagazinesCnt;
+    chVTResetI(&Tmr);
+    chSysUnlock();
 }
 
 void Fire() {
-    State = FirState::Firing;
     Gun::Fire();
     RoundsCnt--;
 }
@@ -101,52 +114,44 @@ void Fire() {
 static THD_WORKING_AREA(waFireThread, 256);
 static void FireThread(void* arg) {
     while(true) {
-        FirEvt Evt = EvtQ.Fetch(TIME_INFINITE);
+        FirEvt Evt = FirEvtQ.Fetch(TIME_INFINITE);
         // Will be here when new Evt occur
         if(Evt == FirEvt::Reset) Reset();
-        else if(Hull::HitCnt == 0) return; // Do nothing if no hits left
-        else switch(State) {
-            case FirState::Idle:
-                switch(Evt) {
-                    case FirEvt::StartFire:
-                        if(RoundsCnt > 0) Fire();
-                        break;
-                    case FirEvt::MagazineReloadDone:
-                        RoundsCnt = Settings.RoundsInMagazine;
-                        if(Controls::DoBurstFire()) Fire();
-                        break;
-                    default: break; // Ignore other
-                } // switch evt
+        else if(Hull::HitCnt > 0) switch(Evt) { // Do nothing if no hits left
+            case FirEvt::StartFire:
+                if(RoundsCnt > 0) Fire();
                 break;
-
-            case FirState::Firing:
-                if(Evt == FirEvt::EndOfFiring) {
-                    State = FirState::Idle;
-                    if(RoundsCnt > 0) { // Fire if needed and there are rounds left
-                        if(Controls::DoBurstFire()) Fire();
+            case FirEvt::EndOfFiring:
+                if(RoundsCnt > 0) { // Fire if needed and there are rounds left
+                    if(CtrlPins::DoBurstFire()) Fire();
+                }
+                else { // no more rounds
+                    Indication::ShowRoundsEnd();
+                    if(MagazinesCnt > 0) { // Reload if possible
+                        MagazinesCnt--;
+                        StartDelay(Settings.MagazineReloadDelay, FirEvt::MagazineReloadDone);
                     }
-                    else { // no more rounds
-                        Indication::ShowRoundsEnd();
-                        if(MagazinesCnt > 0) { // Reload if possible
-                            MagazinesCnt--;
-                            StartDelay(Settings.MagazineReloadDelay, FirEvt::MagazineReloadDone);
-                        }
-                        else Indication::ShowMagazinesEnded(); // No magazines left
-                    }
+                    else Indication::ShowMagazinesEnded(); // No magazines left
                 }
                 break;
-        } // switch State
+            case FirEvt::MagazineReloadDone:
+                RoundsCnt = Settings.RoundsInMagazine;
+                if(CtrlPins::DoBurstFire()) Fire();
+                break;
+            default: break;
+        } // switch Evt
     } // while true
 }
 
-
 void Init() {
+    FirEvtQ.Init();
     Reset();
+    // Gun init
+
+
     // Create and start thread
     chThdCreateStatic(waFireThread, sizeof(waFireThread), NORMALPRIO, FireThread, NULL);
-
 }
-
 
 } // Firing
 #endif

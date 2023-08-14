@@ -13,6 +13,7 @@
 #include "battery_consts.h"
 #include "led.h"
 #include "FwUpdateF072.h"
+#include "app.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
@@ -100,7 +101,8 @@ void main() {
 */
 
 
-
+    Firing::Init();
+    CtrlPins::Init();
 
 
 //    Settings.Load();
@@ -161,6 +163,15 @@ void OnCmd(Shell_t *PShell) {
     if(PCmd->NameIs("Ping")) PShell->Ok();
     else if(PCmd->NameIs("Version")) PShell->Print("Version: %S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
 //    else if(PCmd->NameIs("mem")) PrintMemoryInfo();
+
+    else if(PCmd->NameIs("CtrlSet")) {
+        uint32_t In[3];
+        for(int i=0; i<3; i++) {
+            if(PCmd->GetNext(&In[i]) != retvOk) break;
+            CtrlPins::SetInputs(In);
+        }
+        PShell->Ok();
+    }
 
 
     else if(PCmd->NameIs("crc")) {

@@ -14,18 +14,17 @@
 
 namespace Firing {
 
-
-
 void Init();
-
-
 
 }
 
 
-namespace Controls {
+namespace CtrlPins {
 
-bool DoBurstFire();
+void Init();
+
+void SetInputs(uint32_t AIn[3]);
+
 
 }
 
