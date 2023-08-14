@@ -71,6 +71,10 @@
 #define LED_PWM4        { GPIOC, 9, TIM3, 4, invInverted, omPushPull, 255 }
 #define SIDE_LEDS_CNT   4
 
+// Beeper
+#define BEEPER_TOP      22 // 22 < 255: needed to increase frequency
+#define BEEPER_PIN      { GPIOA, 8, TIM1, 1, invInverted, omPushPull, BEEPER_TOP }
+
 // IR Rcvr
 #define IR_WKUP         GPIOC, 13
 #define IR_DATA         GPIOB, 1 // TIM14 & IRQ
@@ -91,7 +95,7 @@
 
 #if 1 // ========================== USART ======================================
 #define PRINTF_FLOAT_EN FALSE
-#define UART_TXBUF_SZ   1024
+#define UART_TXBUF_SZ   4096
 #define UART_RXBUF_SZ   256
 #define CMD_BUF_SZ      256
 

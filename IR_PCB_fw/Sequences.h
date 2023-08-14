@@ -64,7 +64,7 @@ const LedSmoothChunk_t lsqUsbCmd[] = {
 };
 #endif
 
-#if 0 // ============================= Beeper ==================================
+#if 1 // ============================= Beeper ==================================
 #define BEEP_VOLUME     1   // Maximum 10
 
 #if 1 // ==== Notes ====
@@ -102,6 +102,8 @@ const LedSmoothChunk_t lsqUsbCmd[] = {
 #define OneFourth       (OneSixteenth * 4)
 #define OneHalfth       (OneSixteenth * 8)
 #define OneWhole        (OneSixteenth * 16)
+
+#define NOTE(Note, Dur) {csSetup, BEEP_VOLUME, Note}, {csWait, Dur}, {csSetup, 0}, {csWait, 18}
 #endif
 
 // MORSE
@@ -112,6 +114,19 @@ const LedSmoothChunk_t lsqUsbCmd[] = {
 #define MORSE_PAUSE {csSetup, 0}, {csWait, MORSE_PAUSE_LENGTH}
 #define MORSE_DOT MORSE_TONE, {csWait, MORSE_DOT_LENGTH}, MORSE_PAUSE
 #define MORSE_DASH MORSE_TONE, {csWait, MORSE_DASH_LENGTH}, MORSE_PAUSE
+
+// We are the champions
+const BeepChunk_t bsqWeAreTheChampions[] = {
+        NOTE(Fa_3, OneHalfth),
+        NOTE(Mi_3, OneEighth),
+        NOTE(Fa_3, OneEighth),
+        NOTE(Mi_3, OneFourth),
+        NOTE(Do_3, OneEighth),
+        NOTE(Do_3, OneFourth),
+        NOTE(La_2, OneEighth),
+        NOTE(Re_3, OneHalfth),
+        {csEnd}
+};
 
 // Type, BEEP_VOLUME, freq
 const BeepChunk_t bsqOn[] = {
