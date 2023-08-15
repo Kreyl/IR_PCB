@@ -74,25 +74,30 @@ void StartDelay(uint32_t ADelay_s, FirEvt AEvt) {
 
 void Reset() {
     chSysLock();
-    Gun::ResetI();
+    irLed.ResetI();
     RoundsCnt = Settings.RoundsInMagazine;
     MagazinesCnt = Settings.MagazinesCnt;
     chVTResetI(&Tmr);
     chSysUnlock();
 }
 
+void OnIrTxEndI() {
+    PktsToTx--;
+    if(PktsToTx > 0) irLed.TransmitWord(PktTx.W16, Settings.TXPwr, OnIrTxEndI);
+    else FirEvtQ.SendNowOrExitI(FirEvt::EndOfFiring);
+}
+
 void Fire() {
-//    uint32_t
     RoundsCnt--;
     // Prepare pkt
     PktTx.Type = PKT_TYPE_SHOT;
     PktTx.FightID = Settings.FightID;
     PktTx.TeamID = Settings.TeamID;
     PktTx.PktN++;
-    PktTx.crc = PktTx.CalculateControlSum();
+    PktTx.CalculateCRC();
     // Start transmission of several packets
     PktsToTx = PKTS_IN_SHOT;
-    irLed.TransmitWord(wData, Power)
+    irLed.TransmitWord(PktTx.W16, Settings.TXPwr, OnIrTxEndI);
 }
 
 // ==== Thread ====
@@ -130,8 +135,8 @@ static void FireThread(void* arg) {
 
 void AppInit() {
     FirEvtQ.Init();
+    irLed.Init();
     Reset();
-    // Gun init
 
     // Control pins init
 

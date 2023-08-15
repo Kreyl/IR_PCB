@@ -79,8 +79,6 @@ void irLed_t::IDacCarrierEnable() {
 
 // Power is DAC value
 void irLed_t::TransmitWord(uint16_t wData, uint8_t Power) {
-//    if(Busy) return;
-    Busy = true;
     // Fill carrier array
     CarrierArr[0] = Power;
     CarrierArr[1] = 0;

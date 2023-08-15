@@ -25,17 +25,18 @@ union IRPkt_t {
         uint32_t PktN: 5;
         uint32_t crc: 3;
     };
-    uint8_t CalculateControlSum() {
+    void CalculateCRC() {
         uint16_t Sum = 0;
         for(int i=2; i<=14; i+=2) {
             uint16_t w = W16 << i;
             Sum ^= w;
         }
-        return (Sum >>= 14);
+        crc = (Sum >>= 14) & 0b111U;
     }
-    bool IsIntact() {
-        uint32_t CalcSum = CalculateControlSum();
-        return CalcSum == crc;
+    bool IsCrcOk() {
+        uint32_t OldCrc = crc;
+        CalculateCRC();
+        return OldCrc == crc;
     }
     void Print() { Printf("Pkt: Word%04X; Type%u; FightID%u; TeamID%u; PktN%u; crc%u\r",
             W16, Type, FightID, TeamID, PktN, crc); }

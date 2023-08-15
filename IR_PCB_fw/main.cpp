@@ -101,18 +101,10 @@ void main() {
     Lumos.StartOrRestart(lsqFadeIn);
 */
 
-    AppInit();
-    irLed.Init();
-//    DAC->CR = DAC_CR_EN1;
-
-//    Settings.Load();
 
 //    SimpleSensors::Init();
-
-
-
-//    PinSetupOut(GPIOA, 0, omPushPull);
-//    PinSetHi(GPIOA, 0);
+//    Settings.Load();
+    AppInit();
 
     ITask(); // Main cycle
 }
