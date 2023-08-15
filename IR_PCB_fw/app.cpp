@@ -9,14 +9,13 @@
 #include "Settings.h"
 #include "kl_lib.h"
 #include "shell.h"
-#include "ir_pkt.h"
+#include "ir.h"
 
 enum class FirEvt { Reset, StartFire, EndOfFiring, MagazineReloadDone };
 EvtMsgQ_t<FirEvt, 9> FirEvtQ; // Evt queue
+irLed_t irLed;
 
 #if 1 // ============================== Controls ===============================
-namespace CtrlPins {
-
 uint32_t In[3];
 
 void SetInputs(uint32_t AIn[3]) {
@@ -29,11 +28,6 @@ bool DoBurstFire() {
     return In[1] == 1;
 }
 
-void Init() {
-
-}
-
-}
 #endif
 
 namespace Indication {
@@ -53,17 +47,15 @@ void Reset() {
 } // namespace
 
 #if 1 // ================================= Hull ================================
-namespace Hull {
-
 int32_t HitCnt = 4;
 
-}
 #endif
 
 #if 1 //================================= Gun ==================================
 namespace Gun {
 
 void Fire() {
+    Printf("#Fire\r\n");
 
 }
 
@@ -75,10 +67,7 @@ void ResetI() {
 #endif
 
 #if 1 // =============================== Firing ================================
-namespace Firing {
-
 virtual_timer_t Tmr;
-
 int32_t RoundsCnt = 9, MagazinesCnt = 4;
 
 // ==== Delay subsystem ====
@@ -117,13 +106,13 @@ static void FireThread(void* arg) {
         FirEvt Evt = FirEvtQ.Fetch(TIME_INFINITE);
         // Will be here when new Evt occur
         if(Evt == FirEvt::Reset) Reset();
-        else if(Hull::HitCnt > 0) switch(Evt) { // Do nothing if no hits left
+        else if(HitCnt > 0) switch(Evt) { // Do nothing if no hits left
             case FirEvt::StartFire:
                 if(RoundsCnt > 0) Fire();
                 break;
             case FirEvt::EndOfFiring:
                 if(RoundsCnt > 0) { // Fire if needed and there are rounds left
-                    if(CtrlPins::DoBurstFire()) Fire();
+                    if(DoBurstFire()) Fire();
                 }
                 else { // no more rounds
                     Indication::ShowRoundsEnd();
@@ -136,22 +125,21 @@ static void FireThread(void* arg) {
                 break;
             case FirEvt::MagazineReloadDone:
                 RoundsCnt = Settings.RoundsInMagazine;
-                if(CtrlPins::DoBurstFire()) Fire();
+                if(DoBurstFire()) Fire();
                 break;
             default: break;
         } // switch Evt
     } // while true
 }
 
-void Init() {
+void AppInit() {
     FirEvtQ.Init();
     Reset();
     // Gun init
 
+    // Control pins init
 
     // Create and start thread
     chThdCreateStatic(waFireThread, sizeof(waFireThread), NORMALPRIO, FireThread, NULL);
 }
-
-} // Firing
 #endif

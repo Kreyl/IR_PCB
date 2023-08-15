@@ -35,7 +35,7 @@
 #define IR_ONE_US           1200
 
 struct irChunk_t {
-    uint8_t On;
+    uint16_t On;
     uint16_t Duration;
 };
 #define CHUNK_CNT   (1+1+(IR_BIT_CNT*2))    // Header + bit count
@@ -58,6 +58,7 @@ private:
     Timer_t ChunkTmr{TMR_DAC_CHUNK};
     uint8_t CarrierArr[CARRIER_PERIOD_CNT], ZeroArr[CARRIER_PERIOD_CNT];
     Timer_t SamplingTmr{TMR_DAC_SMPL};
+    const stm32_dma_stream_t *PDmaTx = nullptr;
     void IDacCarrierDisable();
     void IDacCarrierEnable();
 public:

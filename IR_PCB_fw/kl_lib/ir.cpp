@@ -7,7 +7,7 @@
 
 #include "ir.h"
 #include "uart.h"
-#include "main.h" // App is here
+//#include "main.h" // App is here
 
 #if IR_TX_ENABLED // ========================== IR TX ==========================
 //#define DBG_PINS
@@ -29,7 +29,7 @@ void irLed_t::Init() {
     // Once the DAC channel is enabled, the corresponding GPIO pin is automatically
     // connected to the DAC converter. In order to avoid parasitic consumption,
     // the GPIO pin should be configured in analog.
-    PinSetupAnalog(LED_IR);
+    PinSetupAnalog(IR_LED);
     // ==== DAC ====
     rccEnableDAC1();
     // Disable buffer
@@ -38,13 +38,13 @@ void irLed_t::Init() {
     // Enable DAC, enable DMA, TIM7 TRGO evt as trigger, trigger enable
     DAC->CR = DAC_CR_EN1 | DAC_CR_DMAEN1 | (0b010 << 3) | DAC_CR_TEN1;
     // ZeroArr
-    for(uint8_t i=0; i<CARRIER_PERIOD_CNT; i++) ZeroArr[i] = 0;
+    for(uint32_t i=0; i<CARRIER_PERIOD_CNT; i++) ZeroArr[i] = 0;
     // ==== DMA ====
-    dmaStreamAllocate     (DAC_DMA, IRQ_PRIO_HIGH, nullptr, nullptr);
-    dmaStreamSetPeripheral(DAC_DMA, &DAC->DHR8R1);
-    dmaStreamSetMode      (DAC_DMA, IRLED_DMA_MODE);
-    dmaStreamSetMemory0   (DAC_DMA, ZeroArr);
-    dmaStreamSetTransactionSize(DAC_DMA, CARRIER_PERIOD_CNT);
+    PDmaTx = dmaStreamAlloc(DAC_DMA, IRQ_PRIO_HIGH, nullptr, nullptr);
+    dmaStreamSetPeripheral(PDmaTx, &DAC->DHR8R1);
+    dmaStreamSetMode      (PDmaTx, IRLED_DMA_MODE);
+    dmaStreamSetMemory0   (PDmaTx, ZeroArr);
+    dmaStreamSetTransactionSize(PDmaTx, CARRIER_PERIOD_CNT);
     // ==== Sampling timer ====
     SamplingTmr.Init();
     SamplingTmr.SetUpdateFrequencyChangingTopValue(SAMPLING_FREQ_HZ);
@@ -63,18 +63,18 @@ void irLed_t::Init() {
 }
 
 void irLed_t::IDacCarrierDisable() {
-    dmaStreamDisable(DAC_DMA);
-    dmaStreamSetMemory0(DAC_DMA, ZeroArr);
-    dmaStreamSetTransactionSize(DAC_DMA, CARRIER_PERIOD_CNT);
-    dmaStreamSetMode(DAC_DMA, IRLED_DMA_MODE);
-    dmaStreamEnable(DAC_DMA);
+    dmaStreamDisable(PDmaTx);
+    dmaStreamSetMemory0(PDmaTx, ZeroArr);
+    dmaStreamSetTransactionSize(PDmaTx, CARRIER_PERIOD_CNT);
+    dmaStreamSetMode(PDmaTx, IRLED_DMA_MODE);
+    dmaStreamEnable(PDmaTx);
 }
 void irLed_t::IDacCarrierEnable() {
-    dmaStreamDisable(DAC_DMA);
-    dmaStreamSetMemory0(DAC_DMA, CarrierArr);
-    dmaStreamSetTransactionSize(DAC_DMA, CARRIER_PERIOD_CNT);
-    dmaStreamSetMode(DAC_DMA, IRLED_DMA_MODE);
-    dmaStreamEnable(DAC_DMA);
+    dmaStreamDisable(PDmaTx);
+    dmaStreamSetMemory0(PDmaTx, CarrierArr);
+    dmaStreamSetTransactionSize(PDmaTx, CARRIER_PERIOD_CNT);
+    dmaStreamSetMode(PDmaTx, IRLED_DMA_MODE);
+    dmaStreamEnable(PDmaTx);
 }
 
 // Power is DAC value
@@ -110,7 +110,7 @@ void irLed_t::TransmitWord(uint16_t wData, uint8_t Power) {
 }
 
 void irLed_t::IChunkTmrHandler() {
-    ChunkTmr.ClearIrqPendingBit();
+    ChunkTmr.ClearUpdateIrqPendingBit();
 //    Uart.PrintfI("ChunkTmr Irq\r");
     uint32_t LenSent = PChunk - TxBuf;
     // Check if last chunk
@@ -119,6 +119,7 @@ void irLed_t::IChunkTmrHandler() {
         ChunkTmr.Disable();
         IDacCarrierDisable(); // Stop Dac
         DBG1_CLR();
+        PrintfI("end\r");
     }
     else {
         PChunk++;

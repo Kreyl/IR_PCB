@@ -12,20 +12,7 @@
 #include "MsgQ.h"
 
 
-namespace Firing {
-
-void Init();
-
-}
-
-
-namespace CtrlPins {
-
-void Init();
-
+void AppInit();
 void SetInputs(uint32_t AIn[3]);
-
-
-}
 
 #endif /* APP_H_ */

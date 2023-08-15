@@ -349,7 +349,7 @@ void BaseUart_t::Init() {
     // ==== DMA ====
     // Remap DMA request if needed
 #if defined STM32F0XX
-    if(PDmaTx == STM32_DMA1_STREAM4) SYSCFG->CFGR1 |= SYSCFG_CFGR1_USART1TX_DMA_RMP;
+    if(Params->DmaTxID == STM32_DMA_STREAM_ID(1, 4)) SYSCFG->CFGR1 |= SYSCFG_CFGR1_USART1TX_DMA_RMP;
 #endif
     PDmaTx = dmaStreamAlloc(Params->DmaTxID, IRQ_PRIO_MEDIUM, DmaUartTxIrq, this);
     dmaStreamSetPeripheral(PDmaTx, &Params->Uart->TDR);
@@ -400,7 +400,7 @@ void BaseUart_t::Init() {
     PinSetupAlterFunc(Params->PGpioRx, Params->PinRx, omOpenDrain, pudPullUp, PinAF);
     // Remap DMA request if needed
 #if defined STM32F0XX
-    if(PDmaRx == STM32_DMA1_STREAM5) SYSCFG->CFGR1 |= SYSCFG_CFGR1_USART1RX_DMA_RMP;
+    if(Params->DmaRxID == STM32_DMA_STREAM_ID(1, 5)) SYSCFG->CFGR1 |= SYSCFG_CFGR1_USART1RX_DMA_RMP;
 #endif
     // DMA
     PDmaRx = dmaStreamAlloc(Params->DmaRxID, IRQ_PRIO_MEDIUM, nullptr, NULL);

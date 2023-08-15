@@ -75,6 +75,9 @@
 #define BEEPER_TOP      22 // 22 < 255: needed to increase frequency
 #define BEEPER_PIN      { GPIOA, 8, TIM1, 1, invInverted, omPushPull, BEEPER_TOP }
 
+// IR LED
+#define IR_LED          GPIOA, 4 // DAC
+
 // IR Rcvr
 #define IR_WKUP         GPIOC, 13
 #define IR_DATA         GPIOB, 1 // TIM14 & IRQ
@@ -82,14 +85,32 @@
 
 #endif // GPIO
 
+#if 1 // ========================= Timer =======================================
+// IR LED
+#define TMR_DAC_CHUNK               TIM6
+#define TMR_DAC_SMPL                TIM7
+#define TMR_DAC_CHUNK_IRQ           TIM6_DAC_IRQn
+#define TMR_DAC_CHUNK_IRQ_HANDLER   Vector84 // TIM6_DAC
+// IR Receiver
+//#define TMR_IR_RX                   TIM4
+#endif // Timer
+
 #if 1 // =========================== DMA =======================================
 #define STM32_DMA_REQUIRED  TRUE
 // ==== Uart ====
 #define UART_DMA_TX_MODE(Chnl) (STM32_DMA_CR_CHSEL(Chnl) | DMA_PRIORITY_LOW | STM32_DMA_CR_MSIZE_BYTE | STM32_DMA_CR_PSIZE_BYTE | STM32_DMA_CR_MINC | STM32_DMA_CR_DIR_M2P | STM32_DMA_CR_TCIE)
 #define UART_DMA_RX_MODE(Chnl) (STM32_DMA_CR_CHSEL(Chnl) | DMA_PRIORITY_MEDIUM | STM32_DMA_CR_MSIZE_BYTE | STM32_DMA_CR_PSIZE_BYTE | STM32_DMA_CR_MINC | STM32_DMA_CR_DIR_P2M | STM32_DMA_CR_CIRC)
 #define UART_DMA_TX     STM32_DMA_STREAM_ID(1, 2)
-#define UART_DMA_RX     STM32_DMA_STREAM_ID(1, 3)
+#define UART_DMA_RX     STM32_DMA_STREAM_ID(1, 5)
 #define UART_DMA_CHNL   0   // Dummy
+
+// === IR TX DAC ====
+#define DAC_DMA         STM32_DMA_STREAM_ID(1, 3)
+#define DAC_DMA_CHNL    0   // Dummy
+
+// ==== IR RX TIM ====
+#define IR_RX_TIM_DMA   STM32_DMA1_STREAM1  // TIM4 CH1 (see ir.cpp why not CH2)
+#define IR_RX_TIM_DMA_CHNL  6
 
 #endif // DMA
 

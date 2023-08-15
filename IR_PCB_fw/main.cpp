@@ -14,6 +14,7 @@
 #include "led.h"
 #include "FwUpdateF072.h"
 #include "app.h"
+#include "ir.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
@@ -100,10 +101,9 @@ void main() {
     Lumos.StartOrRestart(lsqFadeIn);
 */
 
-
-    Firing::Init();
-    CtrlPins::Init();
-
+    AppInit();
+    irLed.Init();
+//    DAC->CR = DAC_CR_EN1;
 
 //    Settings.Load();
 
@@ -168,7 +168,7 @@ void OnCmd(Shell_t *PShell) {
         uint32_t In[3];
         for(int i=0; i<3; i++) {
             if(PCmd->GetNext(&In[i]) != retvOk) break;
-            CtrlPins::SetInputs(In);
+            SetInputs(In);
         }
         PShell->Ok();
     }
@@ -227,6 +227,21 @@ void OnCmd(Shell_t *PShell) {
         }
     }
 
+    else if(PCmd->NameIs("irtx")) {
+        uint32_t N, Pwr;
+        if(PCmd->GetNext(&N) != retvOk) { PShell->BadParam(); return; }
+        if(PCmd->GetNext(&Pwr) != retvOk) { PShell->BadParam(); return; }
+        irLed.TransmitWord(N, Pwr);
+        PShell->Ok();
+    }
+
+    else if(PCmd->NameIs("dac")) {
+        uint8_t N;
+        if(PCmd->GetNext(&N) != retvOk) { PShell->BadParam(); return; }
+        DAC->DHR8R1 = N;
+        Printf("%u\r", DAC->DHR8R1);
+        PShell->Ok();
+    }
 
 #if 0 // ==== FW Update ====
     else if(PCmd->NameIs("UpdateFwRestart")) {
