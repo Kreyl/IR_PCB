@@ -59,12 +59,12 @@ private:
     uint8_t CarrierArr[CARRIER_PERIOD_CNT], ZeroArr[CARRIER_PERIOD_CNT];
     Timer_t SamplingTmr{TMR_DAC_SMPL};
     const stm32_dma_stream_t *PDmaTx = nullptr;
+    ftVoidVoid ICallbackI = nullptr;
     void IDacCarrierDisable();
     void IDacCarrierEnable();
 public:
-    bool Busy;
     void Init();
-    void TransmitWord(uint16_t wData, uint8_t Power);
+    void TransmitWord(uint16_t wData, uint8_t Power, ftVoidVoid CallbackI = nullptr);
     // Inner use
     void IChunkTmrHandler();
 };

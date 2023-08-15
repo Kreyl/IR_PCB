@@ -51,24 +51,11 @@ int32_t HitCnt = 4;
 
 #endif
 
-#if 1 //================================= Gun ==================================
-namespace Gun {
-
-void Fire() {
-    Printf("#Fire\r\n");
-
-}
-
-void ResetI() {
-    // Stop TX, disable and reset IRQ
-}
-
-}
-#endif
-
 #if 1 // =============================== Firing ================================
 virtual_timer_t Tmr;
 int32_t RoundsCnt = 9, MagazinesCnt = 4;
+int32_t PktsToTx = 0;
+IRPkt_t PktTx;
 
 // ==== Delay subsystem ====
 void TmrCallback(virtual_timer_t *vtp, void *p) {
@@ -95,8 +82,17 @@ void Reset() {
 }
 
 void Fire() {
-    Gun::Fire();
+//    uint32_t
     RoundsCnt--;
+    // Prepare pkt
+    PktTx.Type = PKT_TYPE_SHOT;
+    PktTx.FightID = Settings.FightID;
+    PktTx.TeamID = Settings.TeamID;
+    PktTx.PktN++;
+    PktTx.crc = PktTx.CalculateControlSum();
+    // Start transmission of several packets
+    PktsToTx = PKTS_IN_SHOT;
+    irLed.TransmitWord(wData, Power)
 }
 
 // ==== Thread ====

@@ -11,6 +11,11 @@
 #include <inttypes.h>
 #include "shell.h"
 
+#define PKT_TYPE_RESET  0
+#define PKT_TYPE_SHOT   1
+
+#define PKTS_IN_SHOT    4
+
 union IRPkt_t {
     uint16_t W16;
     struct {
@@ -34,6 +39,7 @@ union IRPkt_t {
     }
     void Print() { Printf("Pkt: Word%04X; Type%u; FightID%u; TeamID%u; PktN%u; crc%u\r",
             W16, Type, FightID, TeamID, PktN, crc); }
+    IRPkt_t& operator =(const IRPkt_t &Right) { W16 = Right.W16; return *this; }
 };
 
 #define IR_BIT_CNT          16

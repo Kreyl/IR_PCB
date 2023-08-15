@@ -24,6 +24,11 @@ public:
 //        ISetups.clear();
 //    }
 
+    // IDs
+    uint32_t FightID = 0;
+    uint32_t TeamID = 0;
+
+
     // Counts
     int32_t HitsCnt = 4;
     int32_t RoundsInMagazine = 9;
