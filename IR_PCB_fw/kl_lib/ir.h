@@ -33,9 +33,9 @@ namespace irLed {
 #if IR_RX_ENABLED // ========================== IR RX ==========================
 #define IR_RX_POLLING_PERIOD_MS     90
 #define IR_DEVIATION_uS             150
-#define IR_RX_PKT_TIMEOUT_MS // XXX
+#define IR_RX_PKT_TIMEOUT_MS        4
 
 namespace irRcvr {
-    void Init(ftVoidUint32 Callback);
+    void Init(ftVoidUint32 CallbackI);
 } // namespace
 #endif

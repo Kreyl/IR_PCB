@@ -148,14 +148,15 @@ static void FireThread(void* arg) {
     } // while true
 }
 
-void IrRxCallback(uint32_t Rcvd) {
-
+void IrRxCallbackI(uint32_t Rcvd) {
+    PrintfI("Rcvd: 0x%X\r", Rcvd);
+//    IRPkt_t
 }
 
 void AppInit() {
     FirEvtQ.Init();
     irLed::Init();
-    irRcvr::Init(IrRxCallback);
+    irRcvr::Init(IrRxCallbackI);
     Reset();
 
     // Control pins init

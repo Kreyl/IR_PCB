@@ -157,44 +157,11 @@ ______        ________
 */
 namespace irRcvr {
 
-#define IR_RX_DMA_MODE  STM32_DMA_CR_CHSEL(IR_RX_TIM_DMA_CHNL) | \
-                        DMA_PRIORITY_MEDIUM | \
-                        STM32_DMA_CR_MSIZE_HWORD | \
-                        STM32_DMA_CR_PSIZE_HWORD | \
-                        STM32_DMA_CR_MINC |       /* Memory pointer increase */ \
-                        STM32_DMA_CR_DIR_P2M |    /* Direction is peripheral to memory */ \
-                        STM32_DMA_CR_CIRC         /* Circular buffer enable */
-
-#define IR_RX_BUF_LEN   36
-
-enum class PktPart { Header, Zero, One, Error};
-
-ftVoidUint32 ICallback;
+ftVoidUint32 ICallbackI;
 Timer_t TmrRx{TMR_IR_RX};
-int32_t SzOld, RIndx;
-uint16_t IRxBuf[IR_RX_BUF_LEN];
 
-static PktPart MeasureDuration(uint16_t Duration) {
-    if     (IS_LIKE(Duration, IR_HEADER_uS, IR_DEVIATION_uS)) return PktPart::Header;
-    else if(IS_LIKE(Duration, IR_ZERO_uS,   IR_DEVIATION_uS)) return PktPart::Zero;
-    else if(IS_LIKE(Duration, IR_ONE_uS,    IR_DEVIATION_uS)) return PktPart::One;
-    else return PktPart::Error;
-}
-
-// Parsing
-int32_t IBitCnt = -1; // Header not received
-systime_t IPktStartTime;
-uint32_t ICurrentPkt;
-
-//static THD_WORKING_AREA(waIRRxThread, 128);
-//__noreturn
-//static void IRRxThread(void *arg) {
-//    chRegSetThreadName("IRRx");
-//    irRx.ITask();
-//}
-
-void irRcvr::Init(ftVoidUint32 Callback) {
-    ICallback = Callback;
+void Init(ftVoidUint32 CallbackI) {
+    ICallbackI = CallbackI;
     // GPIO
     PinSetupAlterFunc(IR_RX_DATA_PIN);
 
@@ -213,87 +180,51 @@ void irRcvr::Init(ftVoidUint32 Callback) {
     TmrRx.SelectSlaveMode(smReset);
     // Enable the capture: CC1E = 1
     TMR_IR_RX->CCER |= TIM_CCER_CC1E;
-    // DMA
-    TmrRx.EnableDMAOnCapture(1);
-    // ==== DMA ====
-    dmaStreamAllocate     (IR_RX_TIM_DMA, IRQ_PRIO_MEDIUM, nullptr, nullptr);
-    dmaStreamSetPeripheral(IR_RX_TIM_DMA, &TMR_IR_RX->CCR1);
-    dmaStreamSetMode      (IR_RX_TIM_DMA, IR_RX_DMA_MODE);
-    dmaStreamSetMemory0   (IR_RX_TIM_DMA, IRxBuf);
-    dmaStreamSetTransactionSize(IR_RX_TIM_DMA, IR_RX_BUF_LEN);
-    dmaStreamEnable       (IR_RX_TIM_DMA);
-    // ==== Start capture ====
-    chThdCreateStatic(waIRRxThread, sizeof(waIRRxThread), NORMALPRIO, IRRxThread, NULL);
+    // IRQ
+    TmrRx.EnableIrqOnCompare1();
+    nvicEnableVector(TMR_IR_RX_IRQ, IRQ_PRIO_HIGH);
+    // Start capture
     TmrRx.Enable();
 }
 
-__noreturn
-void irReceiver_t::ITask() {
-    while(true) {
-        chThdSleepMilliseconds(IR_RX_POLLING_PERIOD_MS);
-        // Get number of bytes to process
-#if defined STM32F2XX || defined STM32F4XX
-        int32_t Sz = IR_RX_BUF_LEN - IR_RX_TIM_DMA->stream->NDTR;   // Number of bytes copied to buffer since restart
-#else
-        int32_t Sz = IR_RX_BUF_LEN - IR_RX_TIM_DMA->channel->CNDTR;   // Number of bytes copied to buffer since restart
-#endif
-        if(Sz != SzOld) {
-            int32_t DurationCnt = Sz - SzOld;
-            if(DurationCnt < 0) DurationCnt += IR_RX_BUF_LEN;   // Handle buffer circulation
-            SzOld = Sz;
-            // Iterate received bytes
-            for(int32_t i=0; i<DurationCnt; i++) {
-                uint16_t Dur = IRxBuf[RIndx++];
-                if(RIndx >= IR_RX_BUF_LEN) RIndx = 0;
-//                Uart.Printf("Dur: %u\r\n", Dur);
-                // Reset pkt if delay is too large
-                uint32_t Elapsed = ST2MS(chVTTimeElapsedSinceX(IPktStartTime));
-                if(Elapsed > (2 * IR_RX_POLLING_PERIOD_MS)) {
-                    IBitCnt = -1;
-//                    Uart.Printf("IR TO %u\r", Elapsed);
-                }
-                // ==== Parse durations ====
-                IrPktPartType_t PartType = MeasureDuration(Dur);
-                switch(PartType) {
-                    case iptHeader:
-                        IBitCnt = 0;
-                        IPktStartTime = chVTGetSystemTime();
-                        ICurrentPkt.Word = 0;
-                        break;
-                    case iptOne:
-                        if(IBitCnt >= 0) {
-                            ICurrentPkt.Word <<= 1;
-                            ICurrentPkt.Word |= 1;
-                            IBitCnt++;
-                        }
-                        break;
-                    case iptZero:
-                        if(IBitCnt >= 0) {
-                            ICurrentPkt.Word <<= 1;
-                            IBitCnt++;
-                        }
-                        break;
-                    case iptError:
-                        IBitCnt = -1;   // Cancel pkt
-//                        Uart.Printf("IR err %u\r", Dur);
-                        break;
-                } // switch
-                // Check if Rx completed
-                if(IBitCnt == IR_BIT_CNT) {
-//                    Uart.Printf("IR RX: %04X\r\n", ICurrentPkt.Word);
-                    IBitCnt = -1;
-                    // Check CRC
-                    if(ICurrentPkt.CalculateControlSum() == ICurrentPkt.ControlSum) { // all right
-//                        Uart.Printf("ok\r");
-                        LastPkt.Word = ICurrentPkt.Word; // Copy pkt
-                        App.SignalEvt(EVT_IR_RX);
-                    }
-                } // if rx done
-            } // for
-        } // if sz
-    } // while true
+// Parsing
+static int32_t IBitCnt = -1; // Header not received
+static uint32_t IRxData;
+static systime_t RxStart = 0;
+
+static inline void ProcessDurationI(uint32_t Dur) {
+    PrintfI("%d\r", Dur);
+    if(IS_LIKE(Dur, IR_HEADER_uS, IR_DEVIATION_uS)) { // Header rcvd
+        IBitCnt = 0;
+        IRxData = 0;
+        RxStart = chVTGetSystemTimeX();
+    }
+    // Ignore received if error occured previously
+    else if(IBitCnt != -1) {
+        if(chVTTimeElapsedSinceX(RxStart) < TIME_MS2I(IR_RX_PKT_TIMEOUT_MS)) {
+            if     (IS_LIKE(Dur, IR_ZERO_uS, IR_DEVIATION_uS)) IRxData = (IRxData << 1) | 0UL;
+            else if(IS_LIKE(Dur, IR_ONE_uS,  IR_DEVIATION_uS)) IRxData = (IRxData << 1) | 1UL;
+            else { IBitCnt = -1; return; } // Bad duration
+            IBitCnt++;
+            if(IBitCnt >= IR_BIT_CNT) { // Reception completed
+                if(ICallbackI) ICallbackI(IRxData);
+                IBitCnt = -1; // Wait header
+            }
+            else RxStart = chVTGetSystemTimeX(); // Restart timeout
+        }
+        else IBitCnt = -1; // timeout occured
+    }
 }
 
-
 } // namespace
+
+// ==== IRQ ====
+extern "C"
+void TMR_IR_RX_IRQ_HNDLR() {
+    CH_IRQ_PROLOGUE();
+    chSysLockFromISR();
+    irRcvr::ProcessDurationI(irRcvr::TmrRx.GetCCR1()); // Reading CCR1 clears IRQ flag, too
+    chSysUnlockFromISR();
+    CH_IRQ_EPILOGUE();
+}
 #endif

@@ -77,8 +77,8 @@
 
 // IR LED
 #define IR_LED          GPIOA, 4 // DAC
-#define IR_CARRIER_HZ   56000UL
-#define IR_BIT_CNT      16UL
+#define IR_CARRIER_HZ   38000UL
+#define IR_BIT_CNT      16L
 
 // IR Rcvr
 #define IR_RX_DATA_PIN  GPIOA, 3, omPushPull, pudPullUp, AF0 // TIM15 C2
@@ -90,6 +90,8 @@
 #define TMR_DAC_SMPL    TIM7
 // IR Receiver
 #define TMR_IR_RX       TIM15
+#define TMR_IR_RX_IRQ   TIM15_IRQn
+#define TMR_IR_RX_IRQ_HNDLR   Vector90
 #endif // Timer
 
 #if 1 // =========================== DMA =======================================
@@ -105,9 +107,6 @@
 #define DAC_DMA         STM32_DMA_STREAM_ID(1, 3)
 #define DAC_DMA_CHNL    0   // Dummy
 
-// ==== IR RX TIM ====
-#define IR_RX_TIM_DMA   STM32_DMA1_STREAM1  // TIM4 CH1 (see ir.cpp why not CH2)
-#define IR_RX_TIM_DMA_CHNL  6
 
 #endif // DMA
 

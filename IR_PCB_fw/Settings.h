@@ -33,7 +33,7 @@ public:
     int32_t RoundsInMagazine = 9;
     int32_t MagazinesCnt = 4;
 
-    int32_t IrPktsInShot = 3;
+    int32_t IrPktsInShot = 1;
 
     // Delays
     int32_t ShotsPeriod_ms = 99;
