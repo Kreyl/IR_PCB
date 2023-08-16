@@ -78,7 +78,6 @@ static inline void StartTx() {
     SamplingTmr.Enable();
 }
 
-
 void DmaTxEndIrqHandler(void *p, uint32_t flags) {
     chSysLockFromISR();
     SamplingTmr.Disable();
@@ -90,7 +89,6 @@ void DmaTxEndIrqHandler(void *p, uint32_t flags) {
 }
 
 void Init() {
-    DBG_PIN_INIT();
     // ==== GPIO ====
     // Once the DAC channel is enabled, the corresponding GPIO pin is automatically
     // connected to the DAC converter. In order to avoid parasitic consumption,
@@ -133,14 +131,9 @@ void TransmitWord(uint16_t wData, uint8_t Power, int32_t NRepeat, ftVoidVoid Cal
     }
     // Put pause
     for(i=0; i<NSAMPLES_PAUSE; i++) *p++ = ISampleSpace;
-
-    // Debug print
-//    for(uint8_t i=0; i<CHUNK_CNT; i++) Uart.Printf("%u %u\r", TxBuf[i].On, TxBuf[i].Duration);
-//    Uart.Printf("\r");
     // ==== Start transmission ====
     TransactionSz = (p - DacBuf) * 4; // Every sample pair contains 4 actual samples
-    StartTx()
-    DBG1_SET();
+    StartTx();
 }
 
 void ResetI() {
