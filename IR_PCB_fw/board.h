@@ -77,6 +77,8 @@
 
 // IR LED
 #define IR_LED          GPIOA, 4 // DAC
+#define IR_CARRIER_HZ   56000UL
+#define IR_BIT_CNT      16UL
 
 // IR Rcvr
 #define IR_WKUP         GPIOC, 13

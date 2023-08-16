@@ -41,6 +41,4 @@ union IRPkt_t {
     IRPkt_t& operator =(const IRPkt_t &Right) { W16 = Right.W16; return *this; }
 };
 
-#define IR_BIT_CNT          16UL
-
 #endif /* IR_PKT_H_ */

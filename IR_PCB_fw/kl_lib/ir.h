@@ -7,18 +7,13 @@
 
 #pragma once
 
-#include "hal.h"
-#include "ch.h"
 #include "kl_lib.h"
 #include "board.h"
-#include "uart.h"
-#include "ir_pkt.h"
 
 #define IR_TX_ENABLED   TRUE
 #define IR_RX_ENABLED   FALSE
 
 #if IR_TX_ENABLED // ========================== IR TX ==========================
-#define IR_CARRIER_HZ       56000UL
 #define IR_MAX_PWR          255     // Top DAC value
 
 // Delays, uS

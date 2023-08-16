@@ -10,6 +10,8 @@
 #include "kl_lib.h"
 #include "shell.h"
 #include "ir.h"
+#include "ir_pkt.h"
+#include "MsgQ.h"
 
 enum class FirEvt { Reset, StartFire, EndOfIrTx, EndOfFiring, MagazineReloadDone };
 EvtMsgQ_t<FirEvt, 9> FirEvtQ; // Evt queue

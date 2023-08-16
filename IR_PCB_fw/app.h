@@ -9,7 +9,6 @@
 #define APP_H_
 
 #include <inttypes.h>
-#include "MsgQ.h"
 
 extern int32_t RoundsCnt, MagazinesCnt;
 
