@@ -67,8 +67,6 @@ void StartDelay(uint32_t ADelay_s, FirEvt AEvt) {
     if(ADelay_s == 0) FirEvtQ.SendNowOrExit(AEvt); // Do it immediately
     else chVTSet(&Tmr, TIME_S2I(ADelay_s), TmrCallback, (void*)((uint32_t)AEvt));
 }
-// ====
-
 
 void Reset() {
     chSysLock();
