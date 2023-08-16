@@ -81,17 +81,15 @@
 #define IR_BIT_CNT      16UL
 
 // IR Rcvr
-#define IR_WKUP         GPIOC, 13
-#define IR_DATA         GPIOB, 1 // TIM14 & IRQ
-#define IR_PWR          GPIOB, 2
+#define IR_RX_DATA_PIN  GPIOA, 3, omPushPull, pudPullUp, AF0 // TIM15 C2
 
 #endif // GPIO
 
 #if 1 // ========================= Timer =======================================
 // IR LED
-#define TMR_DAC_SMPL                TIM7
+#define TMR_DAC_SMPL    TIM7
 // IR Receiver
-//#define TMR_IR_RX                   TIM4
+#define TMR_IR_RX       TIM15
 #endif // Timer
 
 #if 1 // =========================== DMA =======================================

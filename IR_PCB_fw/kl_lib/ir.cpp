@@ -147,32 +147,63 @@ void ResetI() {
 #endif
 
 #if IR_RX_ENABLED // ========================== IR RX ==========================
-irReceiver_t irRx;
+/* ==== Timer ====
+______        ________
+      |______|
+      ^      ^
+   TI2FP2   TI2FP1
+   Trigger  Capture
+   Reset    CCR1 => DMA req CCR1 => TIMx Ch1 (not Ch2!) request
+*/
+namespace irRcvr {
 
-static THD_WORKING_AREA(waIRRxThread, 128);
-__noreturn
-static void IRRxThread(void *arg) {
-    chRegSetThreadName("IRRx");
-    irRx.ITask();
+#define IR_RX_DMA_MODE  STM32_DMA_CR_CHSEL(IR_RX_TIM_DMA_CHNL) | \
+                        DMA_PRIORITY_MEDIUM | \
+                        STM32_DMA_CR_MSIZE_HWORD | \
+                        STM32_DMA_CR_PSIZE_HWORD | \
+                        STM32_DMA_CR_MINC |       /* Memory pointer increase */ \
+                        STM32_DMA_CR_DIR_P2M |    /* Direction is peripheral to memory */ \
+                        STM32_DMA_CR_CIRC         /* Circular buffer enable */
+
+#define IR_RX_BUF_LEN   36
+
+enum class PktPart { Header, Zero, One, Error};
+
+ftVoidUint32 ICallback;
+Timer_t TmrRx{TMR_IR_RX};
+int32_t SzOld, RIndx;
+uint16_t IRxBuf[IR_RX_BUF_LEN];
+
+static PktPart MeasureDuration(uint16_t Duration) {
+    if     (IS_LIKE(Duration, IR_HEADER_uS, IR_DEVIATION_uS)) return PktPart::Header;
+    else if(IS_LIKE(Duration, IR_ZERO_uS,   IR_DEVIATION_uS)) return PktPart::Zero;
+    else if(IS_LIKE(Duration, IR_ONE_uS,    IR_DEVIATION_uS)) return PktPart::One;
+    else return PktPart::Error;
 }
 
-void irReceiver_t::Init() {
+// Parsing
+int32_t IBitCnt = -1; // Header not received
+systime_t IPktStartTime;
+uint32_t ICurrentPkt;
+
+//static THD_WORKING_AREA(waIRRxThread, 128);
+//__noreturn
+//static void IRRxThread(void *arg) {
+//    chRegSetThreadName("IRRx");
+//    irRx.ITask();
+//}
+
+void irRcvr::Init(ftVoidUint32 Callback) {
+    ICallback = Callback;
     // GPIO
-    PinSetupAlterFunc(IR_RCVR_PIN);
-    /* ==== Timer ====
-    ______        ________
-          |______|
-          ^      ^
-       TI2FP2   TI2FP1
-       Trigger  Capture
-       Reset    CCR1 => DMA req CCR1 => TIMx Ch1 (not Ch2!) request
-    */
+    PinSetupAlterFunc(IR_RX_DATA_PIN);
+
     TmrRx.Init();
     TmrRx.SetTopValue(0xFFFF);        // Maximum
     TmrRx.SetupPrescaler(1000000);    // Input Freq: 1 MHz => one tick = 1 uS
     // Setup input capture mode for Channel2
     // Select TI2 as active input for CCR1
-    TMR_IR_RX->CCMR1 = (0b10 << 0);
+    TMR_IR_RX->CCMR1 = (0b10U << 0);
     // Select active polarity for TI2FP1 (capture CCR1) and TI2FP2 (trigger reset):
     // rising and falling edges, respectively (CC1P=0, CC2P=1). Look, TI2FP2 first, TI2FP1 second
     TMR_IR_RX->CCER = TIM_CCER_CC2P;
@@ -262,4 +293,7 @@ void irReceiver_t::ITask() {
         } // if sz
     } // while true
 }
+
+
+} // namespace
 #endif
