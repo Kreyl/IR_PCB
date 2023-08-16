@@ -87,10 +87,7 @@
 
 #if 1 // ========================= Timer =======================================
 // IR LED
-#define TMR_DAC_CHUNK               TIM6
 #define TMR_DAC_SMPL                TIM7
-#define TMR_DAC_CHUNK_IRQ           TIM6_DAC_IRQn
-#define TMR_DAC_CHUNK_IRQ_HANDLER   Vector84 // TIM6_DAC
 // IR Receiver
 //#define TMR_IR_RX                   TIM4
 #endif // Timer

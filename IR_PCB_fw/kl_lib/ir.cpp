@@ -11,7 +11,6 @@
 
 #if IR_TX_ENABLED // ========================== IR TX ==========================
 //#define DBG_PINS
-
 #ifdef DBG_PINS
 #define DBG_GPIO1   GPIOC
 #define DBG_PIN1    8
@@ -24,7 +23,40 @@
 #define DBG1_CLR()
 #endif
 
-void irLed_t::Init() {
+namespace irLed {
+
+#define IRLED_DMA_MODE  \
+    STM32_DMA_CR_CHSEL(DAC_DMA_CHNL) | \
+    DMA_PRIORITY_HIGH | \
+    STM32_DMA_CR_MSIZE_BYTE | \
+    STM32_DMA_CR_PSIZE_BYTE | \
+    STM32_DMA_CR_MINC        | \
+    STM32_DMA_CR_DIR_M2P | \
+    STM32_DMA_CR_TCIE
+
+Timer_t SamplingTmr{TMR_DAC_SMPL};
+const stm32_dma_stream_t *PDmaTx = nullptr;
+ftVoidVoid ICallbackI = nullptr;
+int32_t INRepeat;
+
+#define SAMPLING_FREQ_HZ    (IR_CARRIER_HZ * 2)
+// Actual NSamples is doubled due to  1 and next 0 in array
+#define NSAMPLES_HEADER     (((IR_HEADER_uS * IR_CARRIER_HZ) + 999999UL) / 1000000UL)
+#define NSAMPLES_SPACE      (((IR_SPACE_uS * IR_CARRIER_HZ) + 999999UL) / 1000000UL)
+#define NSAMPLES_ZERO       (((IR_ZERO_uS * IR_CARRIER_HZ) + 999999UL) / 1000000UL)
+#define NSAMPLES_ONE        (((IR_ONE_uS * IR_CARRIER_HZ) + 999999UL) / 1000000UL)
+#define NSAMPLES_PAUSE      (((IR_PAUSE_AFTER_uS * IR_CARRIER_HZ) + 999999UL) / 1000000UL)
+
+// DAC buf
+#define DAC_BUF_SZ          (2 * (NSAMPLES_HEADER + NSAMPLES_SPACE + (NSAMPLES_ONE + NSAMPLES_SPACE) * IR_BIT_CNT + NSAMPLES_PAUSE))
+__attribute__((aligned))
+uint8_t DacBuf[DAC_BUF_SZ];
+uint32_t BufSz;
+
+void DmaTxEndIrqHandler(void *p, uint32_t flags);
+
+void Init() {
+    DBG_PIN_INIT();
     // ==== GPIO ====
     // Once the DAC channel is enabled, the corresponding GPIO pin is automatically
     // connected to the DAC converter. In order to avoid parasitic consumption,
@@ -37,52 +69,50 @@ void irLed_t::Init() {
 //    DAC->MCR = 0b010;   // Disable buffer
     // Enable DAC, enable DMA, TIM7 TRGO evt as trigger, trigger enable
     DAC->CR = DAC_CR_EN1 | DAC_CR_DMAEN1 | (0b010 << 3) | DAC_CR_TEN1;
-    // ZeroArr
-    for(uint32_t i=0; i<CARRIER_PERIOD_CNT; i++) ZeroArr[i] = 0;
     // ==== DMA ====
-    PDmaTx = dmaStreamAlloc(DAC_DMA, IRQ_PRIO_HIGH, nullptr, nullptr);
+    PDmaTx = dmaStreamAlloc(DAC_DMA, IRQ_PRIO_MEDIUM, DmaTxEndIrqHandler, nullptr);
     dmaStreamSetPeripheral(PDmaTx, &DAC->DHR8R1);
     dmaStreamSetMode      (PDmaTx, IRLED_DMA_MODE);
-    dmaStreamSetMemory0   (PDmaTx, ZeroArr);
-    dmaStreamSetTransactionSize(PDmaTx, CARRIER_PERIOD_CNT);
+    dmaStreamSetMemory0   (PDmaTx, DacBuf);
     // ==== Sampling timer ====
     SamplingTmr.Init();
     SamplingTmr.SetUpdateFrequencyChangingTopValue(SAMPLING_FREQ_HZ);
     SamplingTmr.SelectMasterMode(mmUpdate);
-    SamplingTmr.Enable();
-
-    // ==== Chunk timer ====
-    DBG_PIN_INIT();
-    ChunkTmr.Init();
-    ChunkTmr.DisableArrBuffering();
-    ChunkTmr.SetupPrescaler(1000000);   // Freq = 1MHz => Period = 1us
-    ChunkTmr.SetTopValue(999);          // Initial, do not care
-    ChunkTmr.GenerateUpdateEvt();       // Allow prescaler to switch on
-    ChunkTmr.EnableIrqOnUpdate();
-    nvicEnableVector(TMR_DAC_CHUNK_IRQ, IRQ_PRIO_HIGH);
+//    SamplingTmr.Enable();
 }
 
-void irLed_t::IDacCarrierDisable() {
-    dmaStreamDisable(PDmaTx);
-    dmaStreamSetMemory0(PDmaTx, ZeroArr);
-    dmaStreamSetTransactionSize(PDmaTx, CARRIER_PERIOD_CNT);
-    dmaStreamSetMode(PDmaTx, IRLED_DMA_MODE);
-    dmaStreamEnable(PDmaTx);
-}
-void irLed_t::IDacCarrierEnable() {
-    dmaStreamDisable(PDmaTx);
-    dmaStreamSetMemory0(PDmaTx, CarrierArr);
-    dmaStreamSetTransactionSize(PDmaTx, CARRIER_PERIOD_CNT);
-    dmaStreamSetMode(PDmaTx, IRLED_DMA_MODE);
-    dmaStreamEnable(PDmaTx);
+//void irLed_t::IDacCarrierDisable() {
+//    dmaStreamDisable(PDmaTx);
+//    dmaStreamSetMemory0(PDmaTx, ZeroArr);
+//    dmaStreamSetTransactionSize(PDmaTx, CARRIER_PERIOD_CNT);
+//    dmaStreamSetMode(PDmaTx, IRLED_DMA_MODE);
+//    dmaStreamEnable(PDmaTx);
+//}
+//void irLed_t::IDacCarrierEnable() {
+//    dmaStreamDisable(PDmaTx);
+//    dmaStreamSetMemory0(PDmaTx, CarrierArr);
+//    dmaStreamSetTransactionSize(PDmaTx, CARRIER_PERIOD_CNT);
+//    dmaStreamSetMode(PDmaTx, IRLED_DMA_MODE);
+//    dmaStreamEnable(PDmaTx);
+//}
+
+static void PutToBuf(uint8_t *Dst, uint32_t DurOn, uint32_t DurSpace) {
+    // Put on chunk
+
 }
 
 // Power is DAC value
-void irLed_t::TransmitWord(uint16_t wData, uint8_t Power) {
-    // Fill carrier array
-    CarrierArr[0] = Power;
-    CarrierArr[1] = 0;
+void TransmitWord(uint16_t wData, uint8_t Power, int32_t NRepeat, ftVoidVoid CallbackI) {
+    ICallbackI = CallbackI;
+    INRepeat = NRepeat;
     // ==== Fill buffer depending on data ====
+    uint8_t *p = DacBuf;
+    // Put header
+    for(uint32_t i=0; i<NSAMPLES_HEADER; i++) { *p++ = Power; *p++ = 0; }
+    for(uint32_t i=0; i<(NSAMPLES_SPACE * 2); i++) *p++ = 0;
+
+
+
     PChunk = TxBuf;
     *PChunk++ = {1, 2400}; // }
     *PChunk++ = {0, 600};  // } Header

@@ -14,8 +14,6 @@
 #define PKT_TYPE_RESET  0
 #define PKT_TYPE_SHOT   1
 
-#define PKTS_IN_SHOT    4
-
 union IRPkt_t {
     uint16_t W16;
     struct {
@@ -43,6 +41,6 @@ union IRPkt_t {
     IRPkt_t& operator =(const IRPkt_t &Right) { W16 = Right.W16; return *this; }
 };
 
-#define IR_BIT_CNT          16
+#define IR_BIT_CNT          16UL
 
 #endif /* IR_PKT_H_ */

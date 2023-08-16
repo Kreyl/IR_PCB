@@ -18,58 +18,21 @@
 #define IR_RX_ENABLED   FALSE
 
 #if IR_TX_ENABLED // ========================== IR TX ==========================
-#define IR_CARRIER_HZ       56000
-#define MAX_PWR             255     // Top DAC value
+#define IR_CARRIER_HZ       56000UL
+#define IR_MAX_PWR          255     // Top DAC value
 
 // Delays, uS
-#define IR_TICK_US          600 // Protocol smallest time unit, us
-/* Header = 4 * IR_TICK_US
- * Space  = 1 * IR_TICK_US
- * Zero   = 1 * IR_TICK_US
- * One    = 2 * IR_TICK_US
- */
+#define IR_HEADER_uS        2400UL
+#define IR_SPACE_uS         600UL
+#define IR_ZERO_uS          600UL
+#define IR_ONE_uS           1200UL
+#define IR_PAUSE_AFTER_uS   2400UL
 
-// Timings
-#define IR_HEADER_US        2400
-#define IR_ZERO_US          600
-#define IR_ONE_US           1200
-
-struct irChunk_t {
-    uint16_t On;
-    uint16_t Duration;
-};
-#define CHUNK_CNT   (1+1+(IR_BIT_CNT*2))    // Header + bit count
-
-#define CARRIER_PERIOD_CNT  2
-#define SAMPLING_FREQ_HZ    (CARRIER_PERIOD_CNT*IR_CARRIER_HZ)
-
-#define IRLED_DMA_MODE  \
-    STM32_DMA_CR_CHSEL(DAC_DMA_CHNL) | \
-    DMA_PRIORITY_HIGH | \
-    STM32_DMA_CR_MSIZE_BYTE | \
-    STM32_DMA_CR_PSIZE_BYTE | \
-    STM32_DMA_CR_MINC        | \
-    STM32_DMA_CR_DIR_M2P     | \
-    STM32_DMA_CR_CIRC
-
-class irLed_t {
-private:
-    irChunk_t TxBuf[CHUNK_CNT], *PChunk; // Buffer of power values: header + all one's + 1 delay after
-    Timer_t ChunkTmr{TMR_DAC_CHUNK};
-    uint8_t CarrierArr[CARRIER_PERIOD_CNT], ZeroArr[CARRIER_PERIOD_CNT];
-    Timer_t SamplingTmr{TMR_DAC_SMPL};
-    const stm32_dma_stream_t *PDmaTx = nullptr;
-    ftVoidVoid ICallbackI = nullptr;
-    void IDacCarrierDisable();
-    void IDacCarrierEnable();
-public:
+namespace irLed {
     void Init();
-    void TransmitWord(uint16_t wData, uint8_t Power, ftVoidVoid CallbackI = nullptr);
-    // Inner use
-    void IChunkTmrHandler();
-};
-
-extern irLed_t irLed;
+    void TransmitWord(uint16_t wData, uint8_t Power, int32_t NRepeat, ftVoidVoid CallbackI);
+    void ResetI();
+} // namespace
 #endif
 
 #if IR_RX_ENABLED // ========================== IR RX ==========================

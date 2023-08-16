@@ -13,7 +13,6 @@
 
 enum class FirEvt { Reset, StartFire, EndOfFiring, MagazineReloadDone };
 EvtMsgQ_t<FirEvt, 9> FirEvtQ; // Evt queue
-irLed_t irLed;
 
 #if 1 // ============================== Controls ===============================
 uint32_t In[3];
@@ -54,7 +53,6 @@ int32_t HitCnt = 4;
 #if 1 // =============================== Firing ================================
 virtual_timer_t Tmr;
 int32_t RoundsCnt = 9, MagazinesCnt = 4;
-int32_t PktsToTx = 0;
 IRPkt_t PktTx;
 
 // ==== Delay subsystem ====
@@ -74,7 +72,7 @@ void StartDelay(uint32_t ADelay_s, FirEvt AEvt) {
 
 void Reset() {
     chSysLock();
-    irLed.ResetI();
+    irLed::ResetI();
     RoundsCnt = Settings.RoundsInMagazine;
     MagazinesCnt = Settings.MagazinesCnt;
     chVTResetI(&Tmr);
@@ -82,9 +80,7 @@ void Reset() {
 }
 
 void OnIrTxEndI() {
-    PktsToTx--;
-    if(PktsToTx > 0) irLed.TransmitWord(PktTx.W16, Settings.TXPwr, OnIrTxEndI);
-    else FirEvtQ.SendNowOrExitI(FirEvt::EndOfFiring);
+    FirEvtQ.SendNowOrExitI(FirEvt::EndOfFiring);
 }
 
 void Fire() {
@@ -96,8 +92,7 @@ void Fire() {
     PktTx.PktN++;
     PktTx.CalculateCRC();
     // Start transmission of several packets
-    PktsToTx = PKTS_IN_SHOT;
-    irLed.TransmitWord(PktTx.W16, Settings.TXPwr, OnIrTxEndI);
+    irLed::TransmitWord(PktTx.W16, Settings.TXPwr, Settings.IrPktsInShot, OnIrTxEndI);
 }
 
 // ==== Thread ====
@@ -135,7 +130,7 @@ static void FireThread(void* arg) {
 
 void AppInit() {
     FirEvtQ.Init();
-    irLed.Init();
+    irLed::Init();
     Reset();
 
     // Control pins init
