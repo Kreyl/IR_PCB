@@ -35,12 +35,13 @@ public:
 
     int32_t IrPktsInShot = 3;
 
-    // Delays, s
-    uint32_t MagazineReloadDelay = 4;
+    // Delays
+    int32_t ShotsPeriod_ms = 99;
+    int32_t MagazineReloadDelay = 4;
 
 
     // TX power
-    uint32_t TXPwr = 207;
+    int32_t TXPwr = 207;
 
 };
 

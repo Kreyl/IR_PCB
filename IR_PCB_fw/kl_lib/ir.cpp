@@ -80,11 +80,13 @@ static inline void StartTx() {
 
 
 void DmaTxEndIrqHandler(void *p, uint32_t flags) {
+    chSysLockFromISR();
     SamplingTmr.Disable();
     dmaStreamDisable(PDmaTx);
     INRepeat--;
     if(INRepeat > 0) StartTx(); // Start over
     else if(ICallbackI) ICallbackI();
+    chSysUnlockFromISR();
 }
 
 void Init() {

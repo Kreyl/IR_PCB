@@ -166,6 +166,14 @@ void OnCmd(Shell_t *PShell) {
     }
 
 
+    else if(PCmd->NameIs("GetSta")) {
+        Printf("Rnds: %d; mgzs: %d\r", RoundsCnt, MagazinesCnt);
+    }
+    else if(PCmd->NameIs("Restore")) {
+        Reset();
+        PShell->Ok();
+    }
+
     else if(PCmd->NameIs("crc")) {
         uint32_t N;
         if(PCmd->GetNext(&N) != retvOk) { PShell->BadParam(); return; }

@@ -11,8 +11,10 @@
 #include <inttypes.h>
 #include "MsgQ.h"
 
+extern int32_t RoundsCnt, MagazinesCnt;
 
 void AppInit();
 void SetInputs(uint32_t AIn[3]);
+void Reset();
 
 #endif /* APP_H_ */

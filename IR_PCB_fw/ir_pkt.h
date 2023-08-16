@@ -36,7 +36,7 @@ union IRPkt_t {
         CalculateCRC();
         return OldCrc == crc;
     }
-    void Print() { Printf("Pkt: Word%04X; Type%u; FightID%u; TeamID%u; PktN%u; crc%u\r",
+    void Print() { Printf("Pkt: Word %04X; Type %u; FightID %u; TeamID %u; PktN %u; crc %u\r",
             W16, Type, FightID, TeamID, PktN, crc); }
     IRPkt_t& operator =(const IRPkt_t &Right) { W16 = Right.W16; return *this; }
 };

@@ -11,7 +11,7 @@
 #include "shell.h"
 #include "ir.h"
 
-enum class FirEvt { Reset, StartFire, EndOfFiring, MagazineReloadDone };
+enum class FirEvt { Reset, StartFire, EndOfIrTx, EndOfFiring, MagazineReloadDone };
 EvtMsgQ_t<FirEvt, 9> FirEvtQ; // Evt queue
 
 #if 1 // ============================== Controls ===============================
@@ -39,8 +39,12 @@ void ShowMagazinesEnded() {
     Printf("#MagazinesEnded\r\n");
 }
 
-void Reset() {
+void ShowMagazineReloaded() {
+    Printf("#MagazineReloaded\r\n");
+}
 
+void Reset() {
+    Printf("#Reset\r\n");
 }
 
 } // namespace
@@ -54,18 +58,23 @@ int32_t HitCnt = 4;
 virtual_timer_t Tmr;
 int32_t RoundsCnt = 9, MagazinesCnt = 4;
 IRPkt_t PktTx;
+systime_t FireStart;
 
 // ==== Delay subsystem ====
 void TmrCallback(virtual_timer_t *vtp, void *p) {
     chSysLockFromISR();
-    FirEvt Evt = (FirEvt)((uint32_t)p);
-    FirEvtQ.SendNowOrExitI(Evt);
+    FirEvtQ.SendNowOrExitI((FirEvt)((uint32_t)p));
     chSysUnlockFromISR();
 }
 
-void StartDelay(uint32_t ADelay_s, FirEvt AEvt) {
-    if(ADelay_s == 0) FirEvtQ.SendNowOrExit(AEvt); // Do it immediately
+void StartDelay(int32_t ADelay_s, FirEvt AEvt) {
+    if(ADelay_s <= 0) FirEvtQ.SendNowOrExit(AEvt); // Do it immediately
     else chVTSet(&Tmr, TIME_S2I(ADelay_s), TmrCallback, (void*)((uint32_t)AEvt));
+}
+
+void StartDelay_ms(int32_t ADelay_ms, FirEvt AEvt) {
+    if(ADelay_ms <= 0) FirEvtQ.SendNowOrExit(AEvt); // Do it immediately
+    else chVTSet(&Tmr, TIME_MS2I(ADelay_ms), TmrCallback, (void*)((uint32_t)AEvt));
 }
 
 void Reset() {
@@ -75,10 +84,11 @@ void Reset() {
     MagazinesCnt = Settings.MagazinesCnt;
     chVTResetI(&Tmr);
     chSysUnlock();
+    Indication::Reset();
 }
 
 void OnIrTxEndI() {
-    FirEvtQ.SendNowOrExitI(FirEvt::EndOfFiring);
+    FirEvtQ.SendNowOrExitI(FirEvt::EndOfIrTx);
 }
 
 void Fire() {
@@ -89,8 +99,10 @@ void Fire() {
     PktTx.TeamID = Settings.TeamID;
     PktTx.PktN++;
     PktTx.CalculateCRC();
+    PktTx.Print();
     // Start transmission of several packets
     irLed::TransmitWord(PktTx.W16, Settings.TXPwr, Settings.IrPktsInShot, OnIrTxEndI);
+    FireStart = chVTGetSystemTimeX();
 }
 
 // ==== Thread ====
@@ -104,6 +116,11 @@ static void FireThread(void* arg) {
             case FirEvt::StartFire:
                 if(RoundsCnt > 0) Fire();
                 break;
+
+            case FirEvt::EndOfIrTx: // Tx of several same pkts just ended
+                StartDelay_ms(Settings.ShotsPeriod_ms - TIME_I2MS(chVTTimeElapsedSinceX(FireStart)), FirEvt::EndOfFiring);
+                break;
+
             case FirEvt::EndOfFiring:
                 if(RoundsCnt > 0) { // Fire if needed and there are rounds left
                     if(DoBurstFire()) Fire();
@@ -117,10 +134,13 @@ static void FireThread(void* arg) {
                     else Indication::ShowMagazinesEnded(); // No magazines left
                 }
                 break;
+
             case FirEvt::MagazineReloadDone:
+                Indication::ShowMagazineReloaded();
                 RoundsCnt = Settings.RoundsInMagazine;
                 if(DoBurstFire()) Fire();
                 break;
+
             default: break;
         } // switch Evt
     } // while true
