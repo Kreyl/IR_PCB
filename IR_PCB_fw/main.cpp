@@ -167,7 +167,7 @@ void OnCmd(Shell_t *PShell) {
 
 
     else if(PCmd->NameIs("GetSta")) {
-        Printf("Rnds: %d; mgzs: %d\r", RoundsCnt, MagazinesCnt);
+        Printf("Hits: %d; Rnds: %d; mgzs: %d\r", HitCnt, RoundsCnt, MagazinesCnt);
     }
     else if(PCmd->NameIs("Restore")) {
         Reset();
@@ -228,11 +228,10 @@ void OnCmd(Shell_t *PShell) {
     }
 
     else if(PCmd->NameIs("irtx")) {
-        uint32_t Word, N, Pwr;
+        uint32_t Word, Pwr;
         if(PCmd->GetNext(&Word) != retvOk) { PShell->BadParam(); return; }
         if(PCmd->GetNext(&Pwr) != retvOk) { PShell->BadParam(); return; }
-        if(PCmd->GetNext(&N) != retvOk) { PShell->BadParam(); return; }
-        irLed::TransmitWord(Word, Pwr, N, nullptr);
+        irLed::TransmitWord(Word, Pwr, nullptr);
         PShell->Ok();
     }
 

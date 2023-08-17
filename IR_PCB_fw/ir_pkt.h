@@ -20,8 +20,8 @@ union IRPkt_t {
         uint32_t Type: 3;
         uint32_t FightID: 2;
         uint32_t TeamID: 3;
-        uint32_t PktN: 5;
-        uint32_t crc: 3;
+        uint32_t GunID: 6;
+        uint32_t crc: 2;
     };
     IRPkt_t() : W16(0) {}
     IRPkt_t(uint16_t AW16) : W16(AW16) {}
@@ -40,8 +40,8 @@ union IRPkt_t {
         return OldCrc == crc;
     }
 
-    void PrintI() { PrintfI("Pkt: Word %04X; Type %u; FightID %u; TeamID %u; PktN %u; crc %u\r",
-            W16, Type, FightID, TeamID, PktN, crc); }
+    void PrintI() { PrintfI("Pkt: Word %04X; Type %u; FightID %u; TeamID %u; GunID %u; crc %u\r",
+            W16, Type, FightID, TeamID, GunID, crc); }
     void Print() {
         chSysLock();
         PrintI();

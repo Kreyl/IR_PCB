@@ -37,7 +37,6 @@ namespace irLed {
 Timer_t SamplingTmr{TMR_DAC_SMPL};
 const stm32_dma_stream_t *PDmaTx = nullptr;
 ftVoidVoid ICallbackI = nullptr;
-static int32_t INRepeat;
 static uint32_t TransactionSz;
 
 #define SAMPLING_FREQ_HZ    (IR_CARRIER_HZ * 2)
@@ -82,9 +81,7 @@ void DmaTxEndIrqHandler(void *p, uint32_t flags) {
     chSysLockFromISR();
     SamplingTmr.Disable();
     dmaStreamDisable(PDmaTx);
-    INRepeat--;
-    if(INRepeat > 0) StartTx(); // Start over
-    else if(ICallbackI) ICallbackI();
+    if(ICallbackI) ICallbackI();
     chSysUnlockFromISR();
 }
 
@@ -111,9 +108,8 @@ void Init() {
 }
 
 // Power is DAC value
-void TransmitWord(uint16_t wData, uint8_t Power, int32_t NRepeat, ftVoidVoid CallbackI) {
+void TransmitWord(uint16_t wData, uint8_t Power, ftVoidVoid CallbackI) {
     ICallbackI = CallbackI;
-    INRepeat = NRepeat;
     // ==== Fill buffer depending on data ====
     DacSamplePair_t *p = DacBuf, ISampleCarrier{Power}, ISampleSpace{0};
     uint32_t i, j;
@@ -137,7 +133,6 @@ void TransmitWord(uint16_t wData, uint8_t Power, int32_t NRepeat, ftVoidVoid Cal
 }
 
 void ResetI() {
-    INRepeat = 0;
     dmaStreamDisable(PDmaTx);
     SamplingTmr.Disable();
     DAC->DHR8R1 = 0;

@@ -13,6 +13,7 @@
 #include "ir_pkt.h"
 #include "MsgQ.h"
 
+#if 1 // ========================== Message queue ==============================
 enum class AppEvt : uint16_t {
     Reset,
     StartFire, EndOfIrTx, EndOfDelayBetweenShots, MagazineReloadDone,
@@ -35,7 +36,11 @@ union AppMsg_t {
     AppMsg_t(AppEvt AEvt, uint16_t Data) : Data16(Data), Evt(AEvt) {}
 } __attribute__((__packed__));
 
-static EvtMsgQ_t<AppMsg_t, 9> EvtQ; // Evt queue
+static EvtMsgQ_t<AppMsg_t, 9> EvtQ;
+#endif
+
+int32_t HitCnt, RoundsCnt, MagazinesCnt;
+
 
 #if 1 // ============================== Controls ===============================
 uint32_t In[3];
@@ -54,16 +59,24 @@ bool DoBurstFire() {
 
 namespace Indication {
 
-void ShowRoundsEnd() {
+void Shot() {
+    Printf("#Shot; %d/%d left\r\n", RoundsCnt, MagazinesCnt);
+}
+
+void RoundsEnd() {
     Printf("#RoundsEnded\r\n");
 }
 
-void ShowMagazinesEnded() {
+void MagazinesEnded() {
     Printf("#MagazinesEnded\r\n");
 }
 
-void ShowMagazineReloaded() {
+void MagazineReloaded() {
     Printf("#MagazineReloaded\r\n");
+}
+
+void Hit(uint32_t HitFrom) {
+    Printf("#Hit from %d; %d left\r\n", HitFrom, HitCnt);
 }
 
 void Reset() {
@@ -73,20 +86,33 @@ void Reset() {
 } // namespace
 
 #if 1 // ================================= Hull ================================
-int32_t HitCnt = 4;
+systime_t PrevHitTime = 0;
 
-void IrRxCallbackI(uint32_t Rcvd) {
-//    PrintfI("Rcvd: 0x%X\r", Rcvd);
-    EvtQ.SendNowOrExitI(AppMsg_t(AppEvt::IrRx, Rcvd));
+void IrRxCallbackI(uint32_t Rcvd) { EvtQ.SendNowOrExitI(AppMsg_t(AppEvt::IrRx, Rcvd)); }
 
+void ProcessRxPkt(IRPkt_t RxPkt) {
+    RxPkt.Print();
+    if(RxPkt.FightID != Settings.FightID) return; // Ignore pkt from outside (or crc error)
+    if(!RxPkt.IsCrcOk()) return; // Bad pkt
+    if(RxPkt.Type == PKT_TYPE_RESET) EvtQ.SendNowOrExitI(AppEvt::Reset);
+    else { // Not reset
+        // XXX
+//        if(RxPkt.TeamID == Settings.TeamID) return; // Ignore pkt from our team (or crc error)
+//        else
+            if(RxPkt.Type == PKT_TYPE_SHOT) { // Shot incoming
+            // Ignore if not enough time passed since last hit
+            if(chVTTimeElapsedSinceX(PrevHitTime) < TIME_S2I(Settings.MinDelayBetweenHits)) return;
+            // Hit occured
+            HitCnt--;
+            PrevHitTime = chVTGetSystemTimeX();
+            Indication::Hit(RxPkt.GunID);
+        }
+    }
 }
-
-
 #endif
 
 #if 1 // =============================== Firing ================================
-virtual_timer_t Tmr;
-int32_t RoundsCnt = 9, MagazinesCnt = 4;
+virtual_timer_t FireTmr;
 IRPkt_t PktTx;
 systime_t FireStart;
 
@@ -99,12 +125,12 @@ void TmrCallback(virtual_timer_t *vtp, void *p) {
 
 void StartDelay(int32_t ADelay_s, AppEvt AEvt) {
     if(ADelay_s <= 0) EvtQ.SendNowOrExit(AEvt); // Do it immediately
-    else chVTSet(&Tmr, TIME_S2I(ADelay_s), TmrCallback, (void*)((uint32_t)AEvt));
+    else chVTSet(&FireTmr, TIME_S2I(ADelay_s), TmrCallback, (void*)((uint32_t)AEvt));
 }
 
 void StartDelay_ms(int32_t ADelay_ms, AppEvt AEvt) {
     if(ADelay_ms <= 0) EvtQ.SendNowOrExit(AEvt); // Do it immediately
-    else chVTSet(&Tmr, TIME_MS2I(ADelay_ms), TmrCallback, (void*)((uint32_t)AEvt));
+    else chVTSet(&FireTmr, TIME_MS2I(ADelay_ms), TmrCallback, (void*)((uint32_t)AEvt));
 }
 
 void Reset() {
@@ -112,7 +138,9 @@ void Reset() {
     irLed::ResetI();
     RoundsCnt = Settings.RoundsInMagazine;
     MagazinesCnt = Settings.MagazinesCnt;
-    chVTResetI(&Tmr);
+    chVTResetI(&FireTmr);
+    HitCnt = Settings.HitCnt;
+    PrevHitTime = chVTGetSystemTimeX();
     chSysUnlock();
     Indication::Reset();
 }
@@ -125,12 +153,13 @@ void Fire() {
     PktTx.Type = PKT_TYPE_SHOT;
     PktTx.FightID = Settings.FightID;
     PktTx.TeamID = Settings.TeamID;
-    PktTx.PktN++;
+    PktTx.GunID = Settings.GunID;
     PktTx.CalculateCRC();
-    PktTx.Print();
-    // Start transmission of several packets
-    irLed::TransmitWord(PktTx.W16, Settings.TXPwr, Settings.IrPktsInShot, OnIrTxEndI);
+//    PktTx.Print();
+    // Start transmission
+    irLed::TransmitWord(PktTx.W16, Settings.TXPwr, OnIrTxEndI);
     FireStart = chVTGetSystemTimeX();
+    Indication::Shot();
 }
 #endif
 
@@ -155,25 +184,24 @@ static void AppThread(void* arg) {
                     if(DoBurstFire()) Fire();
                 }
                 else { // no more rounds
-                    Indication::ShowRoundsEnd();
+                    Indication::RoundsEnd();
                     if(MagazinesCnt > 0) { // Reload if possible
                         MagazinesCnt--;
                         StartDelay(Settings.MagazineReloadDelay, AppEvt::MagazineReloadDone);
                     }
-                    else Indication::ShowMagazinesEnded(); // No magazines left
+                    else Indication::MagazinesEnded(); // No magazines left
                 }
                 break;
 
             case AppEvt::MagazineReloadDone:
-                Indication::ShowMagazineReloaded();
+                Indication::MagazineReloaded();
                 RoundsCnt = Settings.RoundsInMagazine;
                 if(DoBurstFire()) Fire();
                 break;
 
-            case AppEvt::IrRx: {
-                IRPkt_t RxPkt(Msg.Data16);
-                RxPkt.Print();
-            } break;
+            case AppEvt::IrRx:
+                ProcessRxPkt(IRPkt_t(Msg.Data16));
+                break;
 
             default: break;
         } // switch Evt

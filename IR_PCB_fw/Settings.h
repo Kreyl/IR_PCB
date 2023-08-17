@@ -27,13 +27,12 @@ public:
     // IDs
     uint32_t FightID = 0;
     uint32_t TeamID = 0;
+    uint32_t GunID = 1;
 
     // Counts
-    int32_t HitsCnt = 4;
+    int32_t HitCnt = 4;
     int32_t RoundsInMagazine = 9;
     int32_t MagazinesCnt = 4;
-
-    int32_t IrPktsInShot = 1;
 
     // Delays
     int32_t ShotsPeriod_ms = 306;
