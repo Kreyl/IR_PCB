@@ -56,6 +56,38 @@ const LedSmoothChunk_t lsqFadeInOut[] = {
         {csEnd}
 };
 
+const LedSmoothChunk_t lsqShot[] = {
+        {csSetup, 0, LED_TOP_BRIGHTNESS},
+        {csWait, 72},
+        {csSetup, 0, 0},
+        {csEnd}
+};
+
+const LedSmoothChunk_t lsqReloading[] = {
+        {csSetup, 0, LED_TOP_BRIGHTNESS},
+        {csWait, 72},
+        {csSetup, 0, 0},
+        {csWait, 72},
+        {csGoto, 0}
+};
+
+const LedSmoothChunk_t lsqMagazinesEnded[] = {
+        {csSetup, 0, LED_TOP_BRIGHTNESS},
+        {csEnd}
+};
+
+const LedSmoothChunk_t lsqHit[] = {
+        {csSetup, 0, LED_TOP_BRIGHTNESS},
+        {csWait, 153},
+        {csSetup, 0, 0},
+        {csEnd}
+};
+
+const LedSmoothChunk_t lsqHitsEnded[] = {
+        {csSetup, 0, LED_TOP_BRIGHTNESS},
+        {csEnd}
+};
+
 const LedSmoothChunk_t lsqUsbCmd[] = {
         {csSetup, 0, 0},
         {csWait, 90},

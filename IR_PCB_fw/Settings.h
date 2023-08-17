@@ -35,7 +35,7 @@ public:
     int32_t MagazinesCnt = 4;
 
     // Delays
-    int32_t ShotsPeriod_ms = 306;
+    int32_t ShotsPeriod_ms = 252;
     int32_t MagazineReloadDelay = 4;
     int32_t MinDelayBetweenHits = 0;
 

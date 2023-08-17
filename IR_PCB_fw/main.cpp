@@ -84,7 +84,7 @@ void main() {
     /*
     Beeper.Init();
     Beeper.StartOrRestart(bsqWeAreTheChampions);
-
+*/
     // LEDs
     for(auto &Led : SideLEDs) {
         Led.Init();
@@ -99,8 +99,7 @@ void main() {
 
     Lumos.Init();
     Lumos.StartOrRestart(lsqFadeIn);
-*/
-
+    while(!FrontLEDs[1].IsIdle()) chThdSleepMilliseconds(45);
 
 //    SimpleSensors::Init();
 //    Settings.Load();

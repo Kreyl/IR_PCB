@@ -12,6 +12,8 @@
 #include "ir.h"
 #include "ir_pkt.h"
 #include "MsgQ.h"
+#include "led.h"
+#include "Sequences.h"
 
 #if 1 // ========================== Message queue ==============================
 enum class AppEvt : uint16_t {
@@ -57,33 +59,89 @@ bool DoBurstFire() {
 
 #endif
 
+#if 1 // =========================== Indication ================================
+extern LedSmooth_t SideLEDs[SIDE_LEDS_CNT];
+extern LedSmooth_t FrontLEDs[FRONT_LEDS_CNT];
+
 namespace Indication {
 
+enum class IndiState {
+    Idle, Reloading, MagazinesEnded, HitsEnded
+} State = IndiState::Idle;
+
 void Shot() {
+    for(auto& Led : FrontLEDs) Led.StartOrRestart(lsqShot);
     Printf("#Shot; %d/%d left\r\n", RoundsCnt, MagazinesCnt);
 }
 
-void RoundsEnd() {
+void RoundsEnded() {
+    chSysLock();
+    if(SideLEDs[3].GetCurrentSequence() == lsqHit)
+        SideLEDs[3].SetNextSequenceI(lsqReloading);
+    else {
+        SideLEDs[0].StopI();
+        SideLEDs[1].StopI();
+        SideLEDs[2].StopI();
+        SideLEDs[3].StartOrRestartI(lsqReloading);
+    }
+    State = IndiState::Reloading;
+    chSysUnlock();
     Printf("#RoundsEnded\r\n");
 }
 
-void MagazinesEnded() {
-    Printf("#MagazinesEnded\r\n");
-}
-
 void MagazineReloaded() {
+    chSysLock();
+    if(SideLEDs[3].GetCurrentSequence() != lsqHit)
+        for(auto& Led : SideLEDs) Led.StopI();
+    State = IndiState::Idle;
+    chSysUnlock();
     Printf("#MagazineReloaded\r\n");
 }
 
+void MagazinesEnded() {
+    chSysLock();
+    if(SideLEDs[3].GetCurrentSequence() == lsqHit)
+        SideLEDs[3].SetNextSequenceI(lsqMagazinesEnded);
+    else {
+        SideLEDs[0].StopI();
+        SideLEDs[1].StopI();
+        SideLEDs[2].StopI();
+        SideLEDs[3].StartOrRestartI(lsqMagazinesEnded);
+    }
+    State = IndiState::MagazinesEnded;
+    chSysUnlock();
+    Printf("#MagazinesEnded\r\n");
+}
+
 void Hit(uint32_t HitFrom) {
+    chSysLock();
+    for(auto& Led : SideLEDs) Led.StartOrRestartI(lsqHit);
+    switch(State) {
+        case IndiState::Idle:           SideLEDs[3].SetNextSequenceI(nullptr); break;
+        case IndiState::HitsEnded:      SideLEDs[3].SetNextSequenceI(lsqHitsEnded); break;
+        case IndiState::Reloading:      SideLEDs[3].SetNextSequenceI(lsqReloading); break;
+        case IndiState::MagazinesEnded: SideLEDs[3].SetNextSequenceI(lsqMagazinesEnded); break;
+    }
+    chSysUnlock();
     Printf("#Hit from %d; %d left\r\n", HitFrom, HitCnt);
 }
 
+void HitsEnded(uint32_t HitFrom) {
+    chSysLock();
+    for(auto& Led : SideLEDs) Led.StartOrRestartI(lsqHitsEnded);
+    chSysUnlock();
+    Printf("#Hit from %d; 0 left\r\n", HitFrom);
+}
+
 void Reset() {
+    State = IndiState::Idle;
+    for(auto& Led : FrontLEDs) Led.Stop();
+    for(auto& Led : SideLEDs)  Led.Stop();
     Printf("#Reset\r\n");
 }
 
 } // namespace
+#endif
 
 #if 1 // ================================= Hull ================================
 systime_t PrevHitTime = 0;
@@ -91,21 +149,22 @@ systime_t PrevHitTime = 0;
 void IrRxCallbackI(uint32_t Rcvd) { EvtQ.SendNowOrExitI(AppMsg_t(AppEvt::IrRx, Rcvd)); }
 
 void ProcessRxPkt(IRPkt_t RxPkt) {
-    RxPkt.Print();
+//    RxPkt.Print();
     if(RxPkt.FightID != Settings.FightID) return; // Ignore pkt from outside (or crc error)
     if(!RxPkt.IsCrcOk()) return; // Bad pkt
     if(RxPkt.Type == PKT_TYPE_RESET) EvtQ.SendNowOrExitI(AppEvt::Reset);
     else { // Not reset
-        // XXX
-//        if(RxPkt.TeamID == Settings.TeamID) return; // Ignore pkt from our team (or crc error)
-//        else
-            if(RxPkt.Type == PKT_TYPE_SHOT) { // Shot incoming
+        if(RxPkt.TeamID == Settings.TeamID) return; // Ignore pkt from our team (or crc error)
+        else if(RxPkt.Type == PKT_TYPE_SHOT) { // Shot incoming
             // Ignore if not enough time passed since last hit
             if(chVTTimeElapsedSinceX(PrevHitTime) < TIME_S2I(Settings.MinDelayBetweenHits)) return;
             // Hit occured
             HitCnt--;
-            PrevHitTime = chVTGetSystemTimeX();
-            Indication::Hit(RxPkt.GunID);
+            if(HitCnt > 0) {
+                PrevHitTime = chVTGetSystemTimeX();
+                Indication::Hit(RxPkt.GunID);
+            }
+            else Indication::HitsEnded(RxPkt.GunID);
         }
     }
 }
@@ -184,9 +243,9 @@ static void AppThread(void* arg) {
                     if(DoBurstFire()) Fire();
                 }
                 else { // no more rounds
-                    Indication::RoundsEnd();
-                    if(MagazinesCnt > 0) { // Reload if possible
+                    if(MagazinesCnt > 1) { // Reload if possible (more than 0 magazines left)
                         MagazinesCnt--;
+                        Indication::RoundsEnded();
                         StartDelay(Settings.MagazineReloadDelay, AppEvt::MagazineReloadDone);
                     }
                     else Indication::MagazinesEnded(); // No magazines left
@@ -212,6 +271,7 @@ void AppInit() {
     EvtQ.Init();
     irLed::Init();
     irRcvr::Init(IrRxCallbackI);
+//    FrontLEDs[0].
     Reset();
 
     // Control pins init
