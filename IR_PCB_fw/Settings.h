@@ -15,14 +15,8 @@
 class Settings_t {
 private:
 public:
-//    Settings_t() {
-//        ISetups.reserve(SETTINGS_MAX_CNT);
-//    }
     void Load();
     uint8_t Save();
-//    void Clear() {
-//        ISetups.clear();
-//    }
 
     // IDs
     uint32_t FightID = 0;
@@ -38,10 +32,10 @@ public:
     int32_t ShotsPeriod_ms = 252;
     int32_t MagazineReloadDelay = 4;
     int32_t MinDelayBetweenHits = 0;
+    int32_t PulseLengthHit_ms = 450;
 
     // TX power
     int32_t TXPwr = 207;
-
 };
 
 extern Settings_t Settings;
