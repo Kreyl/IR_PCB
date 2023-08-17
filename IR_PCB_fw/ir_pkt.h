@@ -23,6 +23,9 @@ union IRPkt_t {
         uint32_t PktN: 5;
         uint32_t crc: 3;
     };
+    IRPkt_t() : W16(0) {}
+    IRPkt_t(uint16_t AW16) : W16(AW16) {}
+
     void CalculateCRC() {
         uint16_t Sum = 0;
         for(int i=2; i<=14; i+=2) {
@@ -36,8 +39,15 @@ union IRPkt_t {
         CalculateCRC();
         return OldCrc == crc;
     }
-    void Print() { Printf("Pkt: Word %04X; Type %u; FightID %u; TeamID %u; PktN %u; crc %u\r",
+
+    void PrintI() { PrintfI("Pkt: Word %04X; Type %u; FightID %u; TeamID %u; PktN %u; crc %u\r",
             W16, Type, FightID, TeamID, PktN, crc); }
+    void Print() {
+        chSysLock();
+        PrintI();
+        chSysUnlock();
+    }
+
     IRPkt_t& operator =(const IRPkt_t &Right) { W16 = Right.W16; return *this; }
 };
 

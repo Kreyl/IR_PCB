@@ -162,9 +162,7 @@ Timer_t TmrRx{TMR_IR_RX};
 
 void Init(ftVoidUint32 CallbackI) {
     ICallbackI = CallbackI;
-    // GPIO
     PinSetupAlterFunc(IR_RX_DATA_PIN);
-
     TmrRx.Init();
     TmrRx.SetTopValue(0xFFFF);        // Maximum
     TmrRx.SetupPrescaler(1000000);    // Input Freq: 1 MHz => one tick = 1 uS
@@ -190,18 +188,18 @@ void Init(ftVoidUint32 CallbackI) {
 // Parsing
 static int32_t IBitCnt = -1; // Header not received
 static uint32_t IRxData;
-static systime_t RxStart = 0;
+static systime_t RxStartTime = 0;
 
 static inline void ProcessDurationI(uint32_t Dur) {
-    PrintfI("%d\r", Dur);
+//    PrintfI("%d\r", Dur);
     if(IS_LIKE(Dur, IR_HEADER_uS, IR_DEVIATION_uS)) { // Header rcvd
         IBitCnt = 0;
         IRxData = 0;
-        RxStart = chVTGetSystemTimeX();
+        RxStartTime = chVTGetSystemTimeX();
     }
     // Ignore received if error occured previously
     else if(IBitCnt != -1) {
-        if(chVTTimeElapsedSinceX(RxStart) < TIME_MS2I(IR_RX_PKT_TIMEOUT_MS)) {
+        if(chVTTimeElapsedSinceX(RxStartTime) < TIME_MS2I(IR_RX_PKT_TIMEOUT_MS)) {
             if     (IS_LIKE(Dur, IR_ZERO_uS, IR_DEVIATION_uS)) IRxData = (IRxData << 1) | 0UL;
             else if(IS_LIKE(Dur, IR_ONE_uS,  IR_DEVIATION_uS)) IRxData = (IRxData << 1) | 1UL;
             else { IBitCnt = -1; return; } // Bad duration
@@ -210,7 +208,7 @@ static inline void ProcessDurationI(uint32_t Dur) {
                 if(ICallbackI) ICallbackI(IRxData);
                 IBitCnt = -1; // Wait header
             }
-            else RxStart = chVTGetSystemTimeX(); // Restart timeout
+            else RxStartTime = chVTGetSystemTimeX(); // Restart timeout
         }
         else IBitCnt = -1; // timeout occured
     }
