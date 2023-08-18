@@ -47,6 +47,67 @@ int32_t HitCnt, RoundsCnt, MagazinesCnt;
 #if 1 // ============================== Controls ===============================
 uint32_t In[3];
 
+// ==== Outputs ====
+void PulserCallback(virtual_timer_t *vtp, void *p);
+
+class Pulser_t: private PinOutput_t {
+private:
+    virtual_timer_t ITmr;
+public:
+    Pulser_t(GPIO_TypeDef *APGPIO, uint16_t APin) : PinOutput_t(APGPIO, APin, omPushPull) {}
+    void Init() { PinOutput_t::Init(); }
+    void PulseI(uint32_t Dur) {
+        chVTResetI(&ITmr);
+        SetHi();
+        if(Dur == 0) SetLo();
+        else chVTSetI(&ITmr, TIME_MS2I(Dur), PulserCallback, (void*)this);
+    }
+    void ResetI() {
+        chVTResetI(&ITmr);
+        SetLo();
+    }
+    void SetHi() { PinOutput_t::SetHi(); }
+    void SetLo() { PinOutput_t::SetLo(); }
+
+    // Inner use
+    void IOnTmrDone() { SetLo(); }
+};
+
+void PulserCallback(virtual_timer_t *vtp, void *p) { ((Pulser_t*)p)->IOnTmrDone(); }
+
+Pulser_t OutPin[OUTPUT_CNT] = { {OUTPUT1}, {OUTPUT2}, {OUTPUT3} };
+
+// ==== Inputs ====
+void InputPinIrqHandlerI();
+
+class Input_t : private PinIrq_t {
+private:
+    virtual_timer_t ITmr;
+    bool IsInsideDeadtime = false;
+public:
+    Input_t(GPIO_TypeDef *APGpio, uint16_t APinN, PinPullUpDown_t APullUpDown) :
+        PinIrq_t(APGpio, APinN, APullUpDown, InputPinIrqHandlerI) {}
+    void Init() {
+        PinIrq_t::Init(ttRising);
+        EnableIrq(IRQ_PRIO_LOW);
+    }
+
+    void OnIrq() {}
+
+
+};
+
+
+
+void InputPinIrqHandlerI() {
+
+}
+
+Input_t InputPin[INPUT_CNT] = { {INPUT1}, {INPUT2}, {INPUT3} };
+
+
+
+
 void SetInputs(uint32_t AIn[3]) {
     Printf("%u %u %u\r", AIn[0], AIn[1], AIn[2]);
     if(In[0] == 0 and AIn[0] == 1) EvtQ.SendNowOrExit(AppEvt::StartFire);
@@ -116,6 +177,7 @@ void MagazinesEnded() {
 
 void Hit(uint32_t HitFrom) {
     chSysLock();
+    OutPin[0].PulseI(Settings.PulseLengthHit_ms);
     for(auto& Led : SideLEDs) Led.StartOrRestartI(lsqHit);
     switch(State) {
         case IndiState::Idle:           SideLEDs[3].SetNextSequenceI(nullptr); break;
@@ -129,6 +191,7 @@ void Hit(uint32_t HitFrom) {
 
 void HitsEnded() {
     chSysLock();
+    OutPin[1].SetHi();
     for(auto& Led : SideLEDs) Led.StartOrRestartI(lsqHitsEnded);
     chSysUnlock();
     Printf("#Hits Ended\r\n");
@@ -193,18 +256,6 @@ void StartDelay_ms(int32_t ADelay_ms, AppEvt AEvt) {
     else chVTSet(&FireTmr, TIME_MS2I(ADelay_ms), TmrCallback, (void*)((uint32_t)AEvt));
 }
 
-void Reset() {
-    chSysLock();
-    irLed::ResetI();
-    RoundsCnt = Settings.RoundsInMagazine;
-    MagazinesCnt = Settings.MagazinesCnt;
-    chVTResetI(&FireTmr);
-    HitCnt = Settings.HitCnt;
-    PrevHitTime = chVTGetSystemTimeX();
-    chSysUnlock();
-    Indication::Reset();
-}
-
 void OnIrTxEndI() { EvtQ.SendNowOrExitI(AppEvt::EndOfIrTx); }
 
 void Fire() {
@@ -222,6 +273,20 @@ void Fire() {
     Indication::Shot();
 }
 #endif
+
+void Reset() {
+    chSysLock();
+    irLed::ResetI();
+    for(auto& Pin : OutPin) Pin.ResetI();
+    for(auto& Pin : InputPin) Pin.CleanIrqFlag();
+    RoundsCnt = Settings.RoundsInMagazine;
+    MagazinesCnt = Settings.MagazinesCnt;
+    chVTResetI(&FireTmr);
+    HitCnt = Settings.HitCnt;
+    PrevHitTime = chVTGetSystemTimeX();
+    chSysUnlock();
+    Indication::Reset();
+}
 
 // ==================================== Thread =================================
 static THD_WORKING_AREA(waAppThread, 256);
@@ -272,10 +337,10 @@ void AppInit() {
     EvtQ.Init();
     irLed::Init();
     irRcvr::Init(IrRxCallbackI);
-//    FrontLEDs[0].
-    Reset();
-
     // Control pins init
+    for(auto& Pin : OutPin) Pin.Init();
+    for(auto& Pin : InputPin) Pin.Init();
+    Reset();
 
     // Create and start thread
     chThdCreateStatic(waAppThread, sizeof(waAppThread), NORMALPRIO, AppThread, NULL);

@@ -42,14 +42,16 @@
 // PortMinTim_t: GPIO, Pin, Tim, TimChnl, invInverted, omPushPull, TopValue
 
 // Inputs
-#define INPUT1          GPIOB, 3
-#define INPUT2          GPIOB, 4
-#define INPUT3          GPIOB, 5
+#define INPUT1          GPIOB, 3, pudPullDown
+#define INPUT2          GPIOB, 4, pudPullDown
+#define INPUT3          GPIOB, 5, pudPullDown
+#define INPUT_CNT       3UL
 
 // Outputs
 #define OUTPUT1         GPIOB, 13
 #define OUTPUT2         GPIOB, 14
 #define OUTPUT3         GPIOB, 15
+#define OUTPUT_CNT      3UL
 
 // UART
 #define UART_GPIO       GPIOA

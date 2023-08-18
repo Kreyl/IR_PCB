@@ -48,7 +48,7 @@ public:
     Value_t ShotsPeriod_ms      { 252, 0, 9999, "ShotsPeriod_ms" };
     Value_t MagazineReloadDelay {   4, 0,   60, "MagazReloadDelay" };
     Value_t MinDelayBetweenHits {   0, 0,   60, "MinDelayBetwHits" };
-    Value_t PulseLengthHit_ms   { 450, 1, 9999, "PulseLenHit_ms" };
+    Value_t PulseLengthHit_ms   { 100, 1, 9999, "PulseLenHit_ms" };
 
     // TX power
     Value_t TXPwr { 207, 1, 255, "TXPwr" };
