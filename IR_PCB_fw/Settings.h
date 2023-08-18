@@ -50,8 +50,9 @@ public:
     Value_t MinDelayBetweenHits {   0, 0,   60, "MinDelayBetwHits" };
     Value_t PulseLengthHit_ms   { 100, 1, 9999, "PulseLenHit_ms" };
 
-    // TX power
-    Value_t TXPwr { 207, 1, 255, "TXPwr" };
+    // TX
+    Value_t TXPwr   { 207, 1, 255, "TXPwr" };
+    Value_t PktType {   1, 0,   7, "PktType" };
 };
 
 #define SETTINGS_CNT    (sizeof(Settings_t) / sizeof(Value_t))

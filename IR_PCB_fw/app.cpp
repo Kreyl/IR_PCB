@@ -15,6 +15,8 @@
 #include "led.h"
 #include "Sequences.h"
 
+int32_t HitCnt, RoundsCnt, MagazinesCnt;
+
 #if 1 // ========================== Message queue ==============================
 enum class AppEvt : uint16_t {
     Reset,
@@ -40,9 +42,6 @@ union AppMsg_t {
 
 static EvtMsgQ_t<AppMsg_t, 9> EvtQ;
 #endif
-
-int32_t HitCnt, RoundsCnt, MagazinesCnt;
-
 
 #if 1 // ============================== Controls ===============================
 uint32_t In[3];
@@ -209,7 +208,7 @@ void Reset() {
 } // namespace
 #endif
 
-#if 1 // ================================= Hull ================================
+#if 1 // ============================= Hit counter =============================
 systime_t PrevHitTime = 0;
 
 void IrRxCallbackI(uint32_t Rcvd) { EvtQ.SendNowOrExitI(AppMsg_t(AppEvt::IrRx, Rcvd)); }
@@ -218,7 +217,7 @@ void ProcessRxPkt(IRPkt_t RxPkt) {
 //    RxPkt.Print();
     if(RxPkt.FightID != Settings.FightID) return; // Ignore pkt from outside (or crc error)
     if(!RxPkt.IsCrcOk()) return; // Bad pkt
-    if(RxPkt.Type == PKT_TYPE_RESET) EvtQ.SendNowOrExitI(AppEvt::Reset);
+    if(RxPkt.Type == PKT_TYPE_RESET) EvtQ.SendNowOrExit(AppEvt::Reset);
     else { // Not reset
         // XXX
 //        if(RxPkt.TeamID == Settings.TeamID) return; // Ignore pkt from our team (or crc error)
@@ -266,10 +265,10 @@ void Fire() {
     IsFiring = true;
     if(!Settings.RoundsInMagazine.IsInfinity()) RoundsCnt--;
     // Prepare pkt
-    PktTx.Type = PKT_TYPE_SHOT;
+    PktTx.Type    = Settings.PktType;
     PktTx.FightID = Settings.FightID;
-    PktTx.TeamID = Settings.TeamID;
-    PktTx.GunID = Settings.GunID;
+    PktTx.TeamID  = Settings.TeamID;
+    PktTx.GunID   = Settings.GunID;
     PktTx.CalculateCRC();
 //    PktTx.Print();
     // Start transmission
