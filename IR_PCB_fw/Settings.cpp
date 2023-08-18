@@ -13,22 +13,21 @@ Settings_t Settings;
 
 void Settings_t::Load() {
     uint32_t *p = (uint32_t*)SETTINGS_STORAGE_ADDR; // Pointer to storage
-    uint32_t N = *p++;
-    FlameSettings_t *pStp = (FlameSettings_t*)p;
-    for(uint32_t i=0; i<N; i++) {
-        if(pStp->IsOk()) ISetups.push_back(*pStp);
-        else break;
-        pStp++;
+    Value_t *Arr = (Value_t*)this;
+    for(uint32_t i=0; i<SETTINGS_CNT; i++) {
+        if(Arr[i].CheckAndSetIfOk(*p++) == false) {
+            SetAllToDefault();
+            Printf("Default settings loaded\r\n");
+            return;
+        }
     }
-    Printf("Setups loaded: %u\r", ISetups.size());
-    if(ISetups.size() == 0)
-        ISetups.resize(1);
-    LoadCurrIndx();
+    Printf("Settings loaded\r\n");
 }
 
 uint8_t Settings_t::Save() {
     uint8_t Rslt = retvOk;
     uint32_t Addr = SETTINGS_STORAGE_ADDR;
+    Value_t *Arr = (Value_t*)this;
     // Prepare Flash
     chSysLock();
     Flash::LockFlash();
@@ -41,11 +40,9 @@ uint8_t Settings_t::Save() {
         goto End;
     }
     // ==== Write flash ====
-    uint32_t N = (sizeof(Settings_t) + 3UL) / 4;
-    uint32_t *p = (uint32_t*)this;
-    for(uint32_t i=0; i<N; i++) {
-        if(Flash::ProgramWord(Addr, *p++) != retvOk) {
-            PrintfI("Write Fail\r");
+    for(uint32_t i=0; i<SETTINGS_CNT; i++) {
+        if(Flash::ProgramWord(Addr, Arr[i].v) != retvOk) {
+            PrintfI("Write Fail\r\n");
             Rslt = retvFail;
             goto End;
         }
@@ -56,4 +53,9 @@ uint8_t Settings_t::Save() {
     Flash::LockFlash();
     chSysUnlock();
     return Rslt;
+}
+
+void Settings_t::SetAllToDefault() {
+    Value_t *Arr = (Value_t*)this;
+    for(uint32_t i=0; i<SETTINGS_CNT; i++) Arr[i].v = Arr[i].Default;
 }

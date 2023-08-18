@@ -48,6 +48,7 @@ int32_t HitCnt, RoundsCnt, MagazinesCnt;
 uint32_t In[3];
 
 void SetInputs(uint32_t AIn[3]) {
+    Printf("%u %u %u\r", AIn[0], AIn[1], AIn[2]);
     if(In[0] == 0 and AIn[0] == 1) EvtQ.SendNowOrExit(AppEvt::StartFire);
     if(In[1] == 0 and AIn[1] == 1) EvtQ.SendNowOrExit(AppEvt::StartFire);
     for(int i=0; i<3; i++) In[i] = AIn[i];
@@ -126,11 +127,11 @@ void Hit(uint32_t HitFrom) {
     Printf("#Hit from %d; %d left\r\n", HitFrom, HitCnt);
 }
 
-void HitsEnded(uint32_t HitFrom) {
+void HitsEnded() {
     chSysLock();
     for(auto& Led : SideLEDs) Led.StartOrRestartI(lsqHitsEnded);
     chSysUnlock();
-    Printf("#Hit from %d; 0 left\r\n", HitFrom);
+    Printf("#Hits Ended\r\n");
 }
 
 void Reset() {
@@ -154,17 +155,17 @@ void ProcessRxPkt(IRPkt_t RxPkt) {
     if(!RxPkt.IsCrcOk()) return; // Bad pkt
     if(RxPkt.Type == PKT_TYPE_RESET) EvtQ.SendNowOrExitI(AppEvt::Reset);
     else { // Not reset
-        if(RxPkt.TeamID == Settings.TeamID) return; // Ignore pkt from our team (or crc error)
-        else if(RxPkt.Type == PKT_TYPE_SHOT) { // Shot incoming
+        // XXX
+//        if(RxPkt.TeamID == Settings.TeamID) return; // Ignore pkt from our team (or crc error)
+//        else
+            if(RxPkt.Type == PKT_TYPE_SHOT) { // Shot incoming
             // Ignore if not enough time passed since last hit
             if(chVTTimeElapsedSinceX(PrevHitTime) < TIME_S2I(Settings.MinDelayBetweenHits)) return;
-            // Hit occured
-            HitCnt--;
-            if(HitCnt > 0) {
-                PrevHitTime = chVTGetSystemTimeX();
-                Indication::Hit(RxPkt.GunID);
-            }
-            else Indication::HitsEnded(RxPkt.GunID);
+            // Hit occured, decrement if not infinity
+            if(!Settings.HitCnt.IsInfinity()) HitCnt--;
+            Indication::Hit(RxPkt.GunID);
+            if(HitCnt > 0) PrevHitTime = chVTGetSystemTimeX();
+            else Indication::HitsEnded();
         }
     }
 }
@@ -207,7 +208,7 @@ void Reset() {
 void OnIrTxEndI() { EvtQ.SendNowOrExitI(AppEvt::EndOfIrTx); }
 
 void Fire() {
-    RoundsCnt--;
+    if(!Settings.RoundsInMagazine.IsInfinity()) RoundsCnt--;
     // Prepare pkt
     PktTx.Type = PKT_TYPE_SHOT;
     PktTx.FightID = Settings.FightID;
@@ -244,7 +245,7 @@ static void AppThread(void* arg) {
                 }
                 else { // no more rounds
                     if(MagazinesCnt > 1) { // Reload if possible (more than 0 magazines left)
-                        MagazinesCnt--;
+                        if(!Settings.MagazinesCnt.IsInfinity()) MagazinesCnt--;
                         Indication::RoundsEnded();
                         StartDelay(Settings.MagazineReloadDelay, AppEvt::MagazineReloadDone);
                     }

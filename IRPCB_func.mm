@@ -81,7 +81,7 @@
 <node TEXT="Светится одна красная диодная пара" ID="ID_1502205175" CREATED="1691942721006" MODIFIED="1692276403678"/>
 <node TEXT="Пишется строка #MagazinesEnded" ID="ID_1896848432" CREATED="1691944272036" MODIFIED="1691944291569"/>
 </node>
-<node TEXT="Пишется строка #NewMagazine" ID="ID_12604984" CREATED="1691944055703" MODIFIED="1691944269946"/>
+<node TEXT="Пишется строка #MagazineReloaded" ID="ID_12604984" CREATED="1691944055703" MODIFIED="1692367039297"/>
 </node>
 </node>
 <node TEXT="Пишется строка &quot;#RoundsEnded&quot;" ID="ID_642561019" CREATED="1691942506759" MODIFIED="1691944244126"/>

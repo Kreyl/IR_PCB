@@ -79,28 +79,27 @@ void main() {
     if(!QuartzIsOk) Printf("Quartz fail\r\n");
     Clk.PrintFreqs();
 
-    /*
     Beeper.Init();
-    Beeper.StartOrRestart(bsqWeAreTheChampions);
-*/
+//    Beeper.StartOrRestart(bsqWeAreTheChampions);
+    Settings.Load();
+
     // LEDs
     for(auto &Led : SideLEDs) {
         Led.Init();
-        Led.StartOrRestart(lsqFadeInOut);
-        chThdSleepMilliseconds(207);
+//        Led.StartOrRestart(lsqFadeInOut);
+//        chThdSleepMilliseconds(207);
     }
     for(auto &Led : FrontLEDs) {
         Led.Init();
-        Led.StartOrRestart(lsqFadeInOut);
-        chThdSleepMilliseconds(207);
+//        Led.StartOrRestart(lsqFadeInOut);
+//        chThdSleepMilliseconds(207);
     }
 
     Lumos.Init();
     Lumos.StartOrRestart(lsqFadeIn);
-    while(!FrontLEDs[1].IsIdle()) chThdSleepMilliseconds(45);
+//    while(!FrontLEDs[1].IsIdle()) chThdSleepMilliseconds(45);
 
 //    SimpleSensors::Init();
-//    Settings.Load();
     AppInit();
 
     ITask(); // Main cycle
@@ -124,26 +123,6 @@ void ProcessInput(PinSnsState_t *PState, uint32_t Len) {
 
 }
 
-
-uint8_t Crc3Rem[256] = {
-        0x00,0x60,0xC0,0xA0,0xE0,0x80,0x20,0x40,0xA0,0xC0,0x60,0x00,0x40,0x20,0x80,0xE0,
-        0x20,0x40,0xE0,0x80,0xC0,0xA0,0x00,0x60,0x80,0xE0,0x40,0x20,0x60,0x00,0xA0,0xC0,
-        0x40,0x20,0x80,0xE0,0xA0,0xC0,0x60,0x00,0xE0,0x80,0x20,0x40,0x00,0x60,0xC0,0xA0,
-        0x60,0x00,0xA0,0xC0,0x80,0xE0,0x40,0x20,0xC0,0xA0,0x00,0x60,0x20,0x40,0xE0,0x80,
-        0x80,0xE0,0x40,0x20,0x60,0x00,0xA0,0xC0,0x20,0x40,0xE0,0x80,0xC0,0xA0,0x00,0x60,
-        0xA0,0xC0,0x60,0x00,0x40,0x20,0x80,0xE0,0x00,0x60,0xC0,0xA0,0xE0,0x80,0x20,0x40,
-        0xC0,0xA0,0x00,0x60,0x20,0x40,0xE0,0x80,0x60,0x00,0xA0,0xC0,0x80,0xE0,0x40,0x20,
-        0xE0,0x80,0x20,0x40,0x00,0x60,0xC0,0xA0,0x40,0x20,0x80,0xE0,0xA0,0xC0,0x60,0x00,
-        0x60,0x00,0xA0,0xC0,0x80,0xE0,0x40,0x20,0xC0,0xA0,0x00,0x60,0x20,0x40,0xE0,0x80,
-        0x40,0x20,0x80,0xE0,0xA0,0xC0,0x60,0x00,0xE0,0x80,0x20,0x40,0x00,0x60,0xC0,0xA0,
-        0x20,0x40,0xE0,0x80,0xC0,0xA0,0x00,0x60,0x80,0xE0,0x40,0x20,0x60,0x00,0xA0,0xC0,
-        0x00,0x60,0xC0,0xA0,0xE0,0x80,0x20,0x40,0xA0,0xC0,0x60,0x00,0x40,0x20,0x80,0xE0,
-        0xE0,0x80,0x20,0x40,0x00,0x60,0xC0,0xA0,0x40,0x20,0x80,0xE0,0xA0,0xC0,0x60,0x00,
-        0xC0,0xA0,0x00,0x60,0x20,0x40,0xE0,0x80,0x60,0x00,0xA0,0xC0,0x80,0xE0,0x40,0x20,
-        0xA0,0xC0,0x60,0x00,0x40,0x20,0x80,0xE0,0x00,0x60,0xC0,0xA0,0xE0,0x80,0x20,0x40,
-        0x80,0xE0,0x40,0x20,0x60,0x00,0xA0,0xC0,0x20,0x40,0xE0,0x80,0xC0,0xA0,0x00,0x60,
-};
-
 #if 1 // ======================= Command processing ============================
 void OnCmd(Shell_t *PShell) {
     Cmd_t *PCmd = &PShell->Cmd;
@@ -153,16 +132,6 @@ void OnCmd(Shell_t *PShell) {
     else if(PCmd->NameIs("Version")) PShell->Print("Version: %S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
 //    else if(PCmd->NameIs("mem")) PrintMemoryInfo();
 
-    else if(PCmd->NameIs("CtrlSet")) {
-        uint32_t In[3];
-        for(int i=0; i<3; i++) {
-            if(PCmd->GetNext(&In[i]) != retvOk) break;
-            SetInputs(In);
-        }
-        PShell->Ok();
-    }
-
-
     else if(PCmd->NameIs("GetSta")) {
         Printf("Hits: %d; Rnds: %d; mgzs: %d\r", HitCnt, RoundsCnt, MagazinesCnt);
     }
@@ -171,59 +140,65 @@ void OnCmd(Shell_t *PShell) {
         PShell->Ok();
     }
 
-    else if(PCmd->NameIs("crc")) {
-        uint32_t N;
-        if(PCmd->GetNext(&N) != retvOk) { PShell->BadParam(); return; }
-
-        uint32_t Rslts[8] = { 0,0,0,0,0,0,0,0 };
-
-        uint32_t Poly = 0xB0000000;
-
-        systime_t Start = chVTGetSystemTimeX();
-//        for(uint32_t i=0; i<N; i++) {
-            for(uint32_t v = 0; v<=0x1FFF; v++) {
-                uint32_t rem = v << 19;
-
-                uint32_t top = (rem >> 24) & 0xFFUL;
-                rem = ((uint32_t)Crc3Rem[top] << 24) | (rem & 0x00FF0000UL);
-
-                for(uint32_t j=0; j<13; j++) {
-                    if(rem & 0x80000000) rem ^= Poly;
-                    rem <<= 1;
-                }
-
-
-//                for(uint32_t j=0; j<13; j++) {
-//                    if(rem & 0x80000000) rem ^= Poly;
-//                    rem <<= 1;
-//                }
-                uint32_t crc = (rem >> 29) & 0b111UL;
-                if(crc > 7) Printf("err 0x%X\r", v);
-                else Rslts[crc]++;
-                Printf("%u crc: 0x%X\r", v, crc);
-            }
-//        }
-        sysinterval_t Dur = chVTTimeElapsedSinceX(Start);
-        for(uint32_t i=0; i<8; i++) Printf("%u: %u\r", i, Rslts[i]);
-        Printf("Dur: %u\r", TIME_I2MS(Dur));
-//        Printf("crc: 0x%X\r", crc);
-//        Printf("Done\r");
-    }
-
-    else if(PCmd->NameIs("tbl")) {
-        uint32_t Poly = 0xB0000000;
-
-        for(uint32_t v = 0; v < 256; v++) {
-            uint32_t rem = v << 24;
-            for(uint32_t j=0; j < 8; j++) {
-                if(rem & 0x80000000) rem ^= Poly;
-                rem <<= 1;
-            }
-            Printf("0x%02X,", (rem >> 24));
-            if((v+1) % 16 == 0) Printf("\r\n");
+    // ==== Settings ====
+    else if(PCmd->NameIs("GetSettings")) {
+        Value_t *Arr = (Value_t*)&Settings;
+        for(uint32_t i=0; i<SETTINGS_CNT; i++, Arr++) {
+            Printf("%*S = %4u; Min = %u; Max = %4u; default = %4u\r\n",
+                    16, Arr->Name, Arr->v, Arr->Min, Arr->Max, Arr->Default);
         }
     }
 
+    else if(PCmd->NameIs("Set")) {
+        const char* Name;
+        uint32_t v, N = 0;
+        bool Found;
+        // Get pairs of values
+        while((((Name = PCmd->GetNextString()) != nullptr) and PCmd->GetNext(&v) == retvOk)) {
+            Found = false;
+            Value_t *Arr = (Value_t*)&Settings;
+            for(uint32_t i=0; i<SETTINGS_CNT; i++, Arr++) { // Find by name
+                if(kl_strcasecmp(Name, Arr->Name) == 0) {
+                    if(Arr->CheckAndSetIfOk(v)) {
+                        Printf("%S = %u\r\n", Name, v);
+                        N++;
+                        Found = true;
+                        break;
+                    }
+                    else {
+                        Printf("%S BadValue: %u\r\n", Name, v);
+                        return;
+                    }
+                } // if
+            } // for
+            if(!Found) {
+                Printf("BadName: %S\r\n", Name);
+                break;
+            }
+        } // while
+        Printf("Set %u values\r\n", N);
+        Reset();
+    }
+
+    else if(PCmd->NameIs("SaveSettings")) {
+        if(Settings.Save() == retvOk) Printf("Saved\r\n");
+        else Printf("Saving fail\r\n");
+    }
+
+    else if(PCmd->NameIs("LoadSettings")) {
+        Settings.Load();
+        Reset();
+    }
+
+    // ==== Debug ====
+    else if(PCmd->NameIs("CtrlSet")) {
+        uint32_t In[3] = { 0, 0, 0 };
+        for(int i=0; i<3; i++) {
+            if(PCmd->GetNext(&In[i]) != retvOk) break;
+        }
+        SetInputs(In);
+        PShell->Ok();
+    }
     else if(PCmd->NameIs("irtx")) {
         uint32_t Word, Pwr;
         if(PCmd->GetNext(&Word) != retvOk) { PShell->BadParam(); return; }
