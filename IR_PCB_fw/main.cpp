@@ -119,10 +119,6 @@ void ITask() {
     } // while true
 }
 
-void ProcessInput(PinSnsState_t *PState, uint32_t Len) {
-
-}
-
 #if 1 // ======================= Command processing ============================
 void OnCmd(Shell_t *PShell) {
     Cmd_t *PCmd = &PShell->Cmd;

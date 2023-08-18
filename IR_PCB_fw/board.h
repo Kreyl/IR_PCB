@@ -22,7 +22,7 @@
 #define STM32_ST_USE_TIMER      14
 #define SYS_TIM_CLK             (Clk.APBFreqHz)
 
-#define SIMPLESENSORS_ENABLED   TRUE
+#define SIMPLESENSORS_ENABLED   FALSE
 #define BUTTONS_ENABLED         FALSE
 #define ADC_REQUIRED            FALSE
 #define I2C1_ENABLED            FALSE
@@ -46,6 +46,7 @@
 #define INPUT2          GPIOB, 4, pudPullDown
 #define INPUT3          GPIOB, 5, pudPullDown
 #define INPUT_CNT       3UL
+#define INPUT_DEADTIME_ms   36
 
 // Outputs
 #define OUTPUT1         GPIOB, 13

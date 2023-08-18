@@ -79,46 +79,50 @@ Pulser_t OutPin[OUTPUT_CNT] = { {OUTPUT1}, {OUTPUT2}, {OUTPUT3} };
 
 // ==== Inputs ====
 void InputPinIrqHandlerI();
+void InputTmrCallback(virtual_timer_t *vtp, void *p) { __NOP(); }
 
-class Input_t : private PinIrq_t {
-private:
-    virtual_timer_t ITmr;
-    bool IsInsideDeadtime = false;
+class Input_t : public PinIrq_t {
 public:
+    virtual_timer_t ITmr;
     Input_t(GPIO_TypeDef *APGpio, uint16_t APinN, PinPullUpDown_t APullUpDown) :
         PinIrq_t(APGpio, APinN, APullUpDown, InputPinIrqHandlerI) {}
     void Init() {
         PinIrq_t::Init(ttRising);
+        CleanIrqFlag();
         EnableIrq(IRQ_PRIO_LOW);
     }
-
-    void OnIrq() {}
-
-
+    bool CheckIfProcess() {
+        if(chVTIsArmedI(&ITmr)) return false; // Not enough time passed
+        chVTSetI(&ITmr, TIME_MS2I(INPUT_DEADTIME_ms), InputTmrCallback, nullptr);
+        return true;
+    }
 };
 
-
+Input_t InputPin[] = { {INPUT1}, {INPUT2}, /*{INPUT3}*/ };
 
 void InputPinIrqHandlerI() {
-
+    uint32_t Flags = EXTI->PR;
+    // Pin1
+    if(Flags & (1 << InputPin[0].PinN)) {
+        if(InputPin[0].CheckIfProcess()) EvtQ.SendNowOrExitI(AppEvt::StartFire);
+    }
+    // Pin2
+    if(Flags & (1 << InputPin[1].PinN)) {
+        if(InputPin[0].CheckIfProcess()) EvtQ.SendNowOrExitI(AppEvt::StartFire);
+    }
+    // Pin3 - unused
+//    if(Flags & (1 << InputPin[2].PinN))
 }
 
-Input_t InputPin[INPUT_CNT] = { {INPUT1}, {INPUT2}, {INPUT3} };
-
-
-
-
 void SetInputs(uint32_t AIn[3]) {
-    Printf("%u %u %u\r", AIn[0], AIn[1], AIn[2]);
     if(In[0] == 0 and AIn[0] == 1) EvtQ.SendNowOrExit(AppEvt::StartFire);
     if(In[1] == 0 and AIn[1] == 1) EvtQ.SendNowOrExit(AppEvt::StartFire);
     for(int i=0; i<3; i++) In[i] = AIn[i];
 }
 
 bool DoBurstFire() {
-    return In[1] == 1;
+    return In[0] == 1 or InputPin[0].IsHi();
 }
-
 #endif
 
 #if 1 // =========================== Indication ================================
@@ -127,9 +131,7 @@ extern LedSmooth_t FrontLEDs[FRONT_LEDS_CNT];
 
 namespace Indication {
 
-enum class IndiState {
-    Idle, Reloading, MagazinesEnded, HitsEnded
-} State = IndiState::Idle;
+enum class IndiState { Idle, Reloading, MagazinesEnded, HitsEnded } State = IndiState::Idle;
 
 void Shot() {
     for(auto& Led : FrontLEDs) Led.StartOrRestart(lsqShot);
@@ -258,7 +260,10 @@ void StartDelay_ms(int32_t ADelay_ms, AppEvt AEvt) {
 
 void OnIrTxEndI() { EvtQ.SendNowOrExitI(AppEvt::EndOfIrTx); }
 
+bool IsFiring;
+
 void Fire() {
+    IsFiring = true;
     if(!Settings.RoundsInMagazine.IsInfinity()) RoundsCnt--;
     // Prepare pkt
     PktTx.Type = PKT_TYPE_SHOT;
@@ -279,6 +284,7 @@ void Reset() {
     irLed::ResetI();
     for(auto& Pin : OutPin) Pin.ResetI();
     for(auto& Pin : InputPin) Pin.CleanIrqFlag();
+    IsFiring = false;
     RoundsCnt = Settings.RoundsInMagazine;
     MagazinesCnt = Settings.MagazinesCnt;
     chVTResetI(&FireTmr);
@@ -297,7 +303,7 @@ static void AppThread(void* arg) {
         if(Msg.Evt == AppEvt::Reset) Reset();
         else if(HitCnt > 0) switch(Msg.Evt) { // Do nothing if no hits left
             case AppEvt::StartFire:
-                if(RoundsCnt > 0) Fire();
+                if(!IsFiring and RoundsCnt > 0) Fire();
                 break;
 
             case AppEvt::EndOfIrTx: // Tx of several same pkts just ended
@@ -305,6 +311,7 @@ static void AppThread(void* arg) {
                 break;
 
             case AppEvt::EndOfDelayBetweenShots:
+                IsFiring = false;
                 if(RoundsCnt > 0) { // Fire if needed and there are rounds left
                     if(DoBurstFire()) Fire();
                 }
