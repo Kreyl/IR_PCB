@@ -30,8 +30,6 @@ LedSmooth_t FrontLEDs[FRONT_LEDS_CNT] = { {LED_FRONT1}, {LED_FRONT2} };
 
 Beeper_t Beeper {BEEPER_PIN};
 
-Settings_t Settings;
-
 // === Vector table moving to SRAM ==
 #if FROM_BOOT
 static inline void MoveVectorTable() {

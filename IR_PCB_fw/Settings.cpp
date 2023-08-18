@@ -5,57 +5,13 @@
  *      Author: layst
  */
 
-/*
 #include "Settings.h"
 #include "kl_lib.h"
 #include "shell.h"
 
-FlameSettings_t& Settings_t::operator[](const uint8_t Indx) {
-    if(Indx < ISetups.size()) CurrIndx = Indx;
-    else CurrIndx = ISetups.size() - 1;
-    SaveCurrIndx();
-    return ISetups[CurrIndx];
-}
-
-FlameSettings_t& Settings_t::GetNext() {
-    if(CurrIndx >= ISetups.size() - 1) CurrIndx = 0;
-    else CurrIndx++;
-    SaveCurrIndx();
-    return ISetups[CurrIndx];
-}
-
-FlameSettings_t& Settings_t::GetPrev() {
-    if(CurrIndx == 0) CurrIndx = ISetups.size() - 1;
-    else CurrIndx--;
-    SaveCurrIndx();
-    return ISetups[CurrIndx];
-}
-
-FlameSettings_t& Settings_t::GetCurrent() {
-    return ISetups[CurrIndx];
-}
-
-void Settings_t::LoadCurrIndx() {
-    uint8_t SavedValue = RTC->BKP1R;
-    if(SavedValue < ISetups.size()) CurrIndx = SavedValue;
-    else CurrIndx = 0;
-    Printf("LoadIndx: %u\r", RTC->BKP1R);
-}
-
-void Settings_t::SaveCurrIndx() {
-    RTC->BKP1R = CurrIndx;
-}
-
-uint8_t Settings_t::Add(FlameSettings_t &ASetup) {
-    if(ISetups.size() >= SETTINGS_MAX_CNT) return retvOverflow;
-    else {
-        ISetups.push_back(ASetup);
-        return retvOk;
-    }
-}
+Settings_t Settings;
 
 void Settings_t::Load() {
-    ISetups.clear();
     uint32_t *p = (uint32_t*)SETTINGS_STORAGE_ADDR; // Pointer to storage
     uint32_t N = *p++;
     FlameSettings_t *pStp = (FlameSettings_t*)p;
@@ -85,24 +41,15 @@ uint8_t Settings_t::Save() {
         goto End;
     }
     // ==== Write flash ====
-    // Write setups count
-    if(Flash::ProgramWord(Addr, ISetups.size()) != retvOk) {
-        PrintfI("Write Cnt Fail\r");
-        Rslt = retvFail;
-        goto End;
-    }
-    // Write setups
-    for(FlameSettings_t &fst : ISetups) {
-        uint32_t *p = (uint32_t*)&fst;
-        uint32_t N = (sizeof(FlameSettings_t) + 3) / 4;
-        for(uint32_t i=0; i<N; i++) {
-            Addr += sizeof(uint32_t);
-            if(Flash::ProgramWord(Addr, *p++) != retvOk) {
-                PrintfI("Write Fail\r");
-                Rslt = retvFail;
-                goto End;
-            }
+    uint32_t N = (sizeof(Settings_t) + 3UL) / 4;
+    uint32_t *p = (uint32_t*)this;
+    for(uint32_t i=0; i<N; i++) {
+        if(Flash::ProgramWord(Addr, *p++) != retvOk) {
+            PrintfI("Write Fail\r");
+            Rslt = retvFail;
+            goto End;
         }
+        Addr += sizeof(uint32_t);
     }
     Flash::WaitForLastOperation(TIME_MS2I(450));
     End:
@@ -110,4 +57,3 @@ uint8_t Settings_t::Save() {
     chSysUnlock();
     return Rslt;
 }
-*/
