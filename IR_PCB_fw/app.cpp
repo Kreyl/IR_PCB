@@ -13,9 +13,11 @@
 #include "ir_pkt.h"
 #include "MsgQ.h"
 #include "led.h"
+#include "beeper.h"
 #include "Sequences.h"
 
 int32_t HitCnt, RoundsCnt, MagazinesCnt;
+extern Beeper_t Beeper;
 
 #if 1 // ========================== Message queue ==============================
 enum class AppEvt : uint16_t {
@@ -134,18 +136,22 @@ enum class IndiState { Idle, Reloading, MagazinesEnded, HitsEnded } State = Indi
 
 void Shot() {
     for(auto& Led : FrontLEDs) Led.StartOrRestart(lsqShot);
+    Beeper.StartOrRestart(bsqShot);
     Printf("#Shot; %d/%d left\r\n", RoundsCnt, MagazinesCnt);
 }
 
 void RoundsEnded() {
     chSysLock();
-    if(SideLEDs[3].GetCurrentSequence() == lsqHit)
+    if(SideLEDs[3].GetCurrentSequence() == lsqHit) {
         SideLEDs[3].SetNextSequenceI(lsqReloading);
+        Beeper.SetNextSequenceI(bsqReloading);
+    }
     else {
         SideLEDs[0].StopI();
         SideLEDs[1].StopI();
         SideLEDs[2].StopI();
         SideLEDs[3].StartOrRestartI(lsqReloading);
+        Beeper.StartOrRestartI(bsqReloading);
     }
     State = IndiState::Reloading;
     chSysUnlock();
@@ -154,8 +160,10 @@ void RoundsEnded() {
 
 void MagazineReloaded() {
     chSysLock();
-    if(SideLEDs[3].GetCurrentSequence() != lsqHit)
+    Beeper.StartOrRestartI(bsqMagazReloaded);
+    if(SideLEDs[3].GetCurrentSequence() != lsqHit) {
         for(auto& Led : SideLEDs) Led.StopI();
+    }
     State = IndiState::Idle;
     chSysUnlock();
     Printf("#MagazineReloaded\r\n");
@@ -163,6 +171,7 @@ void MagazineReloaded() {
 
 void MagazinesEnded() {
     chSysLock();
+    Beeper.StartOrRestartI(bsqMagazEnded);
     if(SideLEDs[3].GetCurrentSequence() == lsqHit)
         SideLEDs[3].SetNextSequenceI(lsqMagazinesEnded);
     else {

@@ -51,8 +51,9 @@ struct LedSmoothChunk_t {
 // Beeper
 struct BeepChunk_t {   // Value == Volume
     BaseChunk_Vars;
-    uint16_t Freq_Hz;
-} __attribute__((packed));
+    uint32_t Freq_Hz;
+    uint32_t FreqSmooth = 0;
+} __attribute__((aligned));
 
 
 #if 1 // ====================== Base sequencer class ===========================

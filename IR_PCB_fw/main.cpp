@@ -30,6 +30,14 @@ LedSmooth_t FrontLEDs[FRONT_LEDS_CNT] = { {LED_FRONT1}, {LED_FRONT2} };
 
 Beeper_t Beeper {BEEPER_PIN};
 
+BeepChunk_t bsq[] = {
+       {csSetup, 10, 8000, 0},
+       {csWait, 20},
+       {csSetup, 10, 1000, 360},
+       {csSetup, 0},
+       {csEnd}
+};
+
 // === Vector table moving to SRAM ==
 #if FROM_BOOT
 static inline void MoveVectorTable() {
@@ -210,6 +218,19 @@ void OnCmd(Shell_t *PShell) {
         Printf("%u\r", DAC->DHR8R1);
         PShell->Ok();
     }
+
+    else if(PCmd->NameIs("shot")) {
+        if(         PCmd->GetNext(&bsq[0].Freq_Hz) == retvOk
+                and PCmd->GetNext(&bsq[1].Time_ms) == retvOk
+                and PCmd->GetNext(&bsq[2].Freq_Hz) == retvOk
+                and PCmd->GetNext(&bsq[2].FreqSmooth) == retvOk
+                ) {
+            Beeper.StartOrRestart(bsq);
+        }
+    }
+
+    else if(PCmd->NameIs("ab")) Beeper.StartOrRestart(bsqReloading);
+    else if(PCmd->NameIs("cd")) Beeper.StartOrRestart(bsqBeepPillBad);
 
 #if 0 // ==== FW Update ====
     else if(PCmd->NameIs("UpdateFwRestart")) {

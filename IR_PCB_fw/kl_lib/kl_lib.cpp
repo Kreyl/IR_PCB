@@ -485,6 +485,7 @@ void Timer_t::SetUpdateFrequencyChangingPrescaler(uint32_t FreqHz) const {
 //    Uart.Printf("InputFreq=%u; UpdFreqMax=%u; div=%u; ARR=%u\r", InputFreq, UpdFreqMax, div, ITmr->ARR);
     ITmr->PSC = Psc;
     ITmr->CNT = 0;  // Reset counter to start from scratch
+    ITmr->EGR = TIM_EGR_UG; // Generate update event
 }
 
 void Timer_t::SetUpdateFrequencyChangingTopValue(uint32_t FreqHz) const {

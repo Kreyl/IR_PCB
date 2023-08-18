@@ -1,7 +1,7 @@
 /*
  * beeper.h
  *
- *  Created on: 22 марта 2015 г.
+ *  Created on: 22 пїЅпїЅпїЅпїЅпїЅ 2015 пїЅ.
  *      Author: Kreyl
  */
 
@@ -14,12 +14,29 @@
 class Beeper_t : public BaseSequencer_t<BeepChunk_t> {
 private:
     const PinOutputPWM_t IPin;
+    uint32_t CurrFreq = 0;
     void ISwitchOff() { IPin.Set(0); }
     SequencerLoopTask_t ISetup() {
-        IPin.SetFrequencyHz(IPCurrentChunk->Freq_Hz);
         IPin.Set(IPCurrentChunk->Volume);
-        IPCurrentChunk++;   // Always goto next
-        return sltProceed;  // Always proceed
+        if(IPCurrentChunk->FreqSmooth == 0) { // If smooth time is zero, set now
+            CurrFreq = IPCurrentChunk->Freq_Hz;
+            IPin.SetFrequencyHz(CurrFreq);
+            IPCurrentChunk++;   // goto next
+        }
+        else {
+            if     (CurrFreq < IPCurrentChunk->Freq_Hz) CurrFreq += 100;
+            else if(CurrFreq > IPCurrentChunk->Freq_Hz) CurrFreq -= 100;
+            IPin.SetFrequencyHz(CurrFreq);
+            // Check if completed now
+            if(CurrFreq == IPCurrentChunk->Freq_Hz) IPCurrentChunk++;
+            else { // Not completed
+                // Calculate time to next adjustment
+                uint32_t Delay = (IPCurrentChunk->FreqSmooth / (CurrFreq+4)) + 1;
+                SetupDelay(Delay);
+                return sltBreak;
+            } // Not completed
+        }
+        return sltProceed;
     }
 public:
     Beeper_t(const PwmSetup_t APinSetup) : BaseSequencer_t(), IPin(APinSetup) {}
