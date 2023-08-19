@@ -232,9 +232,9 @@ void OnCmd(Shell_t *PShell) {
     else if(PCmd->NameIs("ab")) Beeper.StartOrRestart(bsqReloading);
     else if(PCmd->NameIs("cd")) Beeper.StartOrRestart(bsqBeepPillBad);
 
-#if 0 // ==== FW Update ====
+#if 1 // ==== FW Update ====
     else if(PCmd->NameIs("UpdateFwRestart")) {
-        Flames.StopNow();
+        Reset();
         FwUpdater.Restart();
         PShell->Ok();
     }

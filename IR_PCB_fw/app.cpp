@@ -135,23 +135,23 @@ namespace Indication {
 enum class IndiState { Idle, Reloading, MagazinesEnded, HitsEnded } State = IndiState::Idle;
 
 void Shot() {
-    for(auto& Led : FrontLEDs) Led.StartOrRestart(lsqShot);
     Beeper.StartOrRestart(bsqShot);
+    for(auto& Led : FrontLEDs) Led.StartOrRestart(lsqShot);
     Printf("#Shot; %d/%d left\r\n", RoundsCnt, MagazinesCnt);
 }
 
 void RoundsEnded() {
     chSysLock();
-    if(SideLEDs[3].GetCurrentSequence() == lsqHit) {
-        SideLEDs[3].SetNextSequenceI(lsqReloading);
-        Beeper.SetNextSequenceI(bsqReloading);
-    }
+    // Beeper
+    if(Beeper.GetCurrentSequence() == bsqHit) Beeper.SetNextSequenceI(bsqReloading);
+    else Beeper.StartOrRestartI(bsqReloading);
+    // Leds
+    if(SideLEDs[3].GetCurrentSequence() == lsqHit) SideLEDs[3].SetNextSequenceI(lsqReloading);
     else {
         SideLEDs[0].StopI();
         SideLEDs[1].StopI();
         SideLEDs[2].StopI();
         SideLEDs[3].StartOrRestartI(lsqReloading);
-        Beeper.StartOrRestartI(bsqReloading);
     }
     State = IndiState::Reloading;
     chSysUnlock();
@@ -160,7 +160,10 @@ void RoundsEnded() {
 
 void MagazineReloaded() {
     chSysLock();
-    Beeper.StartOrRestartI(bsqMagazReloaded);
+    // Beeper
+    if(Beeper.GetCurrentSequence() == bsqHit) Beeper.SetNextSequenceI(bsqMagazReloaded);
+    else Beeper.StartOrRestartI(bsqMagazReloaded);
+    // Leds
     if(SideLEDs[3].GetCurrentSequence() != lsqHit) {
         for(auto& Led : SideLEDs) Led.StopI();
     }
@@ -171,7 +174,10 @@ void MagazineReloaded() {
 
 void MagazinesEnded() {
     chSysLock();
-    Beeper.StartOrRestartI(bsqMagazEnded);
+    // Beeper
+    if(Beeper.GetCurrentSequence() == bsqHit) Beeper.SetNextSequenceI(bsqMagazEnded);
+    else Beeper.StartOrRestartI(bsqMagazEnded);
+    // Leds
     if(SideLEDs[3].GetCurrentSequence() == lsqHit)
         SideLEDs[3].SetNextSequenceI(lsqMagazinesEnded);
     else {
@@ -188,12 +194,25 @@ void MagazinesEnded() {
 void Hit(uint32_t HitFrom) {
     chSysLock();
     OutPin[0].PulseI(Settings.PulseLengthHit_ms);
+    Beeper.StartOrRestartI(bsqHit);
     for(auto& Led : SideLEDs) Led.StartOrRestartI(lsqHit);
     switch(State) {
-        case IndiState::Idle:           SideLEDs[3].SetNextSequenceI(nullptr); break;
-        case IndiState::HitsEnded:      SideLEDs[3].SetNextSequenceI(lsqHitsEnded); break;
-        case IndiState::Reloading:      SideLEDs[3].SetNextSequenceI(lsqReloading); break;
-        case IndiState::MagazinesEnded: SideLEDs[3].SetNextSequenceI(lsqMagazinesEnded); break;
+        case IndiState::Idle:
+            Beeper.SetNextSequenceI(nullptr);
+            SideLEDs[3].SetNextSequenceI(nullptr);
+            break;
+        case IndiState::HitsEnded:
+            Beeper.SetNextSequenceI(bsqHitsEnded);
+            SideLEDs[3].SetNextSequenceI(lsqHitsEnded);
+            break;
+        case IndiState::Reloading:
+            Beeper.SetNextSequenceI(bsqReloading);
+            SideLEDs[3].SetNextSequenceI(lsqReloading);
+            break;
+        case IndiState::MagazinesEnded:
+            Beeper.SetNextSequenceI(bsqMagazEnded);
+            SideLEDs[3].SetNextSequenceI(lsqMagazinesEnded);
+            break;
     }
     chSysUnlock();
     Printf("#Hit from %d; %d left\r\n", HitFrom, HitCnt);
