@@ -250,7 +250,7 @@ void ProcessRxPkt(IRPkt_t RxPkt) {
     if(!RxPkt.IsCrcOk()) return; // Bad pkt
     if(RxPkt.Type == PKT_TYPE_RESET) EvtQ.SendNowOrExit(AppEvt::Reset);
     else if(HitCnt > 0) { // Not reset
-        if(RxPkt.TeamID == Settings.TeamID) return; // Ignore pkt from our team (or crc error)
+        if(RxPkt.GunID == Settings.GunID) return; // Ignore pkt from self
         else if(RxPkt.Type == PKT_TYPE_SHOT) { // Shot incoming
             // Ignore if not enough time passed since last hit
             if(chVTTimeElapsedSinceX(PrevHitTime) < TIME_S2I(Settings.MinDelayBetweenHits)) return;
