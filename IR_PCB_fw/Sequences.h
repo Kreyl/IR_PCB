@@ -199,22 +199,24 @@ const BeepChunk_t bsqMagazEnded[] = {
         {csEnd}
 };
 
-
-// XXX
 const BeepChunk_t bsqHit[] = {
-        {csSetup, BEEP_VOLUME_MAX, 2250, 0},
-        {csWait, 40},
-        {csSetup, BEEP_VOLUME_MAX, 1050, 90000},
+        {csSetup, BEEP_VOLUME_MAX, 100, 0},
+        {csWait, 20},
+        {csSetup, BEEP_VOLUME_MAX, 2700, 1000},
+        {csWait, 10},
+        {csSetup, BEEP_VOLUME_MAX, 100, 1000},
+        {csWait, 100},
         {csSetup, 0},
         {csEnd}
 };
 
-// XXX
 const BeepChunk_t bsqHitsEnded[] = {
-        {csSetup, BEEP_VOLUME_MAX, 2250, 0},
-        {csWait, 40},
-        {csSetup, BEEP_VOLUME_MAX, 1050, 90000},
+        {csSetup, BEEP_VOLUME_MAX, 260, 0},
+        {csWait, 200},
+        {csSetup, BEEP_VOLUME_MAX, 160, 0},
+        {csWait, 200},
         {csSetup, 0},
+        {csRepeat, 3},
         {csEnd}
 };
 

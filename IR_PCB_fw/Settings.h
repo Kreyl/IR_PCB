@@ -51,7 +51,7 @@ public:
     Value_t PulseLengthHit_ms   { 100, 1, 9999, "PulseLenHit_ms" };
 
     // TX
-    Value_t TXPwr   { 207, 1, 255, "TXPwr" };
+    Value_t TXPwr   {  90, 1, 255, "TXPwr" };
     Value_t PktType {   1, 0,   7, "PktType" };
 };
 

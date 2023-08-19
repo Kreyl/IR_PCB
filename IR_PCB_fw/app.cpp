@@ -220,6 +220,9 @@ void Hit(uint32_t HitFrom) {
 
 void HitsEnded() {
     chSysLock();
+    // Beeper
+    if(Beeper.GetCurrentSequence() == bsqHit) Beeper.SetNextSequenceI(bsqHitsEnded);
+    else Beeper.StartOrRestartI(bsqHitsEnded);
     OutPin[1].SetHi();
     for(auto& Led : SideLEDs) Led.StartOrRestartI(lsqHitsEnded);
     chSysUnlock();
@@ -246,11 +249,9 @@ void ProcessRxPkt(IRPkt_t RxPkt) {
     if(RxPkt.FightID != Settings.FightID) return; // Ignore pkt from outside (or crc error)
     if(!RxPkt.IsCrcOk()) return; // Bad pkt
     if(RxPkt.Type == PKT_TYPE_RESET) EvtQ.SendNowOrExit(AppEvt::Reset);
-    else { // Not reset
-        // XXX
-//        if(RxPkt.TeamID == Settings.TeamID) return; // Ignore pkt from our team (or crc error)
-//        else
-            if(RxPkt.Type == PKT_TYPE_SHOT) { // Shot incoming
+    else if(HitCnt > 0) { // Not reset
+        if(RxPkt.TeamID == Settings.TeamID) return; // Ignore pkt from our team (or crc error)
+        else if(RxPkt.Type == PKT_TYPE_SHOT) { // Shot incoming
             // Ignore if not enough time passed since last hit
             if(chVTTimeElapsedSinceX(PrevHitTime) < TIME_S2I(Settings.MinDelayBetweenHits)) return;
             // Hit occured, decrement if not infinity
@@ -328,6 +329,7 @@ static void AppThread(void* arg) {
         AppMsg_t Msg = EvtQ.Fetch(TIME_INFINITE);
         // Will be here when new Evt occur
         if(Msg.Evt == AppEvt::Reset) Reset();
+        else if(Msg.Evt == AppEvt::IrRx) ProcessRxPkt(IRPkt_t(Msg.Data16));
         else if(HitCnt > 0) switch(Msg.Evt) { // Do nothing if no hits left
             case AppEvt::StartFire:
                 if(!IsFiring and RoundsCnt > 0) Fire();
@@ -356,10 +358,6 @@ static void AppThread(void* arg) {
                 Indication::MagazineReloaded();
                 RoundsCnt = Settings.RoundsInMagazine;
                 if(DoBurstFire()) Fire();
-                break;
-
-            case AppEvt::IrRx:
-                ProcessRxPkt(IRPkt_t(Msg.Data16));
                 break;
 
             default: break;
