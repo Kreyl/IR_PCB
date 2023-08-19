@@ -8,8 +8,8 @@
 #pragma once
 
 // ==== General ====
-#define BOARD_NAME          "Silmire1"
-#define APP_NAME            "F072Boot"
+#define BOARD_NAME          "IR_PCB1"
+#define APP_NAME            "IrPcbBoot"
 
 // MCU type as defined in the ST header.
 #define STM32F072xB     // no matter, 8 or B
@@ -34,6 +34,6 @@
 #define CMD_UART        USART1
 
 // Green LED
-#define LUMOS_PIN       GPIOB, 9
+#define LUMOS_PIN       GPIOA, 0
 
 #endif // GPIO

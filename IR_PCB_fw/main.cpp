@@ -4,13 +4,9 @@
 #include "shell.h"
 #include "uart.h"
 #include "kl_lib.h"
-#include "SimpleSensors.h"
-#include "buttons.h"
 #include "Sequences.h"
 #include "beeper.h"
-#include "adcF072.h"
 #include "Settings.h"
-#include "battery_consts.h"
 #include "led.h"
 #include "FwUpdateF072.h"
 #include "app.h"
@@ -57,11 +53,9 @@ static inline void MoveVectorTable() {
 #endif
 
 
-
-
 void main() {
 #if FROM_BOOT
-//    MoveVectorTable();
+    MoveVectorTable();
 #endif
     // ==== Init Clock system ====
     Clk.EnablePrefetch();
