@@ -12,7 +12,7 @@ uint32_t Buf[BUF_SZ];
 
 void JumpToApp() {
     uint32_t JumpAddress = *(volatile uint32_t*)(FW_START_ADDR + 4);
-    Printf("Jumping to 0x%08X\r", JumpAddress);
+    Printf("Jumping to 0x%08X at 0x%08X\r", JumpAddress, (FW_START_ADDR + 4));
     ftVoidVoid JumpToAppFunc = (ftVoidVoid)JumpAddress;
     // Init App's stack pointer
     __set_MSP(*(volatile uint32_t*)FW_START_ADDR);
@@ -32,7 +32,7 @@ int main(void) {
 
     UartInit();
     Printf("\r%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
-    Printf("AHBFreq=%uMHz; APBFreq=%uMHz\r", Clk.AHBFreqHz/1000000, Clk.APBFreqHz/1000000);
+//    Printf("AHBFreq=%uMHz; APBFreq=%uMHz\r", Clk.AHBFreqHz/1000000, Clk.APBFreqHz/1000000);
 
     PinSetupOut(LUMOS_PIN, omPushPull);
     LedOn();

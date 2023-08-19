@@ -226,11 +226,11 @@ void HitsEnded() {
     Printf("#Hits Ended\r\n");
 }
 
-void Reset() {
+void Reset(bool quiet) {
     State = IndiState::Idle;
     for(auto& Led : FrontLEDs) Led.Stop();
     for(auto& Led : SideLEDs)  Led.Stop();
-    Printf("#Reset\r\n");
+    if(!quiet) Printf("#Reset\r\n");
 }
 
 } // namespace
@@ -306,7 +306,7 @@ void Fire() {
 }
 #endif
 
-void Reset() {
+void Reset(bool quiet) {
     chSysLock();
     irLed::ResetI();
     for(auto& Pin : OutPin) Pin.ResetI();
@@ -318,7 +318,7 @@ void Reset() {
     HitCnt = Settings.HitCnt;
     PrevHitTime = chVTGetSystemTimeX();
     chSysUnlock();
-    Indication::Reset();
+    Indication::Reset(quiet);
 }
 
 // ==================================== Thread =================================

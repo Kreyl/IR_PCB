@@ -3,3 +3,4 @@ IR_PCB_hw/#auto_saved_files#
 *.dsn
 *.ses
 *.xml
+__pycache__/

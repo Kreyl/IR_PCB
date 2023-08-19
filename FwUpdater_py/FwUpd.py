@@ -1,4 +1,4 @@
-import serial
+import argparse
 import sys
 import os
 from typing import List
@@ -51,25 +51,30 @@ def get_version():
     print("No version data")
 
 
-def main(portname: str, filename: str):
-    """
-    sends file to portname by chunks of selected length 
-    :param portname:name of port
-    :param filename: name of sile to send
-    :return:
-    """
-    print("Firmware Update Utility v1.0")
+def main():
+    print("Firmware Update Utility v2.0")
+    parser = argparse.ArgumentParser(description="MCU fw updater")
+    parser.add_argument("-f", "--mcufw",   default="", help='.bin file with mcu firmware')
+    parser.add_argument("-c", "--comport", default="", help='COM-port name')
+    args = parser.parse_args()
 
-    # Check file
-    if not (os.path.exists(filename) and os.path.isfile(filename)):
-        print("Bad filename")
+    # Check args
+    if args.mcufw == "":
+        print("Specify binary file to flash")
         return
-    fsize = os.path.getsize(filename)
+    if args.mcufw and (not os.path.exists(args.mcufw) or not os.path.isfile(args.mcufw)):
+        print("Bad MCU FW file")
+        return
+    fsize = os.path.getsize(args.mcufw)
     if fsize > 131072:
         print("Too large file sz: %i" % fsize)
         return
 
     # Open port
+    if args.comport:
+        if not uart.check_port(args.comport):
+            print("Device not found at {}".format(args.comport))
+            return
     if not uart.find_port():
         print("Device not found")
         return
@@ -79,16 +84,16 @@ def main(portname: str, filename: str):
 
     # Restart fw update
     if uart.send_cmd_and_get_ok("UpdateFwRestart"):
-        print("Restart FW update OK")
+        print("Start FW update OK")
     else:
-        print("Restart FW update FAIL")
+        print("Start FW update FAIL")
         return
 
     # Write data chunk by chunk
-    total_sz = os.path.getsize(filename)
+    total_sz = os.path.getsize(args.mcufw)
     all_data = bytes()
     table = get_crc16_table(crc_poly)
-    with open(filename, "rb") as f:
+    with open(args.mcufw, "rb") as f:
         if total_sz != 0:
             print("0% ", end="", flush=True)
         percent_to_show = 15
@@ -132,7 +137,4 @@ def main(portname: str, filename: str):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) <= 2:
-        print("Port name, File name")
-    else:
-        main(sys.argv[1], sys.argv[2])
+    main()

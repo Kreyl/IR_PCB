@@ -228,7 +228,7 @@ void OnCmd(Shell_t *PShell) {
 
 #if 1 // ==== FW Update ====
     else if(PCmd->NameIs("UpdateFwRestart")) {
-        Reset();
+        Reset(true); // Do not print "#Reset"
         FwUpdater.Restart();
         PShell->Ok();
     }

@@ -14,6 +14,6 @@ extern int32_t HitCnt, RoundsCnt, MagazinesCnt;
 
 void AppInit();
 void SetInputs(uint32_t AIn[3]);
-void Reset();
+void Reset(bool quiet = false);
 
 #endif /* APP_H_ */
