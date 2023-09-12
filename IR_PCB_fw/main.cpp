@@ -188,10 +188,11 @@ void OnCmd(Shell_t *PShell) {
         PShell->Ok();
     }
     else if(PCmd->NameIs("irtx")) {
-        uint32_t Word, Pwr;
+        uint32_t Word, Pwr, BitCnt;
         if(PCmd->GetNext(&Word) != retvOk) { PShell->BadParam(); return; }
+        if(PCmd->GetNext(&BitCnt) != retvOk) { PShell->BadParam(); return; }
         if(PCmd->GetNext(&Pwr) != retvOk) { PShell->BadParam(); return; }
-        irLed::TransmitWord(Word, Pwr, nullptr);
+        irLed::TransmitWord(Word, BitCnt, Pwr, nullptr);
         PShell->Ok();
     }
 

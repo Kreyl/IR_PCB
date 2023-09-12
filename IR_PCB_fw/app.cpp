@@ -239,28 +239,28 @@ void Reset(bool quiet) {
 } // namespace
 #endif
 
-#if 1 // ============================= Hit counter =============================
+#if 1 // ========================= Reception processing ========================
 systime_t PrevHitTime = 0;
 
 void IrRxCallbackI(uint32_t Rcvd) { EvtQ.SendNowOrExitI(AppMsg_t(AppEvt::IrRx, Rcvd)); }
 
 void ProcessRxPkt(IRPkt_t RxPkt) {
 //    RxPkt.Print();
-    if(RxPkt.FightID != Settings.FightID) return; // Ignore pkt from outside (or crc error)
-    if(!RxPkt.IsCrcOk()) return; // Bad pkt
-    if(RxPkt.Type == PKT_TYPE_RESET) EvtQ.SendNowOrExit(AppEvt::Reset);
-    else if(HitCnt > 0) { // Not reset
-        if(RxPkt.GunID == Settings.GunID) return; // Ignore pkt from self
-        else if(RxPkt.Type == PKT_TYPE_SHOT) { // Shot incoming
-            // Ignore if not enough time passed since last hit
-            if(chVTTimeElapsedSinceX(PrevHitTime) < TIME_S2I(Settings.MinDelayBetweenHits)) return;
-            // Hit occured, decrement if not infinity
-            if(!Settings.HitCnt.IsInfinity()) HitCnt--;
-            Indication::Hit(RxPkt.GunID);
-            if(HitCnt > 0) PrevHitTime = chVTGetSystemTimeX();
-            else Indication::HitsEnded();
-        }
-    }
+    // Reset
+    if(RxPkt.W16 == PKT_RESET) EvtQ.SendNowOrExit(AppEvt::Reset);
+    // Shot incoming
+    else if(RxPkt.Zero == 0) {
+        if(HitCnt <= 0) return; // Nothing to do when no hits left
+        if(RxPkt.PlayerID == Settings.PlayerID) return; // Ignore pkt from self
+        if(RxPkt.TeamID == Settings.TeamID) return; // Ignore friendly fire
+        // Ignore if not enough time passed since last hit
+        if(chVTTimeElapsedSinceX(PrevHitTime) < TIME_S2I(Settings.MinDelayBetweenHits)) return;
+        // Hit occured, decrement if not infinity
+        if(!Settings.HitCnt.IsInfinity()) HitCnt--;
+        Indication::Hit(RxPkt.PlayerID);
+        if(HitCnt > 0) PrevHitTime = chVTGetSystemTimeX();
+        else Indication::HitsEnded();
+    } // if zero
 }
 #endif
 
@@ -294,14 +294,18 @@ void Fire() {
     IsFiring = true;
     if(!Settings.RoundsInMagazine.IsInfinity()) RoundsCnt--;
     // Prepare pkt
-    PktTx.Type    = Settings.PktType;
-    PktTx.FightID = Settings.FightID;
-    PktTx.TeamID  = Settings.TeamID;
-    PktTx.GunID   = Settings.GunID;
-    PktTx.CalculateCRC();
+    if(Settings.PktType == PKT_SHOT) {
+        PktTx.W16 = 0;
+        PktTx.PlayerID = Settings.PlayerID;
+        PktTx.TeamID  = Settings.TeamID;
+        PktTx.DamageID = 0; // Which means 1 hit
+        irLed::TransmitWord(PktTx.W16, 14, Settings.TXPwr, OnIrTxEndI);
+    }
+    else {
+        PktTx.W16 = (uint16_t)Settings.PktType;
+        irLed::TransmitWord(PktTx.W16, 16, Settings.TXPwr, OnIrTxEndI);
+    }
 //    PktTx.Print();
-    // Start transmission
-    irLed::TransmitWord(PktTx.W16, Settings.TXPwr, OnIrTxEndI);
     FireStart = chVTGetSystemTimeX();
     Indication::Shot();
 }

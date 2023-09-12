@@ -81,7 +81,7 @@
 // IR LED
 #define IR_LED          GPIOA, 4 // DAC
 #define IR_CARRIER_HZ   38000UL
-#define IR_BIT_CNT      16L
+#define IR_BIT_CNT_MAX  16L     // Just for buffer reservation
 
 // IR Rcvr
 #define IR_RX_DATA_PIN  GPIOA, 3, omPushPull, pudPullUp, AF0 // TIM15 C2

@@ -35,9 +35,8 @@ public:
     void SetAllToDefault();
 
     // IDs
-    Value_t FightID { 0, 0,  3, "FightID" };
-    Value_t TeamID  { 0, 0,  7, "TeamID" };
-    Value_t GunID   { 0, 0, 63, "GunID" };
+    Value_t PlayerID { 0, 0, 127, "PlayerID" };
+    Value_t TeamID   { 0, 0,  3,  "TeamID" };
 
     // Counts
     Value_t HitCnt           { 4, 1, 254, "HitCnt" };
@@ -51,8 +50,8 @@ public:
     Value_t PulseLengthHit_ms   { 100, 1, 9999, "PulseLenHit_ms" };
 
     // TX
-    Value_t TXPwr   {  90, 1, 255, "TXPwr" };
-    Value_t PktType {   1, 0,   7, "PktType" };
+    Value_t TXPwr   {  90, 1,    255, "TXPwr" };
+    Value_t PktType {   0, 0, 0xFFFF, "PktType" };
 };
 
 #define SETTINGS_CNT    (sizeof(Settings_t) / sizeof(Value_t))

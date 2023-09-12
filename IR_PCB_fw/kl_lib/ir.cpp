@@ -7,7 +7,6 @@
 
 #include "ir.h"
 #include "uart.h"
-//#include "main.h" // App is here
 
 #if IR_TX_ENABLED // ========================== IR TX ==========================
 //#define DBG_PINS
@@ -48,7 +47,7 @@ static uint32_t TransactionSz;
 #define NSAMPLES_PAUSE      (((IR_PAUSE_AFTER_uS * IR_CARRIER_HZ) + 1999999UL) / 2000000UL)
 
 // DAC buf
-#define DAC_BUF_SZ          (NSAMPLES_HEADER + NSAMPLES_SPACE + (NSAMPLES_ONE + NSAMPLES_SPACE) * IR_BIT_CNT + NSAMPLES_PAUSE)
+#define DAC_BUF_SZ          (NSAMPLES_HEADER + NSAMPLES_SPACE + (NSAMPLES_ONE + NSAMPLES_SPACE) * IR_BIT_CNT_MAX + NSAMPLES_PAUSE)
 
 union DacSamplePair_t {
     uint32_t W32;
@@ -108,7 +107,7 @@ void Init() {
 }
 
 // Power is DAC value
-void TransmitWord(uint16_t wData, uint8_t Power, ftVoidVoid CallbackI) {
+void TransmitWord(uint16_t wData, uint32_t BitCnt, uint8_t Power, ftVoidVoid CallbackI) {
     ICallbackI = CallbackI;
     // ==== Fill buffer depending on data ====
     DacSamplePair_t *p = DacBuf, ISampleCarrier{Power}, ISampleSpace{0};
@@ -117,7 +116,7 @@ void TransmitWord(uint16_t wData, uint8_t Power, ftVoidVoid CallbackI) {
     for(i=0; i<NSAMPLES_HEADER; i++) *p++ = ISampleCarrier;
     for(i=0; i<NSAMPLES_SPACE; i++)  *p++ = ISampleSpace;
     // Put data
-    for(j=0; j<IR_BIT_CNT; j++) {
+    for(j=0; j<BitCnt; j++) {
         // Carrier
         if(wData & 0x8000) { for(i=0; i<NSAMPLES_ONE;  i++) *p++ = ISampleCarrier; }
         else               { for(i=0; i<NSAMPLES_ZERO; i++) *p++ = ISampleCarrier; }
@@ -181,25 +180,30 @@ void Init(ftVoidUint32 CallbackI) {
 }
 
 // Parsing
-static int32_t IBitCnt = -1; // Header not received
+static int32_t IBitCnt = -1, StopRemainder = 0; // Header not received
 static uint32_t IRxData;
 static systime_t RxStartTime = 0;
 
 static inline void ProcessDurationI(uint32_t Dur) {
 //    PrintfI("%d\r", Dur);
     if(IS_LIKE(Dur, IR_HEADER_uS, IR_DEVIATION_uS)) { // Header rcvd
-        IBitCnt = 0;
+        IBitCnt = 16;
+        StopRemainder = 0;
         IRxData = 0;
         RxStartTime = chVTGetSystemTimeX();
     }
     // Ignore received if error occured previously
     else if(IBitCnt != -1) {
         if(chVTTimeElapsedSinceX(RxStartTime) < TIME_MS2I(IR_RX_PKT_TIMEOUT_MS)) {
-            if     (IS_LIKE(Dur, IR_ZERO_uS, IR_DEVIATION_uS)) IRxData = (IRxData << 1) | 0UL;
-            else if(IS_LIKE(Dur, IR_ONE_uS,  IR_DEVIATION_uS)) IRxData = (IRxData << 1) | 1UL;
+            uint32_t bit;
+            if     (IS_LIKE(Dur, IR_ZERO_uS, IR_DEVIATION_uS)) bit = 0UL;
+            else if(IS_LIKE(Dur, IR_ONE_uS,  IR_DEVIATION_uS)) bit = 1UL;
             else { IBitCnt = -1; return; } // Bad duration
-            IBitCnt++;
-            if(IBitCnt >= IR_BIT_CNT) { // Reception completed
+            // Find out expected bit cnt
+            if(IBitCnt == 16 and bit == 0) StopRemainder = 2; // if first bit is 0, 14 bits are expected
+            IBitCnt--;
+            IRxData |= bit << IBitCnt;
+            if(IBitCnt <= StopRemainder) { // Reception completed
                 if(ICallbackI) ICallbackI(IRxData);
                 IBitCnt = -1; // Wait header
             }
