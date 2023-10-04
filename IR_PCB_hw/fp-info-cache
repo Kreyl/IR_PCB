@@ -1,4 +1,4 @@
-824566419634625
+829655803029949
 Antennas
 ANT_868_10d4x36
 PCB 75.7x37.5, AntPcb 14.8mm
@@ -596,6 +596,13 @@ CAP_22_5_VERT
 2
 Capacitors
 CAP_0402
+
+
+0
+2
+2
+Capacitors
+CAP_0402_Fab
 
 
 0
@@ -2471,6 +2478,13 @@ Hole3d6_out4d6mm
 1
 1
 PCB
+Hole4_out5d3mm
+
+
+0
+1
+1
+PCB
 Hole4d4_out6d4mm
 
 
@@ -3284,6 +3298,13 @@ Silmaril
 2
 Resistors
 RES_0402
+
+
+0
+2
+2
+Resistors
+RES_0402_Fab
 
 
 0
