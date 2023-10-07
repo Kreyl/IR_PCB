@@ -1,4 +1,4 @@
-829655803029949
+836442513436533
 Antennas
 ANT_868_10d4x36
 PCB 75.7x37.5, AntPcb 14.8mm
@@ -1239,8 +1239,22 @@ Single-line connector 4-pin
 2
 2
 Connectors
+SLD_2_2D5_SMD
+Single-line SMD connector 3-pin
+
+0
+2
+2
+Connectors
 SLD_3_2D5
 Single-line connector 3-pin
+
+0
+3
+3
+Connectors
+SLD_3_2D5_SMD
+Single-line SMD connector 3-pin
 
 0
 3
@@ -1267,12 +1281,26 @@ Single-line connector 4-pin
 4
 4
 Connectors
+SLD_4_2D5_SMD
+Single-line SMD connector 3-pin
+
+0
+4
+4
+Connectors
 SLD_5_2D5
 Single-line connector 4-pin
 
 0
 5
 5
+Connectors
+SLD_5_2D5_SMD
+Single-line SMD connector 3-pin
+
+0
+4
+4
 Connectors
 SLD_6_2D5
 Single-line connector 4-pin
