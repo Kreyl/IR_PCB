@@ -1,4 +1,4 @@
-842048377814959
+868987127937747
 Antennas
 ANT_868_10d4x36
 PCB 75.7x37.5, AntPcb 14.8mm
@@ -251,6 +251,34 @@ Tirusse868
 0
 2
 2
+BGA
+BGA-153_14x14_11.5x13.0mm
+
+
+0
+153
+153
+BGA
+BGA-294_21x14_12.0x7.5mm
+
+
+0
+167
+167
+BGA
+BGA-529_23x23_15.0x15.0mm
+
+
+0
+396
+396
+BGA
+BGA176+25_15x15_0.65pitch_10x10mm
+
+
+0
+201
+201
 BtnsSwitches
 BTN_4PIN_12mm
 
@@ -539,13 +567,6 @@ Polarized capacitor 08R, horizontal mount
 2
 2
 Capacitors
-CAP_08xxR_MIRR
-Polarized capacitor 08R 3.5F
-
-0
-2
-2
-Capacitors
 CAP_10Rx16_HOR
 Polarized capacitor 10R 16Len horizontal
 
@@ -602,13 +623,6 @@ CAP_0402
 2
 2
 Capacitors
-CAP_0402_Fab
-
-
-0
-2
-2
-Capacitors
 CAP_0402_large
 
 
@@ -617,13 +631,6 @@ CAP_0402_large
 2
 Capacitors
 CAP_0603
-
-
-0
-2
-2
-Capacitors
-CAP_0603_Fab
 
 
 0
@@ -1246,22 +1253,8 @@ Single-line connector 4-pin
 2
 2
 Connectors
-SLD_2_2D5_SMD
-Single-line SMD connector 3-pin
-
-0
-2
-2
-Connectors
 SLD_3_2D5
 Single-line connector 3-pin
-
-0
-3
-3
-Connectors
-SLD_3_2D5_SMD
-Single-line SMD connector 3-pin
 
 0
 3
@@ -1288,22 +1281,8 @@ Single-line connector 4-pin
 4
 4
 Connectors
-SLD_4_2D5_SMD
-Single-line SMD connector 3-pin
-
-0
-4
-4
-Connectors
 SLD_5_2D5
 Single-line connector 4-pin
-
-0
-5
-5
-Connectors
-SLD_5_2D5_SMD
-Single-line SMD connector 3-pin
 
 0
 5
@@ -1398,7 +1377,7 @@ USBC_10PF-074
 
 0
 16
-16
+13
 Connectors
 USBC_24PF-009
 
@@ -1723,13 +1702,6 @@ IHLP2525
 2
 Inductors
 IND_0402
-
-
-0
-2
-2
-Inductors
-IND_0402_Fab
 
 
 0
@@ -2520,13 +2492,6 @@ Hole3d6_out4d6mm
 1
 1
 PCB
-Hole4_out5d3mm
-
-
-0
-1
-1
-PCB
 Hole4d4_out6d4mm
 
 
@@ -2632,13 +2597,6 @@ Oval6x3
 1
 1
 PCB
-Oval7d7x5d7wHole5d5x3d5
-
-
-0
-1
-1
-PCB
 REF_POINT_1MM
 
 
@@ -2724,13 +2682,6 @@ AmperkaLogo_7x8d7
 0
 Pictures
 Amperka_20d3x5d5
-
-
-0
-0
-0
-Pictures
-KiberiadaTYUKF
 
 
 0
@@ -3310,50 +3261,8 @@ Crystal 6x2d
 0
 3
 3
-Radio
-AP6212
-
-
-0
-47
-47
-Radio
-BALUN868_ST
-
-
-0
-4
-4
-Radio
-BALUN_JOHANSON868
-
-
-0
-6
-6
-Radio
-FLT_LFB21
-
-
-0
-4
-4
-Radio
-Silmaril
-
-
-0
-2
-2
 Resistors
 RES_0402
-
-
-0
-2
-2
-Resistors
-RES_0402_Fab
 
 
 0
