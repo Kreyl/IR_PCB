@@ -436,137 +436,60 @@
         )
       )
     )
-    (symbol "Connectors_kl:USB_C" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
-      (property "Reference" "XL" (at 5.08 21.59 0)
-        (effects (font (size 1.27 1.27)))
+    (symbol "Connectors_kl:USB_MICRO_3H" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
+      (property "Reference" "XL" (at -5.08 11.43 0)
+        (effects (font (size 1.524 1.524)))
       )
-      (property "Value" "USB_C" (at -8.89 21.59 0)
-        (effects (font (size 1.27 1.27)))
+      (property "Value" "USB_MICRO_3H" (at -2.54 8.89 0)
+        (effects (font (size 1.524 1.524)))
       )
-      (property "Footprint" "" (at 0 -3.81 0)
+      (property "Footprint" "" (at 0 0 0)
+        (effects (font (size 1.524 1.524)))
+      )
+      (property "Datasheet" "" (at 0 0 0)
+        (effects (font (size 1.524 1.524)))
+      )
+      (property "ki_fp_filters" "USB*" (at 0 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
-      (property "Datasheet" "" (at 0 -3.81 0)
-        (effects (font (size 1.27 1.27)) hide)
-      )
-      (symbol "USB_C_0_1"
-        (rectangle (start -12.7 20.32) (end 12.7 -20.32)
+      (symbol "USB_MICRO_3H_0_1"
+        (rectangle (start 0 -7.62) (end -10.16 7.62)
           (stroke (width 0) (type default))
-          (fill (type none))
+          (fill (type background))
         )
-        (pin passive line (at 17.78 -10.16 180) (length 5.08)
-          (name "GND" (effects (font (size 1.27 1.27))))
-          (number "B1" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 12.7 180) (length 5.08)
-          (name "RX1-" (effects (font (size 1.27 1.27))))
-          (number "B10" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 15.24 180) (length 5.08)
-          (name "RX1+" (effects (font (size 1.27 1.27))))
-          (number "B11" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 17.78 180) (length 5.08)
-          (name "GND" (effects (font (size 1.27 1.27))))
-          (number "B12" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 -7.62 180) (length 5.08)
-          (name "TX2+" (effects (font (size 1.27 1.27))))
-          (number "B2" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 -5.08 180) (length 5.08)
-          (name "TX2-" (effects (font (size 1.27 1.27))))
-          (number "B3" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 -2.54 180) (length 5.08)
-          (name "VBUS" (effects (font (size 1.27 1.27))))
-          (number "B4" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 0 180) (length 5.08)
-          (name "CC2" (effects (font (size 1.27 1.27))))
-          (number "B5" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 2.54 180) (length 5.08)
-          (name "D+" (effects (font (size 1.27 1.27))))
-          (number "B6" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 5.08 180) (length 5.08)
-          (name "D-" (effects (font (size 1.27 1.27))))
-          (number "B7" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 7.62 180) (length 5.08)
-          (name "SBU2" (effects (font (size 1.27 1.27))))
-          (number "B8" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 10.16 180) (length 5.08)
-          (name "VBUS" (effects (font (size 1.27 1.27))))
-          (number "B9" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 -17.78 180) (length 5.08)
-          (name "PAD" (effects (font (size 1.27 1.27))))
-          (number "S3" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 17.78 -15.24 180) (length 5.08)
-          (name "PAD" (effects (font (size 1.27 1.27))))
-          (number "S4" (effects (font (size 1.27 1.27))))
+        (pin passive line (at -3.81 -12.7 90) (length 5.08)
+          (name "~" (effects (font (size 1.27 1.27))))
+          (number "H3" (effects (font (size 1.27 1.27))))
         )
       )
-      (symbol "USB_C_1_1"
-        (pin passive line (at -17.78 17.78 0) (length 5.08)
-          (name "GND" (effects (font (size 1.27 1.27))))
-          (number "A1" (effects (font (size 1.27 1.27))))
+      (symbol "USB_MICRO_3H_1_1"
+        (pin power_out line (at 5.08 5.08 180) (length 5.08)
+          (name "UVcc" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
         )
-        (pin passive line (at -17.78 -5.08 0) (length 5.08)
-          (name "RX2-" (effects (font (size 1.27 1.27))))
-          (number "A10" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at -17.78 -7.62 0) (length 5.08)
-          (name "RX2+" (effects (font (size 1.27 1.27))))
-          (number "A11" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at -17.78 -10.16 0) (length 5.08)
-          (name "GND" (effects (font (size 1.27 1.27))))
-          (number "A12" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at -17.78 15.24 0) (length 5.08)
-          (name "TX1+" (effects (font (size 1.27 1.27))))
-          (number "A2" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at -17.78 12.7 0) (length 5.08)
-          (name "TX1-" (effects (font (size 1.27 1.27))))
-          (number "A3" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at -17.78 10.16 0) (length 5.08)
-          (name "VBUS" (effects (font (size 1.27 1.27))))
-          (number "A4" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at -17.78 7.62 0) (length 5.08)
-          (name "CC1" (effects (font (size 1.27 1.27))))
-          (number "A5" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at -17.78 5.08 0) (length 5.08)
-          (name "D+" (effects (font (size 1.27 1.27))))
-          (number "A6" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at -17.78 2.54 0) (length 5.08)
+        (pin passive line (at 5.08 2.54 180) (length 5.08)
           (name "D-" (effects (font (size 1.27 1.27))))
-          (number "A7" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
         )
-        (pin passive line (at -17.78 0 0) (length 5.08)
-          (name "SBU1" (effects (font (size 1.27 1.27))))
-          (number "A8" (effects (font (size 1.27 1.27))))
+        (pin passive line (at 5.08 0 180) (length 5.08)
+          (name "D+" (effects (font (size 1.27 1.27))))
+          (number "3" (effects (font (size 1.27 1.27))))
         )
-        (pin passive line (at -17.78 -2.54 0) (length 5.08)
-          (name "VBUS" (effects (font (size 1.27 1.27))))
-          (number "A9" (effects (font (size 1.27 1.27))))
+        (pin passive line (at 5.08 -2.54 180) (length 5.08)
+          (name "UID" (effects (font (size 1.27 1.27))))
+          (number "4" (effects (font (size 1.27 1.27))))
         )
-        (pin passive line (at -17.78 -15.24 0) (length 5.08)
-          (name "PAD" (effects (font (size 1.27 1.27))))
-          (number "S1" (effects (font (size 1.27 1.27))))
+        (pin power_out line (at 5.08 -5.08 180) (length 5.08)
+          (name "UGND" (effects (font (size 1.27 1.27))))
+          (number "5" (effects (font (size 1.27 1.27))))
         )
-        (pin passive line (at -17.78 -17.78 0) (length 5.08)
-          (name "PAD" (effects (font (size 1.27 1.27))))
-          (number "S2" (effects (font (size 1.27 1.27))))
+        (pin passive line (at -8.89 -12.7 90) (length 5.08)
+          (name "~" (effects (font (size 1.27 1.27))))
+          (number "H1" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at -6.35 -12.7 90) (length 5.08)
+          (name "~" (effects (font (size 1.27 1.27))))
+          (number "H2" (effects (font (size 1.27 1.27))))
         )
       )
     )
@@ -2598,7 +2521,7 @@
   (junction (at 292.1 236.22) (diameter 0) (color 0 0 0 0)
     (uuid 18e97178-d9bc-43d8-a0c0-d8b7dfe965bc)
   )
-  (junction (at 251.46 39.37) (diameter 0) (color 0 0 0 0)
+  (junction (at 240.03 40.64) (diameter 0) (color 0 0 0 0)
     (uuid 19cf0167-b596-413c-a982-55b6b3033756)
   )
   (junction (at 367.03 242.57) (diameter 0) (color 0 0 0 0)
@@ -2714,6 +2637,9 @@
   )
   (junction (at 214.63 170.18) (diameter 0) (color 0 0 0 0)
     (uuid 79b76602-47ed-4d85-8193-6a980ce68e9c)
+  )
+  (junction (at 237.49 50.8) (diameter 0) (color 0 0 0 0)
+    (uuid 7dea47c8-88e3-42cd-8a3d-4e283887fb6b)
   )
   (junction (at 184.15 226.06) (diameter 0) (color 0 0 0 0)
     (uuid 820922c0-e83c-4d76-a194-3b9fa6acbd20)
@@ -2854,24 +2780,13 @@
     (uuid fcd54b53-39ef-44b5-b74b-97a847d578e6)
   )
 
-  (no_connect (at 210.82 67.31) (uuid 147d8b39-7ede-43ca-802d-c3b9720012b7))
-  (no_connect (at 210.82 36.83) (uuid 14d1419a-c86a-4da0-9a9f-f4fd283a2f69))
-  (no_connect (at 246.38 64.77) (uuid 1c4b5c8e-0963-45d8-81b0-2d7bef3bebf6))
-  (no_connect (at 246.38 34.29) (uuid 2e4a7d5c-d6e3-4de8-8ae1-b8348eeec2b9))
-  (no_connect (at 246.38 57.15) (uuid 2fdf68ca-38eb-46c3-919b-a938d141f3aa))
-  (no_connect (at 246.38 54.61) (uuid 35c4bd4f-f620-43f0-807f-05ff5b2c8742))
-  (no_connect (at 246.38 67.31) (uuid 38274461-63b5-4b90-9a1a-9110d0a6ded4))
-  (no_connect (at 246.38 36.83) (uuid 3e693297-6ae6-470b-9f07-0b587e2814c3))
-  (no_connect (at 210.82 64.77) (uuid 40f32d68-c986-4656-8695-279defaafab0))
+  (no_connect (at 223.52 58.42) (uuid 1c4b5c8e-0963-45d8-81b0-2d7bef3bebf6))
+  (no_connect (at 226.06 58.42) (uuid 2fdf68ca-38eb-46c3-919b-a938d141f3aa))
+  (no_connect (at 220.98 58.42) (uuid 38274461-63b5-4b90-9a1a-9110d0a6ded4))
   (no_connect (at 140.97 101.6) (uuid 660fe654-4777-4b4b-bb95-cd416ae5d042))
   (no_connect (at 140.97 106.68) (uuid 6ef0bd73-0fad-466c-bf57-93462cd5c647))
-  (no_connect (at 246.38 41.91) (uuid 86f82694-c5ef-481e-a5a3-1ecda52c3376))
-  (no_connect (at 210.82 34.29) (uuid 8dc46f23-b3f2-4bd4-985f-1a2661669631))
   (no_connect (at 140.97 99.06) (uuid 91ef4402-3de4-4ce1-aae3-d26ced4f5236))
-  (no_connect (at 210.82 49.53) (uuid 9fa04182-591f-4333-88f5-7661b7c7abeb))
-  (no_connect (at 210.82 54.61) (uuid aa42b01f-e9b4-411e-8a8a-264078577545))
   (no_connect (at 140.97 60.96) (uuid bedb355a-1888-4d31-8b76-4c4bad3ab391))
-  (no_connect (at 210.82 57.15) (uuid d52e8716-0f15-4942-ba1d-867e51b5bbd9))
 
   (wire (pts (xy 68.58 96.52) (xy 80.01 96.52))
     (stroke (width 0) (type default))
@@ -2921,10 +2836,6 @@
   (wire (pts (xy 39.37 176.53) (xy 39.37 179.07))
     (stroke (width 0) (type solid))
     (uuid 07fbb773-cb2e-4184-bc7a-33b3f9beb2d2)
-  )
-  (wire (pts (xy 246.38 49.53) (xy 256.54 49.53))
-    (stroke (width 0) (type solid))
-    (uuid 087cea3c-8285-42e7-b6a9-0b619e7a4324)
   )
   (wire (pts (xy 156.21 73.66) (xy 140.97 73.66))
     (stroke (width 0) (type default))
@@ -3060,10 +2971,6 @@
     (stroke (width 0) (type default))
     (uuid 1c291bd8-cbb0-4893-9a1b-7264242b8cef)
   )
-  (wire (pts (xy 201.93 44.45) (xy 210.82 44.45))
-    (stroke (width 0) (type default))
-    (uuid 1c63a4d1-82ec-4045-b01f-22eb9bb687c2)
-  )
   (wire (pts (xy 375.92 142.24) (xy 375.92 143.51))
     (stroke (width 0) (type default))
     (uuid 1eacafdb-d5d1-43a5-8a4b-843fa3fe0470)
@@ -3121,6 +3028,10 @@
     (stroke (width 0) (type default))
     (uuid 2baba76f-a6fb-4dd6-847c-b6f95eda2647)
   )
+  (wire (pts (xy 234.95 50.8) (xy 237.49 50.8))
+    (stroke (width 0) (type default))
+    (uuid 2be06a23-9eb7-4d33-8804-9f25624c0c4d)
+  )
   (wire (pts (xy 251.46 113.03) (xy 251.46 111.76))
     (stroke (width 0) (type default))
     (uuid 2c30539e-411c-451f-938b-f622dd1fe304)
@@ -3148,6 +3059,10 @@
   (wire (pts (xy 381 77.47) (xy 387.35 77.47))
     (stroke (width 0) (type default))
     (uuid 2fa14748-c5a3-4d89-be07-2329836b83cc)
+  )
+  (wire (pts (xy 237.49 50.8) (xy 237.49 58.42))
+    (stroke (width 0) (type default))
+    (uuid 2fd42527-c8bf-43df-8a99-dc1ff3db3637)
   )
   (wire (pts (xy 217.17 189.23) (xy 220.98 189.23))
     (stroke (width 0) (type default))
@@ -3240,6 +3155,10 @@
     (stroke (width 0) (type default))
     (uuid 3c6937a5-c790-43b0-ac95-da0021c8a3c5)
   )
+  (wire (pts (xy 234.95 48.26) (xy 237.49 48.26))
+    (stroke (width 0) (type default))
+    (uuid 3d3c447e-8194-472e-9a71-c10cf23e6ea7)
+  )
   (wire (pts (xy 245.11 111.76) (xy 245.11 113.03))
     (stroke (width 0) (type default))
     (uuid 3d747e71-0d63-4ece-8e9f-e4afac82813d)
@@ -3248,7 +3167,7 @@
     (stroke (width 0) (type solid))
     (uuid 3da63bd0-37bb-4471-b14e-8a752a5cf617)
   )
-  (wire (pts (xy 246.38 46.99) (xy 255.27 46.99))
+  (wire (pts (xy 234.95 45.72) (xy 243.84 45.72))
     (stroke (width 0) (type default))
     (uuid 3e998e83-4a66-427b-8f8e-e7ed783fc074)
   )
@@ -3320,7 +3239,7 @@
     (stroke (width 0) (type default))
     (uuid 4dc65a17-ac25-48c6-8255-91bf4577ac79)
   )
-  (wire (pts (xy 246.38 39.37) (xy 251.46 39.37))
+  (wire (pts (xy 234.95 40.64) (xy 240.03 40.64))
     (stroke (width 0) (type solid))
     (uuid 4df9502c-d7de-4642-8191-c2b7157bb717)
   )
@@ -3459,10 +3378,6 @@
     (uuid 663d6b0b-ca6b-4df7-a390-08e4f1f0a434)
   )
 
-  (wire (pts (xy 201.93 46.99) (xy 210.82 46.99))
-    (stroke (width 0) (type default))
-    (uuid 66afdbcf-6cb9-4309-9c91-be72f1e748c4)
-  )
   (wire (pts (xy 355.6 27.94) (xy 378.46 27.94))
     (stroke (width 0) (type default))
     (uuid 66c08e30-25a8-41fe-a2ef-2d29a3baab6a)
@@ -3532,10 +3447,6 @@
     (stroke (width 0) (type default))
     (uuid 70781387-8cb8-4a9a-bff9-f4e77747c899)
   )
-  (wire (pts (xy 210.82 52.07) (xy 208.28 52.07))
-    (stroke (width 0) (type solid))
-    (uuid 7198a55b-d186-4529-abce-d00103ec4e15)
-  )
   (wire (pts (xy 292.1 210.82) (xy 294.64 210.82))
     (stroke (width 0) (type default))
     (uuid 7228c236-be03-4ec0-8e42-6c2520f7dc18)
@@ -3564,7 +3475,7 @@
     (stroke (width 0) (type default))
     (uuid 74c616f8-7c89-4565-9081-61cb9055d4e3)
   )
-  (wire (pts (xy 251.46 36.83) (xy 251.46 39.37))
+  (wire (pts (xy 240.03 38.1) (xy 240.03 40.64))
     (stroke (width 0) (type default))
     (uuid 75d3772e-fd93-4035-8aba-72bae608eb97)
   )
@@ -3597,7 +3508,7 @@
     (stroke (width 0) (type default))
     (uuid 79e952ab-ad29-4e1b-95a3-19eace0a90bf)
   )
-  (wire (pts (xy 246.38 44.45) (xy 255.27 44.45))
+  (wire (pts (xy 234.95 43.18) (xy 243.84 43.18))
     (stroke (width 0) (type default))
     (uuid 7a9794bd-88ee-42cf-831d-af10ffee0026)
   )
@@ -3608,10 +3519,6 @@
   (wire (pts (xy 134.62 194.31) (xy 134.62 203.2))
     (stroke (width 0) (type default))
     (uuid 7b42c5c0-51b3-4cec-a833-361103c3089d)
-  )
-  (wire (pts (xy 210.82 39.37) (xy 208.28 39.37))
-    (stroke (width 0) (type solid))
-    (uuid 7b8802b0-6220-4e2e-bc93-34202e979625)
   )
   (wire (pts (xy 116.84 256.54) (xy 130.81 256.54))
     (stroke (width 0) (type default))
@@ -3624,10 +3531,6 @@
   (wire (pts (xy 214.63 262.89) (xy 220.98 262.89))
     (stroke (width 0) (type default))
     (uuid 7d1b8c93-93d9-4d92-9b03-e3ed781f23ed)
-  )
-  (wire (pts (xy 256.54 49.53) (xy 256.54 54.61))
-    (stroke (width 0) (type default))
-    (uuid 7d9a6cf8-6471-45a6-9a00-9faa2378a04a)
   )
   (wire (pts (xy 25.4 168.91) (xy 39.37 168.91))
     (stroke (width 0) (type solid))
@@ -3644,6 +3547,10 @@
   (wire (pts (xy 353.06 101.6) (xy 381 101.6))
     (stroke (width 0) (type default))
     (uuid 8215156e-3161-4561-a2d0-810ba8bd7e5f)
+  )
+  (wire (pts (xy 237.49 48.26) (xy 237.49 50.8))
+    (stroke (width 0) (type default))
+    (uuid 822665ec-b5a9-4864-af6d-8fbeeb893231)
   )
   (wire (pts (xy 45.72 114.3) (xy 39.37 114.3))
     (stroke (width 0) (type default))
@@ -3851,10 +3758,6 @@
     (stroke (width 0) (type default))
     (uuid 9ed21366-32cb-4cac-834a-b0ae0d213a67)
   )
-  (wire (pts (xy 199.39 41.91) (xy 210.82 41.91))
-    (stroke (width 0) (type solid))
-    (uuid 9f46a8b8-e89d-45e1-bb34-c54e8f4e34d1)
-  )
   (wire (pts (xy 55.88 264.16) (xy 53.34 264.16))
     (stroke (width 0) (type default))
     (uuid 9fd2f776-5a6c-4119-8875-5287d48408fa)
@@ -3924,7 +3827,7 @@
     (stroke (width 0) (type default))
     (uuid a73c87e3-5fa5-48a8-a438-8fa7616d6802)
   )
-  (wire (pts (xy 251.46 39.37) (xy 254 39.37))
+  (wire (pts (xy 240.03 40.64) (xy 242.57 40.64))
     (stroke (width 0) (type solid))
     (uuid a794efc2-3da9-496c-bb07-98dab8e4b30c)
   )
@@ -4245,10 +4148,6 @@
     (stroke (width 0) (type default))
     (uuid d9c2de7e-9176-4605-94f2-aa4b8bdcba92)
   )
-  (wire (pts (xy 199.39 41.91) (xy 199.39 50.8))
-    (stroke (width 0) (type default))
-    (uuid da378935-2b1a-4210-96cb-6cdfe7818d1d)
-  )
   (wire (pts (xy 80.01 83.82) (xy 60.96 83.82))
     (stroke (width 0) (type default))
     (uuid da457564-ad56-4e16-af85-bcaa6a5ae33a)
@@ -4457,10 +4356,6 @@
   (wire (pts (xy 55.88 264.16) (xy 60.96 264.16))
     (stroke (width 0) (type default))
     (uuid fa1180dd-d9c8-4dad-9f52-62e058c6cf98)
-  )
-  (wire (pts (xy 246.38 52.07) (xy 248.92 52.07))
-    (stroke (width 0) (type solid))
-    (uuid fa399778-7f63-43a9-b613-cc97d618ebca)
   )
   (wire (pts (xy 72.39 116.84) (xy 72.39 111.76))
     (stroke (width 0) (type default))
@@ -4685,10 +4580,6 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 3eb5f672-c8a9-49f8-ac9e-4d8c5645b482)
   )
-  (label "USB_CC1" (at 201.93 41.91 0) (fields_autoplaced)
-    (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 3fa4cf57-4c71-47bf-9f9f-5e1f97558270)
-  )
   (label "IR_RCVR" (at 386.08 135.89 180) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid 40c2dc05-fa20-4433-bf0b-b0a8be5b88fc)
@@ -4777,10 +4668,6 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 801485f0-a7ac-4aca-9a77-3271ec09e459)
   )
-  (label "USB_D-" (at 201.93 46.99 0) (fields_autoplaced)
-    (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 80a1df97-a191-4e3a-bee5-9ae25ce43a02)
-  )
   (label "UART_RX" (at 36.83 36.83 180) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid 82009c64-16d5-4351-8acc-b39c646fd20f)
@@ -4788,10 +4675,6 @@
   (label "LED_FRONT1" (at 337.82 77.47 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 82bcb98b-8ae5-49da-b9e5-62c95fb9ceab)
-  )
-  (label "USB_D+" (at 201.93 44.45 0) (fields_autoplaced)
-    (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid 837cdbd5-b698-426c-ab9f-beb3c7a4235d)
   )
   (label "IR_LED_DAC" (at 154.94 58.42 180) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
@@ -4809,7 +4692,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 88773af2-53e4-4efa-8eb6-456e532e6b4a)
   )
-  (label "USB_D+" (at 255.27 46.99 0) (fields_autoplaced)
+  (label "USB_D+" (at 243.84 45.72 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid 8d429bab-1ff4-438e-905e-620d3bdcd9d5)
   )
@@ -4869,11 +4752,7 @@
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid c66e5bdc-7066-40bb-835d-fd9f05a9e69f)
   )
-  (label "USB_CC2" (at 256.54 49.53 0) (fields_autoplaced)
-    (effects (font (size 1.27 1.27)) (justify right bottom))
-    (uuid c71e4840-d923-405e-959d-fb945d34e48a)
-  )
-  (label "USB_D-" (at 255.27 44.45 0) (fields_autoplaced)
+  (label "USB_D-" (at 243.84 43.18 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right bottom))
     (uuid c7ac2edd-5ad4-4bca-9341-81ec59cbc411)
   )
@@ -4953,13 +4832,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 391.16 142.24 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 009a0997-e507-4bd3-8d54-725eb7f0ca54)
-    (property "Reference" "R11" (at 391.16 139.7 90)
+    (property "Reference" "R9" (at 391.16 139.7 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "51R" (at 391.16 142.24 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 388.62 140.208 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 388.62 140.208 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 394.97 140.208 90)
@@ -4991,7 +4870,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R11") (unit 1)
+          (reference "R9") (unit 1)
         )
       )
     )
@@ -5000,7 +4879,7 @@
   (symbol (lib_id "power:GND") (at 243.84 262.89 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 0180d2ed-cfdb-43e0-b85b-c6f2f991df18)
-    (property "Reference" "#PWR097" (at 244.348 260.604 0)
+    (property "Reference" "#PWR087" (at 244.348 260.604 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 245.872 262.89 0)
@@ -5016,7 +4895,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR097") (unit 1)
+          (reference "#PWR087") (unit 1)
         )
       )
     )
@@ -5025,7 +4904,7 @@
   (symbol (lib_id "power:GND") (at 383.54 181.61 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 031c9476-50fc-42e0-a103-03a6096ca34d)
-    (property "Reference" "#PWR070" (at 385.826 182.118 0)
+    (property "Reference" "#PWR061" (at 385.826 182.118 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 383.54 183.642 0)
@@ -5041,7 +4920,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR070") (unit 1)
+          (reference "#PWR061") (unit 1)
         )
       )
       (project "Avada"
@@ -5055,7 +4934,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 207.01 180.34 0) (mirror y) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 035bd9bf-843d-4977-b6a3-e90b32e95372)
-    (property "Reference" "XL15" (at 208.28 185.42 0)
+    (property "Reference" "XL11" (at 208.28 185.42 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 207.01 175.26 0)
@@ -5073,7 +4952,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL15") (unit 1)
+          (reference "XL11") (unit 1)
         )
       )
     )
@@ -5106,13 +4985,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 227.33 198.12 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 04f56c1c-8c37-4362-aeb1-708a413d798e)
-    (property "Reference" "R20" (at 227.33 195.58 90)
+    (property "Reference" "R18" (at 227.33 195.58 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "100R" (at 227.33 198.12 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 224.79 196.088 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 224.79 196.088 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 231.14 196.088 90)
@@ -5141,7 +5020,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R20") (unit 1)
+          (reference "R18") (unit 1)
         )
       )
     )
@@ -5150,13 +5029,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 129.54 168.91 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 05d41846-2ccd-417d-b0ce-78591bdfeba9)
-    (property "Reference" "R14" (at 127 168.275 0)
+    (property "Reference" "R12" (at 127 168.275 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10k" (at 127 170.815 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 127.508 166.37 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 127.508 166.37 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 127.508 172.72 90)
@@ -5185,7 +5064,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R14") (unit 1)
+          (reference "R12") (unit 1)
         )
       )
       (project "Avada"
@@ -5199,13 +5078,13 @@
   (symbol (lib_id "Tittar_kl:C") (at 66.04 121.92 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 064545aa-a3ee-4b61-867d-6d81c4e7c1a4)
-    (property "Reference" "C13" (at 63.5 124.46 0)
+    (property "Reference" "C12" (at 63.5 124.46 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 63.5 119.38 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 68.58 125.73 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 68.58 125.73 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 63.5 124.46 0)
@@ -5243,7 +5122,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C13") (unit 1)
+          (reference "C12") (unit 1)
         )
       )
       (project "Avada"
@@ -5295,7 +5174,7 @@
   (symbol (lib_id "power:+3v3") (at 361.95 227.33 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 09664f85-b8f5-41b6-b77c-9a0c6580a346)
-    (property "Reference" "#PWR086" (at 361.95 228.346 0)
+    (property "Reference" "#PWR079" (at 361.95 228.346 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+3v3" (at 360.807 224.79 0)
@@ -5311,7 +5190,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR086") (unit 1)
+          (reference "#PWR079") (unit 1)
         )
       )
     )
@@ -5320,7 +5199,7 @@
   (symbol (lib_id "power:GND") (at 375.92 181.61 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 09c84ba9-89ee-4d59-a9f1-c7458a73053b)
-    (property "Reference" "#PWR069" (at 378.206 182.118 0)
+    (property "Reference" "#PWR060" (at 378.206 182.118 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 375.92 183.642 0)
@@ -5336,7 +5215,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR069") (unit 1)
+          (reference "#PWR060") (unit 1)
         )
       )
       (project "Avada"
@@ -5350,7 +5229,7 @@
   (symbol (lib_id "power:GND") (at 321.31 97.79 90) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 09fb04fb-a121-4209-a371-4528043dac26)
-    (property "Reference" "#PWR028" (at 321.818 100.076 0)
+    (property "Reference" "#PWR019" (at 321.818 100.076 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 323.342 97.79 0)
@@ -5366,7 +5245,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR028") (unit 1)
+          (reference "#PWR019") (unit 1)
         )
       )
       (project "CndMainPcb"
@@ -5380,7 +5259,7 @@
   (symbol (lib_id "power:GND") (at 243.84 77.47 270) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 0abf23e3-d5b4-4a08-91e4-2971259c6fbc)
-    (property "Reference" "#PWR021" (at 243.332 75.184 0)
+    (property "Reference" "#PWR013" (at 243.332 75.184 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 241.808 77.47 0)
@@ -5396,7 +5275,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR021") (unit 1)
+          (reference "#PWR013") (unit 1)
         )
       )
       (project "LipteMain"
@@ -5425,7 +5304,7 @@
   (symbol (lib_id "power:+5vUSB") (at 218.44 77.47 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 0b63ce38-0381-41fd-82e0-23b71480936b)
-    (property "Reference" "#PWR020" (at 218.44 78.486 0)
+    (property "Reference" "#PWR012" (at 218.44 78.486 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+5vUSB" (at 217.17 76.2 0)
@@ -5441,7 +5320,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR020") (unit 1)
+          (reference "#PWR012") (unit 1)
         )
       )
       (project "LipteMain"
@@ -5465,7 +5344,7 @@
   (symbol (lib_id "Tittar_kl:C") (at 335.28 163.83 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 0c791531-d9b6-4bc2-ac58-4dc861d948e0)
-    (property "Reference" "C19" (at 332.74 166.37 0)
+    (property "Reference" "C18" (at 332.74 166.37 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "47u" (at 332.74 161.29 0)
@@ -5512,7 +5391,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C19") (unit 1)
+          (reference "C18") (unit 1)
         )
       )
       (project "Avada"
@@ -5526,13 +5405,13 @@
   (symbol (lib_id "Tittar_kl:C") (at 59.69 121.92 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 0cd97c0f-3589-41ef-9e5f-d71ecc83a398)
-    (property "Reference" "C12" (at 57.15 124.46 0)
+    (property "Reference" "C11" (at 57.15 124.46 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 57.15 119.38 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 62.23 125.73 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 62.23 125.73 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 57.15 124.46 0)
@@ -5570,7 +5449,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C12") (unit 1)
+          (reference "C11") (unit 1)
         )
       )
       (project "Avada"
@@ -5590,7 +5469,7 @@
     (property "Value" "1u" (at 247.65 115.57 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 242.57 121.92 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 242.57 121.92 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 247.65 120.65 0)
@@ -5642,26 +5521,26 @@
     )
   )
 
-  (symbol (lib_id "power:GND") (at 246.38 59.69 90) (unit 1)
+  (symbol (lib_id "power:GND") (at 237.49 58.42 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 0ddded68-6a5c-40b4-9607-9405970297c4)
-    (property "Reference" "#PWR014" (at 246.888 57.404 0)
+    (property "Reference" "#PWR08" (at 235.204 57.912 0)
       (effects (font (size 0.762 0.762)) hide)
     )
-    (property "Value" "GND" (at 248.412 59.69 0)
+    (property "Value" "GND" (at 237.49 56.388 0)
       (effects (font (size 0.762 0.762)) hide)
     )
-    (property "Footprint" "" (at 246.38 59.69 0)
+    (property "Footprint" "" (at 237.49 58.42 0)
       (effects (font (size 1.524 1.524)))
     )
-    (property "Datasheet" "" (at 246.38 59.69 0)
+    (property "Datasheet" "" (at 237.49 58.42 0)
       (effects (font (size 1.524 1.524)))
     )
     (pin "1" (uuid fbd2a512-17c6-42be-9dbf-be56ea86b773))
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR014") (unit 1)
+          (reference "#PWR08") (unit 1)
         )
       )
       (project "LipteMain"
@@ -5690,7 +5569,7 @@
   (symbol (lib_id "power:GND") (at 361.95 195.58 270) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 0fc63b8f-19ff-4a47-831b-857307385e4a)
-    (property "Reference" "#PWR078" (at 361.442 193.294 0)
+    (property "Reference" "#PWR069" (at 361.442 193.294 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 359.918 195.58 0)
@@ -5706,7 +5585,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR078") (unit 1)
+          (reference "#PWR069") (unit 1)
         )
       )
       (project "Avada"
@@ -5720,7 +5599,7 @@
   (symbol (lib_id "power:GND") (at 59.69 127 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 0fcb09d2-121e-464c-8a74-dc0d3236cdef)
-    (property "Reference" "#PWR048" (at 61.976 127.508 0)
+    (property "Reference" "#PWR038" (at 61.976 127.508 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 59.69 129.032 0)
@@ -5736,7 +5615,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR048") (unit 1)
+          (reference "#PWR038") (unit 1)
         )
       )
       (project "Avada"
@@ -5747,26 +5626,26 @@
     )
   )
 
-  (symbol (lib_id "power:+5vUSB") (at 254 39.37 0) (unit 1)
+  (symbol (lib_id "power:+5vUSB") (at 242.57 40.64 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 128e8897-c71e-4f2a-b2b9-bdbb69f16a45)
-    (property "Reference" "#PWR07" (at 254 40.386 0)
+    (property "Reference" "#PWR06" (at 242.57 41.656 0)
       (effects (font (size 0.762 0.762)) hide)
     )
-    (property "Value" "+5vUSB" (at 255.27 38.1 0)
+    (property "Value" "+5vUSB" (at 243.84 39.37 0)
       (effects (font (size 0.762 0.762)))
     )
-    (property "Footprint" "" (at 254 39.37 0)
+    (property "Footprint" "" (at 242.57 40.64 0)
       (effects (font (size 1.524 1.524)))
     )
-    (property "Datasheet" "" (at 254 39.37 0)
+    (property "Datasheet" "" (at 242.57 40.64 0)
       (effects (font (size 1.524 1.524)))
     )
     (pin "1" (uuid 151bb040-9580-41e3-8fe7-b9ba0f9d4193))
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR07") (unit 1)
+          (reference "#PWR06") (unit 1)
         )
       )
       (project "LipteMain"
@@ -5868,7 +5747,7 @@
   (symbol (lib_id "power:GND") (at 180.34 121.92 90) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 13cfe3f4-1e43-4daa-8842-bb1b6a2e1442)
-    (property "Reference" "#PWR043" (at 180.848 124.206 0)
+    (property "Reference" "#PWR034" (at 180.848 124.206 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 182.372 121.92 0)
@@ -5884,7 +5763,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR043") (unit 1)
+          (reference "#PWR034") (unit 1)
         )
       )
       (project "CndMainPcb"
@@ -5898,7 +5777,7 @@
   (symbol (lib_id "power:GND") (at 397.51 242.57 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 1785578f-3379-4ef3-9d21-b276c237c9c0)
-    (property "Reference" "#PWR093" (at 399.796 243.078 0)
+    (property "Reference" "#PWR084" (at 399.796 243.078 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 397.51 244.602 0)
@@ -5914,7 +5793,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR093") (unit 1)
+          (reference "#PWR084") (unit 1)
         )
       )
       (project "Avada"
@@ -5928,7 +5807,7 @@
   (symbol (lib_id "power:GND") (at 171.45 86.36 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 180a3eda-0513-4170-8cca-7ab76d43a515)
-    (property "Reference" "#PWR023" (at 173.736 86.868 0)
+    (property "Reference" "#PWR014" (at 173.736 86.868 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 171.45 88.392 0)
@@ -5944,7 +5823,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR023") (unit 1)
+          (reference "#PWR014") (unit 1)
         )
       )
       (project "Avada"
@@ -5958,7 +5837,7 @@
   (symbol (lib_id "power:+PwrMCU") (at 58.42 106.68 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 18ccda0c-1a8d-4b21-b641-c63863284eb4)
-    (property "Reference" "#PWR031" (at 58.42 105.41 0)
+    (property "Reference" "#PWR023" (at 58.42 105.41 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+PwrMCU" (at 57.2516 105.41 0)
@@ -5974,7 +5853,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR031") (unit 1)
+          (reference "#PWR023") (unit 1)
         )
       )
       (project "Avada"
@@ -5988,7 +5867,7 @@
   (symbol (lib_id "power:GND") (at 212.09 205.74 270) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 198bc968-3eb0-4f20-8863-eb3f71f881f0)
-    (property "Reference" "#PWR082" (at 211.582 203.454 0)
+    (property "Reference" "#PWR073" (at 211.582 203.454 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 210.058 205.74 0)
@@ -6004,7 +5883,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR082") (unit 1)
+          (reference "#PWR073") (unit 1)
         )
       )
       (project "Avada"
@@ -6049,13 +5928,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 149.86 116.84 270) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 19fa2787-a182-49f9-9be5-0692b86fe985)
-    (property "Reference" "R10" (at 149.86 119.38 90)
+    (property "Reference" "R8" (at 149.86 119.38 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "1k" (at 149.86 116.84 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 152.4 114.808 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 152.4 114.808 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 146.05 114.808 90)
@@ -6084,7 +5963,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R10") (unit 1)
+          (reference "R8") (unit 1)
         )
       )
       (project "CndMainPcb"
@@ -6098,7 +5977,7 @@
   (symbol (lib_id "power:+3v3") (at 397.51 170.18 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 1a962f5f-200c-463c-bd0c-71085c25d72e)
-    (property "Reference" "#PWR064" (at 397.51 171.196 0)
+    (property "Reference" "#PWR054" (at 397.51 171.196 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+3v3" (at 398.78 168.91 0)
@@ -6114,7 +5993,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR064") (unit 1)
+          (reference "#PWR054") (unit 1)
         )
       )
     )
@@ -6192,7 +6071,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 360.68 90.17 0) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 2007a0e7-3dd6-4303-b0f6-2f64cbe4c9e0)
-    (property "Reference" "XL7" (at 358.14 82.55 0)
+    (property "Reference" "XL6" (at 358.14 82.55 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 360.68 85.09 0)
@@ -6210,7 +6089,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL7") (unit 1)
+          (reference "XL6") (unit 1)
         )
       )
     )
@@ -6290,7 +6169,7 @@
   (symbol (lib_id "power:GND") (at 212.09 242.57 270) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 229188f3-9301-40cb-85ae-a5a242667304)
-    (property "Reference" "#PWR092" (at 211.582 240.284 0)
+    (property "Reference" "#PWR083" (at 211.582 240.284 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 210.058 242.57 0)
@@ -6306,7 +6185,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR092") (unit 1)
+          (reference "#PWR083") (unit 1)
         )
       )
       (project "Avada"
@@ -6320,7 +6199,7 @@
   (symbol (lib_id "Transistors_kl:P_3PIN") (at 69.85 226.06 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 252e9efa-06dd-44f2-bfb8-011813aa364c)
-    (property "Reference" "Q10" (at 77.47 227.33 0)
+    (property "Reference" "Q9" (at 77.47 227.33 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "SI2301" (at 78.74 229.87 0)
@@ -6350,7 +6229,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "Q10") (unit 1)
+          (reference "Q9") (unit 1)
         )
       )
       (project "Avada"
@@ -6361,73 +6240,10 @@
     )
   )
 
-  (symbol (lib_id "Connectors_kl:USB_C") (at 228.6 49.53 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
-    (uuid 26a2d380-7e3f-41fb-844a-b976511bd4e0)
-    (property "Reference" "XL4" (at 228.6 25.4 0)
-      (effects (font (size 1.27 1.27)))
-    )
-    (property "Value" "USB_C 24PF-009" (at 228.6 27.94 0)
-      (effects (font (size 1.27 1.27)))
-    )
-    (property "Footprint" "Connectors:USBC_24PF-009" (at 228.6 53.34 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Datasheet" "" (at 228.6 53.34 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "URL" "https://www.zip-2002.ru/product/usb3-1_type-c_24pf-009/" (at 228.6 49.53 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Price" "40" (at 228.6 49.53 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "B1" (uuid 31aa53ed-a034-431e-b572-eb60bc03592b))
-    (pin "B10" (uuid 73ae0975-25d4-425b-81e6-3b56e63a6087))
-    (pin "B11" (uuid e2ceeb3a-2a5a-434a-aed4-dfb369d8bd9f))
-    (pin "B12" (uuid d266118b-c7f4-43dd-acb6-522be2260f27))
-    (pin "B2" (uuid a59423f3-6e56-4be5-b784-12d02405277e))
-    (pin "B3" (uuid 6e8d4ad7-28bc-4498-9abf-58d8b32c6284))
-    (pin "B4" (uuid 5541be29-f9a4-448d-aa91-0205d4c1a674))
-    (pin "B5" (uuid b0aea78d-d234-4ee1-a671-7af726c4b96f))
-    (pin "B6" (uuid 6f0393f9-ff01-4f93-975a-7e313d0a99ee))
-    (pin "B7" (uuid 2d4b825f-d631-4a8e-9ce9-64f700a5f5e2))
-    (pin "B8" (uuid a97c490a-b3db-480f-85be-c1fae1e2202f))
-    (pin "B9" (uuid 2d0d974a-52ba-40bc-9a1d-e19a1291cf70))
-    (pin "S3" (uuid e9d0692d-e06a-43e0-8613-d054254096ba))
-    (pin "S4" (uuid 9d55ead4-3d47-4e7d-93e4-2c1cfaced340))
-    (pin "A1" (uuid be3c4d26-75b1-4746-8604-d8216346403e))
-    (pin "A10" (uuid 68c5bd6c-b825-439d-a410-9bcc50796c83))
-    (pin "A11" (uuid a8396da3-453b-489f-8835-ad66851d8f0a))
-    (pin "A12" (uuid c9e22311-3bd3-4213-8e52-b018c35f1237))
-    (pin "A2" (uuid 377e3595-8b5b-4d54-838a-3c2775b4844c))
-    (pin "A3" (uuid 722a675e-413b-4254-9d0a-12eb1382609d))
-    (pin "A4" (uuid 0cb116fd-859b-4462-8bab-9617c1823666))
-    (pin "A5" (uuid 78ad4c63-494d-4405-9bbe-78eb89f00917))
-    (pin "A6" (uuid 549d4fc5-29b3-4ac2-ba6b-5849ad4b3f84))
-    (pin "A7" (uuid b20f4879-3b44-4ed9-8ade-0c98fe2fa306))
-    (pin "A8" (uuid c061dcc0-f72a-4e9d-ad25-f4b7226959ab))
-    (pin "A9" (uuid 0605d17f-1fa3-4179-91f5-73f4204dba51))
-    (pin "S1" (uuid f82b89c0-720e-4a43-9fb8-986a69dd8dfb))
-    (pin "S2" (uuid bcf198f0-a827-4eee-9b65-acab54391d4f))
-    (instances
-      (project "IR_PCB"
-        (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL4") (unit 1)
-        )
-      )
-      (project "LipteMain"
-        (path "/49eb80ac-5687-4461-a6b8-6d93d26c2f61"
-          (reference "XL?") (unit 1)
-        )
-      )
-    )
-  )
-
   (symbol (lib_id "Tittar_kl:D_Shottky") (at 69.85 219.71 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 2a8c5333-4926-41ef-b8d0-05df4452a622)
-    (property "Reference" "D13" (at 66.04 217.17 0)
+    (property "Reference" "D9" (at 66.04 217.17 0)
       (effects (font (size 1.016 1.016)))
     )
     (property "Value" "PMEG2020" (at 74.93 217.17 0)
@@ -6442,7 +6258,7 @@
     (property "SolderPoints" "2" (at 69.85 219.71 0)
       (effects (font (size 1.524 1.524)) hide)
     )
-    (property "Price" "10.59" (at 69.85 219.71 0)
+    (property "Price" "10.35" (at 69.85 219.71 0)
       (effects (font (size 1.524 1.524)) hide)
     )
     (property "URL" "https://onelec.ru/products/pmeg2020aea-115-cdb00143-854a-4849-8e00-88d42820eb88" (at 69.85 219.71 0)
@@ -6456,12 +6272,12 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "D13") (unit 1)
+          (reference "D9") (unit 1)
         )
       )
       (project "Flute2"
         (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "D2") (unit 1)
+          (reference "D?") (unit 1)
         )
       )
     )
@@ -6470,13 +6286,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 162.56 69.85 270) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 2bed041a-be49-4582-83ff-c0df4ba45845)
-    (property "Reference" "R5" (at 162.56 67.31 90)
+    (property "Reference" "R3" (at 162.56 67.31 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "1k" (at 162.56 69.85 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 165.1 67.818 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 165.1 67.818 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 158.75 67.818 90)
@@ -6505,7 +6321,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R5") (unit 1)
+          (reference "R3") (unit 1)
         )
       )
       (project "CndMainPcb"
@@ -6519,7 +6335,7 @@
   (symbol (lib_id "power:GND") (at 39.37 127 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 2c3bbc2d-3f31-4a07-a81e-f13d8da10b36)
-    (property "Reference" "#PWR044" (at 37.084 127.508 0)
+    (property "Reference" "#PWR035" (at 37.084 127.508 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 39.37 129.032 0)
@@ -6535,7 +6351,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR044") (unit 1)
+          (reference "#PWR035") (unit 1)
         )
       )
       (project "Avada"
@@ -6619,7 +6435,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 194.31 245.11 0) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 301918a3-02ec-4fb3-b273-a90171a9c21e)
-    (property "Reference" "XL21" (at 193.04 250.19 0)
+    (property "Reference" "XL17" (at 193.04 250.19 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 194.31 240.03 0)
@@ -6637,7 +6453,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL21") (unit 1)
+          (reference "XL17") (unit 1)
         )
       )
     )
@@ -6646,7 +6462,7 @@
   (symbol (lib_id "power:GND") (at 316.23 168.91 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 30a46263-601b-4066-9326-7049d503d50b)
-    (property "Reference" "#PWR060" (at 318.516 169.418 0)
+    (property "Reference" "#PWR050" (at 318.516 169.418 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 316.23 170.942 0)
@@ -6662,7 +6478,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR060") (unit 1)
+          (reference "#PWR050") (unit 1)
         )
       )
     )
@@ -6671,7 +6487,7 @@
   (symbol (lib_id "power:+PwrMCU") (at 52.07 104.14 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 30dad8bf-e437-4c3c-9d86-308b707e21b7)
-    (property "Reference" "#PWR029" (at 52.07 102.87 0)
+    (property "Reference" "#PWR020" (at 52.07 102.87 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+PwrMCU" (at 50.9016 102.87 0)
@@ -6687,7 +6503,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR029") (unit 1)
+          (reference "#PWR020") (unit 1)
         )
       )
       (project "Avada"
@@ -6701,7 +6517,7 @@
   (symbol (lib_id "power:+PwrUnst") (at 20.32 264.16 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 31087804-8a28-4a31-9f1f-a81dabfd1187)
-    (property "Reference" "#PWR087" (at 20.32 265.176 0)
+    (property "Reference" "#PWR088" (at 20.32 265.176 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+PwrUnst" (at 19.05 262.89 0)
@@ -6717,12 +6533,12 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR087") (unit 1)
+          (reference "#PWR088") (unit 1)
         )
       )
       (project "Flute2"
         (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "#PWR023") (unit 1)
+          (reference "#PWR?") (unit 1)
         )
       )
     )
@@ -6731,7 +6547,7 @@
   (symbol (lib_id "power:+3v3") (at 397.51 142.24 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 32229dda-59c5-461e-b65a-92537d12f84e)
-    (property "Reference" "#PWR053" (at 397.51 143.256 0)
+    (property "Reference" "#PWR043" (at 397.51 143.256 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+3v3" (at 398.78 140.97 0)
@@ -6747,7 +6563,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR053") (unit 1)
+          (reference "#PWR043") (unit 1)
         )
       )
     )
@@ -6756,7 +6572,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_2") (at 33.02 223.52 0) (mirror y) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 34482775-85cc-4c35-991d-a80e6e3c226b)
-    (property "Reference" "XL20" (at 34.29 217.17 0)
+    (property "Reference" "XL16" (at 34.29 217.17 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_2" (at 33.02 219.71 0)
@@ -6773,7 +6589,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL20") (unit 1)
+          (reference "XL16") (unit 1)
         )
       )
     )
@@ -6813,7 +6629,7 @@
   (symbol (lib_id "Tittar_kl:LED") (at 238.76 254 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 358f1393-b177-4cc5-9c36-53430b223a41)
-    (property "Reference" "D11" (at 246.38 252.73 0)
+    (property "Reference" "D12" (at 246.38 252.73 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "~" (at 251.46 255.27 0)
@@ -6842,7 +6658,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "D11") (unit 1)
+          (reference "D12") (unit 1)
         )
       )
     )
@@ -6851,13 +6667,13 @@
   (symbol (lib_id "Tittar_kl:C") (at 30.48 270.51 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 359d106d-0ece-4e18-b148-297cce4ec1c6)
-    (property "Reference" "C25" (at 27.94 273.05 0)
+    (property "Reference" "C24" (at 27.94 273.05 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10u" (at 27.94 267.97 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0603_Fab" (at 33.02 274.32 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 33.02 274.32 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 30.48 270.51 0)
@@ -6898,7 +6714,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C25") (unit 1)
+          (reference "C24") (unit 1)
         )
       )
       (project "Avada"
@@ -6909,55 +6725,10 @@
     )
   )
 
-  (symbol (lib_id "power:GND") (at 210.82 59.69 90) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid 374f241f-c104-444d-afa4-aa7f517ccfc4)
-    (property "Reference" "#PWR013" (at 211.328 57.404 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Value" "GND" (at 212.852 59.69 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Footprint" "" (at 210.82 59.69 0)
-      (effects (font (size 1.524 1.524)))
-    )
-    (property "Datasheet" "" (at 210.82 59.69 0)
-      (effects (font (size 1.524 1.524)))
-    )
-    (pin "1" (uuid da2de920-35b6-4798-bf14-ba5216391892))
-    (instances
-      (project "IR_PCB"
-        (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR013") (unit 1)
-        )
-      )
-      (project "LipteMain"
-        (path "/49eb80ac-5687-4461-a6b8-6d93d26c2f61"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "CndMainPcb"
-        (path "/55608349-d84b-4a4e-a012-f774c7983080"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Flute2"
-        (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Silmire"
-        (path "/e008740a-195f-4c81-a5db-9603d1217109"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-    )
-  )
-
   (symbol (lib_id "power:GND") (at 355.6 87.63 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 376b7fc2-d137-42b5-8a1f-15e7fef7165f)
-    (property "Reference" "#PWR025" (at 356.108 85.344 0)
+    (property "Reference" "#PWR015" (at 356.108 85.344 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 357.632 87.63 0)
@@ -6973,7 +6744,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR025") (unit 1)
+          (reference "#PWR015") (unit 1)
         )
       )
     )
@@ -6982,13 +6753,13 @@
   (symbol (lib_id "Tittar_kl:C") (at 375.92 148.59 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 37be6791-e450-4ff8-acc8-fd7edcd632dc)
-    (property "Reference" "C16" (at 373.38 151.13 0)
+    (property "Reference" "C15" (at 373.38 151.13 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 373.38 146.05 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 378.46 152.4 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 378.46 152.4 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 373.38 151.13 0)
@@ -7026,7 +6797,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C16") (unit 1)
+          (reference "C15") (unit 1)
         )
       )
       (project "Avada"
@@ -7071,7 +6842,7 @@
     (property "Value" "0.1u" (at 254 115.57 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 248.92 121.92 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 248.92 121.92 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 254 120.65 0)
@@ -7123,13 +6894,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 130.81 222.25 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 3a520fa3-f88d-40b0-aaf2-5befe2924ddf)
-    (property "Reference" "R21" (at 128.27 221.615 0)
+    (property "Reference" "R19" (at 128.27 221.615 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10k" (at 128.27 224.155 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 128.778 219.71 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 128.778 219.71 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 128.778 226.06 90)
@@ -7158,7 +6929,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R21") (unit 1)
+          (reference "R19") (unit 1)
         )
       )
       (project "Avada"
@@ -7169,50 +6940,10 @@
     )
   )
 
-  (symbol (lib_id "power:+5vUSB") (at 208.28 52.07 0) (mirror y) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid 3a917342-bdbc-419f-a7b4-d39e8c07b677)
-    (property "Reference" "#PWR010" (at 208.28 53.086 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Value" "+5vUSB" (at 207.01 50.8 0)
-      (effects (font (size 0.762 0.762)))
-    )
-    (property "Footprint" "" (at 208.28 52.07 0)
-      (effects (font (size 1.524 1.524)))
-    )
-    (property "Datasheet" "" (at 208.28 52.07 0)
-      (effects (font (size 1.524 1.524)))
-    )
-    (pin "1" (uuid 0e55c8aa-0063-48cc-92ab-83288872d2d4))
-    (instances
-      (project "IR_PCB"
-        (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR010") (unit 1)
-        )
-      )
-      (project "LipteMain"
-        (path "/49eb80ac-5687-4461-a6b8-6d93d26c2f61"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "CndMainPcb"
-        (path "/55608349-d84b-4a4e-a012-f774c7983080"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Silmire"
-        (path "/e008740a-195f-4c81-a5db-9603d1217109"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-    )
-  )
-
   (symbol (lib_id "power:GND") (at 43.18 275.59 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 3ab31b82-5906-4c3f-b153-7ba11ed10567)
-    (property "Reference" "#PWR0100" (at 45.466 276.098 0)
+    (property "Reference" "#PWR096" (at 45.466 276.098 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 43.18 277.622 0)
@@ -7228,7 +6959,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR0100") (unit 1)
+          (reference "#PWR096") (unit 1)
         )
       )
       (project "Avada"
@@ -7242,7 +6973,7 @@
   (symbol (lib_id "Tittar_kl:LED") (at 238.76 226.06 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 3b26baf5-ef4b-48e6-ac2e-b6482ad2bde4)
-    (property "Reference" "D9" (at 246.38 224.79 0)
+    (property "Reference" "D10" (at 246.38 224.79 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "~" (at 251.46 227.33 0)
@@ -7271,25 +7002,25 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "D9") (unit 1)
+          (reference "D10") (unit 1)
         )
       )
     )
   )
 
-  (symbol (lib_id "power:PWR_FLAG") (at 251.46 36.83 0) (unit 1)
+  (symbol (lib_id "power:PWR_FLAG") (at 240.03 38.1 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 3b402a4c-b498-45e3-942b-fcf0addb2aa3)
-    (property "Reference" "#FLG01" (at 251.46 29.972 0)
+    (property "Reference" "#FLG01" (at 240.03 31.242 0)
       (effects (font (size 0.762 0.762)) hide)
     )
-    (property "Value" "PWR_FLAG" (at 251.46 31.5468 0)
+    (property "Value" "PWR_FLAG" (at 240.03 32.8168 0)
       (effects (font (size 0.762 0.762)))
     )
-    (property "Footprint" "" (at 251.46 36.83 0)
+    (property "Footprint" "" (at 240.03 38.1 0)
       (effects (font (size 1.524 1.524)))
     )
-    (property "Datasheet" "" (at 251.46 36.83 0)
+    (property "Datasheet" "" (at 240.03 38.1 0)
       (effects (font (size 1.524 1.524)))
     )
     (pin "1" (uuid af8f6f1a-58b9-43b0-8f3b-47d795cb5929))
@@ -7325,7 +7056,7 @@
   (symbol (lib_id "power:GND") (at 400.05 90.17 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 3b40bc89-4523-4ed2-afe3-cb650c14d0cb)
-    (property "Reference" "#PWR027" (at 402.336 90.678 0)
+    (property "Reference" "#PWR017" (at 402.336 90.678 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 400.05 92.202 0)
@@ -7341,7 +7072,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR027") (unit 1)
+          (reference "#PWR017") (unit 1)
         )
       )
     )
@@ -7387,7 +7118,7 @@
     (property "Value" "1u" (at 41.91 119.38 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 36.83 125.73 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 36.83 125.73 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 41.91 124.46 0)
@@ -7473,7 +7204,7 @@
   (symbol (lib_id "power:GND") (at 39.37 179.07 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 401d98b5-c302-4aa9-b46e-00c39e9e4b93)
-    (property "Reference" "#PWR067" (at 37.084 178.562 0)
+    (property "Reference" "#PWR058" (at 37.084 178.562 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 39.37 177.038 0)
@@ -7489,7 +7220,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR067") (unit 1)
+          (reference "#PWR058") (unit 1)
         )
       )
       (project "Flute2"
@@ -7503,7 +7234,7 @@
   (symbol (lib_id "Tittar_kl:LED") (at 238.76 262.89 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 41e5f6b5-a1fb-4e41-b7aa-ebd8c7fbe432)
-    (property "Reference" "D12" (at 246.38 261.62 0)
+    (property "Reference" "D13" (at 246.38 261.62 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "~" (at 251.46 264.16 0)
@@ -7532,7 +7263,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "D12") (unit 1)
+          (reference "D13") (unit 1)
         )
       )
     )
@@ -7581,7 +7312,7 @@
   (symbol (lib_id "power:GND") (at 77.47 191.77 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 43e2b152-f97e-41bb-8325-00bf3d896b29)
-    (property "Reference" "#PWR074" (at 75.184 191.262 0)
+    (property "Reference" "#PWR065" (at 75.184 191.262 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 77.47 189.738 0)
@@ -7597,7 +7328,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR074") (unit 1)
+          (reference "#PWR065") (unit 1)
         )
       )
       (project "Flute2"
@@ -7611,7 +7342,7 @@
   (symbol (lib_id "power:GND") (at 383.54 153.67 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 44e26eb3-8040-453c-8652-eca2f05b69d9)
-    (property "Reference" "#PWR056" (at 385.826 154.178 0)
+    (property "Reference" "#PWR046" (at 385.826 154.178 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 383.54 155.702 0)
@@ -7627,7 +7358,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR056") (unit 1)
+          (reference "#PWR046") (unit 1)
         )
       )
       (project "Avada"
@@ -7674,7 +7405,7 @@
   (symbol (lib_id "power:GND") (at 90.17 191.77 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 4a30f87b-7c34-471d-96f6-0a9e205e7770)
-    (property "Reference" "#PWR076" (at 92.456 192.278 0)
+    (property "Reference" "#PWR067" (at 92.456 192.278 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 90.17 193.802 0)
@@ -7690,7 +7421,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR076") (unit 1)
+          (reference "#PWR067") (unit 1)
         )
       )
       (project "Flute2"
@@ -7704,7 +7435,7 @@
   (symbol (lib_id "pcb_details:TESTPOINT") (at 25.4 163.83 0) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 4a753ef1-9ad8-4e74-b2d2-008bb57acd64)
-    (property "Reference" "TP2" (at 17.78 163.83 0)
+    (property "Reference" "TP1" (at 17.78 163.83 0)
       (effects (font (size 1.524 1.524)))
     )
     (property "Value" "TESTPOINT" (at 24.765 158.115 0)
@@ -7729,7 +7460,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "TP2") (unit 1)
+          (reference "TP1") (unit 1)
         )
       )
       (project "Flute2"
@@ -7787,7 +7518,7 @@
   (symbol (lib_id "power:GND") (at 364.49 181.61 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 4fef08fd-34e7-4e56-857c-bce1bad3aacb)
-    (property "Reference" "#PWR068" (at 366.776 182.118 0)
+    (property "Reference" "#PWR059" (at 366.776 182.118 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 364.49 183.642 0)
@@ -7803,7 +7534,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR068") (unit 1)
+          (reference "#PWR059") (unit 1)
         )
       )
     )
@@ -7812,13 +7543,13 @@
   (symbol (lib_id "Tittar_kl:C") (at 375.92 176.53 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 50ab9f2b-b290-40c9-a619-5d0bccdbd5c8)
-    (property "Reference" "C20" (at 373.38 179.07 0)
+    (property "Reference" "C19" (at 373.38 179.07 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 373.38 173.99 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 378.46 180.34 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 378.46 180.34 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 373.38 179.07 0)
@@ -7856,7 +7587,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C20") (unit 1)
+          (reference "C19") (unit 1)
         )
       )
       (project "Avada"
@@ -7870,7 +7601,7 @@
   (symbol (lib_id "power:GND") (at 243.84 254 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 51b51289-2bd6-4623-909f-feb5c886ac7b)
-    (property "Reference" "#PWR096" (at 244.348 251.714 0)
+    (property "Reference" "#PWR086" (at 244.348 251.714 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 245.872 254 0)
@@ -7886,7 +7617,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR096") (unit 1)
+          (reference "#PWR086") (unit 1)
         )
       )
     )
@@ -7895,13 +7626,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 130.81 248.92 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 536dd67c-946f-48d2-beb2-6da6291fd60b)
-    (property "Reference" "R25" (at 128.27 248.285 0)
+    (property "Reference" "R24" (at 128.27 248.285 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10k" (at 128.27 250.825 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 128.778 246.38 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 128.778 246.38 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 128.778 252.73 90)
@@ -7930,7 +7661,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R25") (unit 1)
+          (reference "R24") (unit 1)
         )
       )
       (project "Avada"
@@ -7944,7 +7675,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 326.39 100.33 0) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 5477da89-9106-42e9-8f82-1917be798e05)
-    (property "Reference" "XL9" (at 323.85 92.71 0)
+    (property "Reference" "XL8" (at 323.85 92.71 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 326.39 95.25 0)
@@ -7962,7 +7693,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL9") (unit 1)
+          (reference "XL8") (unit 1)
         )
       )
     )
@@ -7971,7 +7702,7 @@
   (symbol (lib_id "power:GND") (at 212.09 270.51 270) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 55a3f174-dcb9-496e-a241-9e014740b7e2)
-    (property "Reference" "#PWR0103" (at 211.582 268.224 0)
+    (property "Reference" "#PWR093" (at 211.582 268.224 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 210.058 270.51 0)
@@ -7987,7 +7718,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR0103") (unit 1)
+          (reference "#PWR093") (unit 1)
         )
       )
       (project "Avada"
@@ -8001,7 +7732,7 @@
   (symbol (lib_id "power:GND") (at 60.96 275.59 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 5608d44a-6dc9-4c8d-bda7-370d56048985)
-    (property "Reference" "#PWR0101" (at 63.246 276.098 0)
+    (property "Reference" "#PWR097" (at 63.246 276.098 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 60.96 277.622 0)
@@ -8017,7 +7748,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR0101") (unit 1)
+          (reference "#PWR097") (unit 1)
         )
       )
       (project "Avada"
@@ -8031,7 +7762,7 @@
   (symbol (lib_id "power:GND") (at 45.72 127 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 56b62245-5b8b-440c-bfc2-3df063f4240b)
-    (property "Reference" "#PWR045" (at 43.434 127.508 0)
+    (property "Reference" "#PWR036" (at 43.434 127.508 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 45.72 129.032 0)
@@ -8047,7 +7778,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR045") (unit 1)
+          (reference "#PWR036") (unit 1)
         )
       )
       (project "Avada"
@@ -8061,13 +7792,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 227.33 254 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 5874f0b5-8e93-42f4-88f6-f773d0a4d51c)
-    (property "Reference" "R26" (at 227.33 251.46 90)
+    (property "Reference" "R25" (at 227.33 251.46 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "100R" (at 227.33 254 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 224.79 251.968 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 224.79 251.968 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 231.14 251.968 90)
@@ -8096,52 +7827,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R26") (unit 1)
-        )
-      )
-    )
-  )
-
-  (symbol (lib_id "power:GND") (at 199.39 63.5 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid 58bb7fbd-a1ec-4ed2-9dba-e63b9bb08aa9)
-    (property "Reference" "#PWR015" (at 201.676 64.008 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Value" "GND" (at 199.39 65.532 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Footprint" "" (at 199.39 63.5 0)
-      (effects (font (size 1.524 1.524)) hide)
-    )
-    (property "Datasheet" "" (at 199.39 63.5 0)
-      (effects (font (size 1.524 1.524)) hide)
-    )
-    (pin "1" (uuid 79fde5c0-d264-4775-bab5-d5b57fe40536))
-    (instances
-      (project "IR_PCB"
-        (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR015") (unit 1)
-        )
-      )
-      (project "LipteMain"
-        (path "/49eb80ac-5687-4461-a6b8-6d93d26c2f61"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "CndMainPcb"
-        (path "/55608349-d84b-4a4e-a012-f774c7983080"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Flute2"
-        (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Silmire"
-        (path "/e008740a-195f-4c81-a5db-9603d1217109"
-          (reference "#PWR?") (unit 1)
+          (reference "R25") (unit 1)
         )
       )
     )
@@ -8150,13 +7836,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 393.7 77.47 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 5905554e-009d-4e8a-baf1-01f40ac64a32)
-    (property "Reference" "R8" (at 393.7 74.93 90)
+    (property "Reference" "R6" (at 393.7 74.93 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "100R" (at 393.7 77.47 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 391.16 75.438 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 391.16 75.438 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 397.51 75.438 90)
@@ -8188,7 +7874,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R8") (unit 1)
+          (reference "R6") (unit 1)
         )
       )
     )
@@ -8197,7 +7883,7 @@
   (symbol (lib_id "power:PWR_FLAG") (at 83.82 223.52 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 59e54087-d7e1-4ea3-b6d7-00f584b74412)
-    (property "Reference" "#FLG05" (at 83.82 216.662 0)
+    (property "Reference" "#FLG03" (at 83.82 216.662 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "PWR_FLAG" (at 83.82 218.948 0)
@@ -8213,52 +7899,12 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#FLG05") (unit 1)
+          (reference "#FLG03") (unit 1)
         )
       )
       (project "Flute2"
         (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "#FLG03") (unit 1)
-        )
-      )
-    )
-  )
-
-  (symbol (lib_id "power:+5vUSB") (at 248.92 52.07 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid 5a2a11e8-5acb-4a10-81f1-04b80e9e0c58)
-    (property "Reference" "#PWR011" (at 248.92 53.086 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Value" "+5vUSB" (at 250.19 50.8 0)
-      (effects (font (size 0.762 0.762)))
-    )
-    (property "Footprint" "" (at 248.92 52.07 0)
-      (effects (font (size 1.524 1.524)))
-    )
-    (property "Datasheet" "" (at 248.92 52.07 0)
-      (effects (font (size 1.524 1.524)))
-    )
-    (pin "1" (uuid 0f25120f-d458-450d-a643-359f69de14fa))
-    (instances
-      (project "IR_PCB"
-        (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR011") (unit 1)
-        )
-      )
-      (project "LipteMain"
-        (path "/49eb80ac-5687-4461-a6b8-6d93d26c2f61"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "CndMainPcb"
-        (path "/55608349-d84b-4a4e-a012-f774c7983080"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Silmire"
-        (path "/e008740a-195f-4c81-a5db-9603d1217109"
-          (reference "#PWR?") (unit 1)
+          (reference "#FLG?") (unit 1)
         )
       )
     )
@@ -8267,13 +7913,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 129.54 195.58 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 5aef4d79-c3b5-44ed-98b2-fb26b966c140)
-    (property "Reference" "R19" (at 127 194.945 0)
+    (property "Reference" "R17" (at 127 194.945 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10k" (at 127 197.485 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 127.508 193.04 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 127.508 193.04 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 127.508 199.39 90)
@@ -8302,7 +7948,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R19") (unit 1)
+          (reference "R17") (unit 1)
         )
       )
       (project "Avada"
@@ -8316,7 +7962,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 207.01 245.11 0) (mirror y) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 5b197258-3736-4f2e-ac68-12c6eb8a3e99)
-    (property "Reference" "XL22" (at 208.28 250.19 0)
+    (property "Reference" "XL18" (at 208.28 250.19 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 207.01 240.03 0)
@@ -8334,7 +7980,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL22") (unit 1)
+          (reference "XL18") (unit 1)
         )
       )
     )
@@ -8374,13 +8020,13 @@
   (symbol (lib_id "Tittar_kl:C") (at 327.66 163.83 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 5d5cc804-ceae-473d-9b2d-d1377511f257)
-    (property "Reference" "C18" (at 325.12 166.37 0)
+    (property "Reference" "C17" (at 325.12 166.37 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 325.12 161.29 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 330.2 167.64 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 330.2 167.64 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 325.12 166.37 0)
@@ -8418,7 +8064,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C18") (unit 1)
+          (reference "C17") (unit 1)
         )
       )
       (project "Avada"
@@ -8507,13 +8153,13 @@
   (symbol (lib_id "Tittar_kl:C") (at 72.39 121.92 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 609a8a67-03e2-4a7f-9b9f-ea50486cee4c)
-    (property "Reference" "C14" (at 69.85 124.46 0)
+    (property "Reference" "C13" (at 69.85 124.46 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 69.85 119.38 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 74.93 125.73 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 74.93 125.73 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 69.85 124.46 0)
@@ -8551,7 +8197,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C14") (unit 1)
+          (reference "C13") (unit 1)
         )
       )
       (project "Avada"
@@ -8571,7 +8217,7 @@
     (property "Value" "2u2" (at 240.03 81.28 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 242.57 74.93 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 242.57 74.93 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 241.3 80.01 0)
@@ -8685,7 +8331,7 @@
   (symbol (lib_id "Tittar_kl:LED") (at 238.76 234.95 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 6113b0ed-e66b-42ec-af49-e63d42f9920d)
-    (property "Reference" "D10" (at 246.38 233.68 0)
+    (property "Reference" "D11" (at 246.38 233.68 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "~" (at 251.46 236.22 0)
@@ -8714,7 +8360,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "D10") (unit 1)
+          (reference "D11") (unit 1)
         )
       )
     )
@@ -8723,7 +8369,7 @@
   (symbol (lib_id "power:+PwrMCU") (at 64.77 109.22 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 62908712-ce59-4e4a-a4b9-13c0da26e6b2)
-    (property "Reference" "#PWR032" (at 64.77 107.95 0)
+    (property "Reference" "#PWR024" (at 64.77 107.95 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+PwrMCU" (at 63.6016 107.95 0)
@@ -8739,7 +8385,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR032") (unit 1)
+          (reference "#PWR024") (unit 1)
         )
       )
       (project "Avada"
@@ -8753,13 +8399,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 227.33 262.89 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 62a61bbb-cd1c-48b6-9ccd-bd775250c6cf)
-    (property "Reference" "R27" (at 227.33 260.35 90)
+    (property "Reference" "R26" (at 227.33 260.35 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "100R" (at 227.33 262.89 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 224.79 260.858 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 224.79 260.858 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 231.14 260.858 90)
@@ -8788,7 +8434,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R27") (unit 1)
+          (reference "R26") (unit 1)
         )
       )
     )
@@ -8803,7 +8449,7 @@
     (property "Value" "0.1u" (at 48.26 119.38 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 43.18 125.73 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 43.18 125.73 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 48.26 124.46 0)
@@ -8855,7 +8501,7 @@
   (symbol (lib_id "power:GND") (at 189.23 205.74 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 65bf682c-845d-4112-a82f-8d79ddcd46d0)
-    (property "Reference" "#PWR081" (at 189.738 203.454 0)
+    (property "Reference" "#PWR072" (at 189.738 203.454 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 191.262 205.74 0)
@@ -8871,7 +8517,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR081") (unit 1)
+          (reference "#PWR072") (unit 1)
         )
       )
       (project "Avada"
@@ -8885,7 +8531,7 @@
   (symbol (lib_id "power:+PwrUnst") (at 273.05 104.14 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 667cb529-23c8-4843-9811-e384822ff3dd)
-    (property "Reference" "#PWR0112" (at 273.05 105.156 0)
+    (property "Reference" "#PWR021" (at 273.05 105.156 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+PwrUnst" (at 271.78 102.87 0)
@@ -8901,12 +8547,12 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR0112") (unit 1)
+          (reference "#PWR021") (unit 1)
         )
       )
       (project "Flute2"
         (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "#PWR023") (unit 1)
+          (reference "#PWR?") (unit 1)
         )
       )
     )
@@ -8959,7 +8605,7 @@
   (symbol (lib_id "power:GND") (at 245.11 127 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 676cd4a8-6978-46ab-a45a-460f520f8e32)
-    (property "Reference" "#PWR052" (at 242.824 127.508 0)
+    (property "Reference" "#PWR042" (at 242.824 127.508 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 245.11 129.032 0)
@@ -8975,7 +8621,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR052") (unit 1)
+          (reference "#PWR042") (unit 1)
         )
       )
       (project "Avada"
@@ -8989,7 +8635,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 194.31 273.05 0) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 68e00182-8df3-458e-b916-f1b32ba4f660)
-    (property "Reference" "XL23" (at 193.04 278.13 0)
+    (property "Reference" "XL19" (at 193.04 278.13 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 194.31 267.97 0)
@@ -9007,7 +8653,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL23") (unit 1)
+          (reference "XL19") (unit 1)
         )
       )
     )
@@ -9016,7 +8662,7 @@
   (symbol (lib_id "power:GND") (at 327.66 168.91 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 6e6d006c-2cc2-4ff9-b4be-e6961baeb7f6)
-    (property "Reference" "#PWR061" (at 329.946 169.418 0)
+    (property "Reference" "#PWR051" (at 329.946 169.418 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 327.66 170.942 0)
@@ -9032,7 +8678,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR061") (unit 1)
+          (reference "#PWR051") (unit 1)
         )
       )
       (project "Avada"
@@ -9101,7 +8747,7 @@
   (symbol (lib_id "power:GND") (at 44.45 222.25 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 6f2460a4-a65b-4dd5-b620-19ef1f1ff678)
-    (property "Reference" "#PWR084" (at 44.958 219.964 0)
+    (property "Reference" "#PWR076" (at 44.958 219.964 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 46.482 222.25 0)
@@ -9117,7 +8763,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR084") (unit 1)
+          (reference "#PWR076") (unit 1)
         )
       )
       (project "Avada"
@@ -9131,7 +8777,7 @@
   (symbol (lib_id "power:+5vUSB") (at 171.45 69.85 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 6fdc9286-2961-4d2c-b5c0-317487654869)
-    (property "Reference" "#PWR019" (at 171.45 70.866 0)
+    (property "Reference" "#PWR09" (at 171.45 70.866 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+5vUSB" (at 172.72 68.58 0)
@@ -9147,7 +8793,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR019") (unit 1)
+          (reference "#PWR09") (unit 1)
         )
       )
       (project "LipteMain"
@@ -9171,7 +8817,7 @@
   (symbol (lib_id "power:GND") (at 140.97 109.22 90) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 72020230-fa80-4a25-8447-17ecfd42bbb6)
-    (property "Reference" "#PWR033" (at 141.478 111.506 0)
+    (property "Reference" "#PWR025" (at 141.478 111.506 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 143.002 109.22 0)
@@ -9187,7 +8833,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR033") (unit 1)
+          (reference "#PWR025") (unit 1)
         )
       )
       (project "CndMainPcb"
@@ -9201,7 +8847,7 @@
   (symbol (lib_id "power:GND") (at 243.84 189.23 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 726c841d-4271-451d-80b7-17963579a0bf)
-    (property "Reference" "#PWR073" (at 244.348 186.944 0)
+    (property "Reference" "#PWR064" (at 244.348 186.944 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 245.872 189.23 0)
@@ -9217,7 +8863,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR073") (unit 1)
+          (reference "#PWR064") (unit 1)
         )
       )
     )
@@ -9312,7 +8958,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 207.01 208.28 0) (mirror y) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 7338c524-e5ce-49fd-8cfe-14af450bf5f0)
-    (property "Reference" "XL19" (at 208.28 213.36 0)
+    (property "Reference" "XL15" (at 208.28 213.36 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 207.01 203.2 0)
@@ -9330,7 +8976,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL19") (unit 1)
+          (reference "XL15") (unit 1)
         )
       )
     )
@@ -9339,13 +8985,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 71.12 240.03 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 74b2b960-a3aa-4968-817d-601dde82e37b)
-    (property "Reference" "R29" (at 73.152 240.03 90)
+    (property "Reference" "R23" (at 73.152 240.03 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "10k" (at 71.12 240.03 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 71.12 240.03 0)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 71.12 240.03 0)
       (effects (font (size 1.524 1.524)) hide)
     )
     (property "Datasheet" "" (at 71.12 240.03 0)
@@ -9374,12 +9020,12 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R29") (unit 1)
+          (reference "R23") (unit 1)
         )
       )
       (project "Flute2"
         (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "R8") (unit 1)
+          (reference "R?") (unit 1)
         )
       )
     )
@@ -9388,7 +9034,7 @@
   (symbol (lib_id "pcb_details:TESTPOINT") (at 25.4 173.99 0) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 776cd950-9c27-40a4-8cd8-bddf84cc2a07)
-    (property "Reference" "TP5" (at 17.78 173.99 0)
+    (property "Reference" "TP4" (at 17.78 173.99 0)
       (effects (font (size 1.524 1.524)))
     )
     (property "Value" "TESTPOINT" (at 24.765 168.275 0)
@@ -9413,7 +9059,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "TP5") (unit 1)
+          (reference "TP4") (unit 1)
         )
       )
       (project "Flute2"
@@ -9427,7 +9073,7 @@
   (symbol (lib_id "power:+PwrMCU") (at 255.27 111.76 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 77c34392-73d7-44c6-bf69-787dcd4f04d2)
-    (property "Reference" "#PWR036" (at 255.27 110.49 0)
+    (property "Reference" "#PWR029" (at 255.27 110.49 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+PwrMCU" (at 256.4384 110.49 0)
@@ -9443,7 +9089,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR036") (unit 1)
+          (reference "#PWR029") (unit 1)
         )
       )
       (project "Avada"
@@ -9533,7 +9179,7 @@
   (symbol (lib_id "power:GND") (at 66.04 127 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 7bc14beb-af34-41fb-885c-73fda01ce172)
-    (property "Reference" "#PWR049" (at 68.326 127.508 0)
+    (property "Reference" "#PWR039" (at 68.326 127.508 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 66.04 129.032 0)
@@ -9549,7 +9195,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR049") (unit 1)
+          (reference "#PWR039") (unit 1)
         )
       )
       (project "Avada"
@@ -9607,7 +9253,7 @@
   (symbol (lib_id "power:GND") (at 326.39 71.12 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 7d42b0ab-baa2-4169-b051-7d28c2596a6d)
-    (property "Reference" "#PWR017" (at 328.676 71.628 0)
+    (property "Reference" "#PWR010" (at 328.676 71.628 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 326.39 73.152 0)
@@ -9623,7 +9269,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR017") (unit 1)
+          (reference "#PWR010") (unit 1)
         )
       )
     )
@@ -9671,7 +9317,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 194.31 180.34 0) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 7fefdba1-b07a-4994-b6ad-dce368889553)
-    (property "Reference" "XL14" (at 193.04 185.42 0)
+    (property "Reference" "XL10" (at 193.04 185.42 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 194.31 175.26 0)
@@ -9689,7 +9335,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL14") (unit 1)
+          (reference "XL10") (unit 1)
         )
       )
     )
@@ -9739,7 +9385,7 @@
   (symbol (lib_id "power:GND") (at 82.55 191.77 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 817879a6-0354-44e7-81fa-b0fa98f5da36)
-    (property "Reference" "#PWR075" (at 84.836 192.278 0)
+    (property "Reference" "#PWR066" (at 84.836 192.278 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 82.55 193.802 0)
@@ -9755,7 +9401,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR075") (unit 1)
+          (reference "#PWR066") (unit 1)
         )
       )
       (project "Flute2"
@@ -9769,7 +9415,7 @@
   (symbol (lib_id "power:GND") (at 53.34 127 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 829da206-072a-4108-b582-46170baa7440)
-    (property "Reference" "#PWR046" (at 55.626 127.508 0)
+    (property "Reference" "#PWR037" (at 55.626 127.508 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 53.34 129.032 0)
@@ -9785,7 +9431,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR046") (unit 1)
+          (reference "#PWR037") (unit 1)
         )
       )
       (project "Avada"
@@ -9799,13 +9445,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 367.03 234.95 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 8398d230-fc8b-480c-9041-bb0070b925f2)
-    (property "Reference" "R24" (at 364.49 234.315 0)
+    (property "Reference" "R22" (at 364.49 234.315 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10k" (at 364.49 236.855 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 364.998 232.41 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 364.998 232.41 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 364.998 238.76 90)
@@ -9834,7 +9480,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R24") (unit 1)
+          (reference "R22") (unit 1)
         )
       )
       (project "Avada"
@@ -9848,7 +9494,7 @@
   (symbol (lib_id "power:GND") (at 243.84 198.12 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 84219f7d-2338-43aa-872e-e1c7dd52d982)
-    (property "Reference" "#PWR079" (at 244.348 195.834 0)
+    (property "Reference" "#PWR070" (at 244.348 195.834 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 245.872 198.12 0)
@@ -9864,7 +9510,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR079") (unit 1)
+          (reference "#PWR070") (unit 1)
         )
       )
     )
@@ -9873,7 +9519,7 @@
   (symbol (lib_id "power:+PwrUnst") (at 317.5 110.49 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 853d6a5c-6461-4b3f-b5c7-e0523a2d1664)
-    (property "Reference" "#PWR0111" (at 317.5 111.506 0)
+    (property "Reference" "#PWR027" (at 317.5 111.506 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+PwrUnst" (at 316.23 109.22 0)
@@ -9889,12 +9535,12 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR0111") (unit 1)
+          (reference "#PWR027") (unit 1)
         )
       )
       (project "Flute2"
         (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "#PWR023") (unit 1)
+          (reference "#PWR?") (unit 1)
         )
       )
     )
@@ -9903,7 +9549,7 @@
   (symbol (lib_id "power:GND") (at 400.05 114.3 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 867a533e-9bb4-4fa2-9a97-167198b2b7b4)
-    (property "Reference" "#PWR040" (at 402.336 114.808 0)
+    (property "Reference" "#PWR031" (at 402.336 114.808 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 400.05 116.332 0)
@@ -9919,7 +9565,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR040") (unit 1)
+          (reference "#PWR031") (unit 1)
         )
       )
     )
@@ -9928,13 +9574,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 227.33 161.29 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 886efa1f-140a-4ca9-a46f-449aad4ae8c0)
-    (property "Reference" "R13" (at 227.33 158.75 90)
+    (property "Reference" "R11" (at 227.33 158.75 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "100R" (at 227.33 161.29 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 224.79 159.258 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 224.79 159.258 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 231.14 159.258 90)
@@ -9963,7 +9609,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R13") (unit 1)
+          (reference "R11") (unit 1)
         )
       )
     )
@@ -9972,13 +9618,13 @@
   (symbol (lib_id "Tittar_kl:C") (at 22.86 270.51 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 892d4a0a-fd02-40cc-9418-75ba917c3f76)
-    (property "Reference" "C24" (at 15.24 269.24 0)
+    (property "Reference" "C23" (at 15.24 269.24 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 15.24 271.78 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 25.4 274.32 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 25.4 274.32 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 20.32 273.05 0)
@@ -10016,79 +9662,12 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C24") (unit 1)
+          (reference "C23") (unit 1)
         )
       )
       (project "Avada"
         (path "/5abad6d7-ce46-488e-93d1-8baa746e0378"
           (reference "C?") (unit 1)
-        )
-      )
-    )
-  )
-
-  (symbol (lib_id "Tittar_kl:R") (at 199.39 57.15 180) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid 8c6f6de6-3c89-43f6-ad86-13de79f6310c)
-    (property "Reference" "R2" (at 198.12 58.42 0)
-      (effects (font (size 1.27 1.27)) (justify left))
-    )
-    (property "Value" "5k1" (at 198.12 55.88 0)
-      (effects (font (size 1.27 1.27)) (justify left))
-    )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 197.358 59.69 90)
-      (effects (font (size 0.7112 0.7112)) hide)
-    )
-    (property "Datasheet" "" (at 197.358 53.34 90)
-      (effects (font (size 1.524 1.524)) hide)
-    )
-    (property "Price" "0.31" (at 194.818 55.88 90)
-      (effects (font (size 1.524 1.524)) hide)
-    )
-    (property "SolderPoints" "2" (at 192.278 58.42 90)
-      (effects (font (size 1.524 1.524)) hide)
-    )
-    (property "Description" "1% resistor" (at 199.39 57.15 0)
-      (effects (font (size 2.0066 2.0066)) hide)
-    )
-    (property "PN" "RC0402FR-075K1L" (at 199.39 57.15 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Tolerance" "1%" (at 199.39 57.15 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Type" "Resistor" (at 199.39 57.15 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "URL" "https://www.promelec.ru/product/229745/" (at 199.39 57.15 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid 7acb7ef2-6567-4290-95c1-d438f90429d8))
-    (pin "2" (uuid 5e2dde6b-b69b-49dd-889f-6012ef7e4500))
-    (instances
-      (project "IR_PCB"
-        (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R2") (unit 1)
-        )
-      )
-      (project "LipteMain"
-        (path "/49eb80ac-5687-4461-a6b8-6d93d26c2f61"
-          (reference "R?") (unit 1)
-        )
-      )
-      (project "CndMainPcb"
-        (path "/55608349-d84b-4a4e-a012-f774c7983080"
-          (reference "R?") (unit 1)
-        )
-      )
-      (project "Flute2"
-        (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "R?") (unit 1)
-        )
-      )
-      (project "Silmire"
-        (path "/e008740a-195f-4c81-a5db-9603d1217109"
-          (reference "R?") (unit 1)
         )
       )
     )
@@ -10143,7 +9722,7 @@
   (symbol (lib_id "power:+3v3") (at 63.5 264.16 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 8e43573d-bed2-4800-8fbb-0ee4e57310e3)
-    (property "Reference" "#PWR095" (at 63.5 265.176 0)
+    (property "Reference" "#PWR089" (at 63.5 265.176 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+3v3" (at 64.77 262.89 0)
@@ -10159,7 +9738,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR095") (unit 1)
+          (reference "#PWR089") (unit 1)
         )
       )
     )
@@ -10168,7 +9747,7 @@
   (symbol (lib_id "power:GND") (at 170.18 115.57 90) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 8f620113-b38e-41ab-947b-ff317deaba85)
-    (property "Reference" "#PWR041" (at 170.688 117.856 0)
+    (property "Reference" "#PWR032" (at 170.688 117.856 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 172.212 115.57 0)
@@ -10184,7 +9763,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR041") (unit 1)
+          (reference "#PWR032") (unit 1)
         )
       )
       (project "CndMainPcb"
@@ -10198,7 +9777,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_2") (at 93.98 166.37 0) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 8f684ced-12c2-49bc-82ef-ff8e535d7c60)
-    (property "Reference" "XL10" (at 92.71 162.56 0)
+    (property "Reference" "XL9" (at 92.71 162.56 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_2" (at 93.98 162.56 0)
@@ -10215,7 +9794,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL10") (unit 1)
+          (reference "XL9") (unit 1)
         )
       )
     )
@@ -10224,7 +9803,7 @@
   (symbol (lib_id "pcb_details:TESTPOINT") (at 25.4 168.91 0) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid 906e47ea-b32a-473f-a8d3-c254e36aa001)
-    (property "Reference" "TP4" (at 17.78 168.91 0)
+    (property "Reference" "TP3" (at 17.78 168.91 0)
       (effects (font (size 1.524 1.524)))
     )
     (property "Value" "TESTPOINT" (at 24.765 163.195 0)
@@ -10249,7 +9828,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "TP4") (unit 1)
+          (reference "TP3") (unit 1)
         )
       )
       (project "Flute2"
@@ -10263,7 +9842,7 @@
   (symbol (lib_id "power:GND") (at 364.49 153.67 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 90d0e30d-32bf-4a17-a28d-a8c285b8ec95)
-    (property "Reference" "#PWR054" (at 366.776 154.178 0)
+    (property "Reference" "#PWR044" (at 366.776 154.178 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 364.49 155.702 0)
@@ -10279,7 +9858,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR054") (unit 1)
+          (reference "#PWR044") (unit 1)
         )
       )
     )
@@ -10288,7 +9867,7 @@
   (symbol (lib_id "power:+PwrMCU") (at 71.12 111.76 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 913e4691-cea4-4261-bfd7-6c40870d889a)
-    (property "Reference" "#PWR035" (at 71.12 110.49 0)
+    (property "Reference" "#PWR028" (at 71.12 110.49 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+PwrMCU" (at 69.9516 110.49 0)
@@ -10304,7 +9883,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR035") (unit 1)
+          (reference "#PWR028") (unit 1)
         )
       )
       (project "Avada"
@@ -10318,7 +9897,7 @@
   (symbol (lib_id "power:+3v3") (at 121.92 187.96 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 939a653d-d24a-419b-875e-5bc10bf41f00)
-    (property "Reference" "#PWR071" (at 121.92 188.976 0)
+    (property "Reference" "#PWR062" (at 121.92 188.976 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+3v3" (at 120.65 186.69 0)
@@ -10334,7 +9913,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR071") (unit 1)
+          (reference "#PWR062") (unit 1)
         )
       )
     )
@@ -10369,7 +9948,7 @@
   (symbol (lib_id "power:GND") (at 71.12 246.38 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 968837f5-472b-4180-b166-2d31341bdd9d)
-    (property "Reference" "#PWR0109" (at 73.406 246.888 0)
+    (property "Reference" "#PWR085" (at 73.406 246.888 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 71.12 248.412 0)
@@ -10385,12 +9964,12 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR0109") (unit 1)
+          (reference "#PWR085") (unit 1)
         )
       )
       (project "Flute2"
         (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "#PWR020") (unit 1)
+          (reference "#PWR?") (unit 1)
         )
       )
     )
@@ -10399,7 +9978,7 @@
   (symbol (lib_id "power:GND") (at 243.84 234.95 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 97d93292-9976-4622-a194-1983caec4528)
-    (property "Reference" "#PWR089" (at 244.348 232.664 0)
+    (property "Reference" "#PWR080" (at 244.348 232.664 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 245.872 234.95 0)
@@ -10415,7 +9994,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR089") (unit 1)
+          (reference "#PWR080") (unit 1)
         )
       )
     )
@@ -10424,7 +10003,7 @@
   (symbol (lib_id "power:GND") (at 378.46 87.63 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 97fe5df1-0ae1-448b-a776-b0971458374b)
-    (property "Reference" "#PWR026" (at 378.968 85.344 0)
+    (property "Reference" "#PWR016" (at 378.968 85.344 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 380.492 87.63 0)
@@ -10440,7 +10019,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR026") (unit 1)
+          (reference "#PWR016") (unit 1)
         )
       )
     )
@@ -10449,13 +10028,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 326.39 64.77 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 984a71d9-8737-4e14-bce7-9e0d19553f45)
-    (property "Reference" "R4" (at 328.93 64.135 0)
+    (property "Reference" "R2" (at 328.93 64.135 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "1k" (at 328.93 66.675 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 328.422 62.23 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 328.422 62.23 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 328.422 68.58 90)
@@ -10487,7 +10066,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R4") (unit 1)
+          (reference "R2") (unit 1)
         )
       )
     )
@@ -10496,13 +10075,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 227.33 234.95 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 98c95712-5d27-4742-bd98-70c8c4191b86)
-    (property "Reference" "R23" (at 227.33 232.41 90)
+    (property "Reference" "R21" (at 227.33 232.41 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "100R" (at 227.33 234.95 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 224.79 232.918 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 224.79 232.918 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 231.14 232.918 90)
@@ -10531,7 +10110,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R23") (unit 1)
+          (reference "R21") (unit 1)
         )
       )
     )
@@ -10540,7 +10119,7 @@
   (symbol (lib_id "power:+3v3") (at 123.19 214.63 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 98ca44ae-8062-4647-9948-cbfb5d16cf13)
-    (property "Reference" "#PWR083" (at 123.19 215.646 0)
+    (property "Reference" "#PWR074" (at 123.19 215.646 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+3v3" (at 121.92 213.36 0)
@@ -10556,7 +10135,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR083") (unit 1)
+          (reference "#PWR074") (unit 1)
         )
       )
     )
@@ -10571,7 +10150,7 @@
     (property "Value" "10k" (at 300.99 48.26 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 298.45 46.228 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 298.45 46.228 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 304.8 46.228 90)
@@ -10612,7 +10191,7 @@
   (symbol (lib_id "power:GND") (at 212.09 177.8 270) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 99b4fdb8-b90c-4bc8-ab7c-91271cd1c007)
-    (property "Reference" "#PWR066" (at 211.582 175.514 0)
+    (property "Reference" "#PWR057" (at 211.582 175.514 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 210.058 177.8 0)
@@ -10628,7 +10207,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR066") (unit 1)
+          (reference "#PWR057") (unit 1)
         )
       )
       (project "Avada"
@@ -10642,13 +10221,13 @@
   (symbol (lib_id "Tittar_kl:C") (at 90.17 184.15 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 99db4601-c98c-4a75-afed-1e0ea0579fe6)
-    (property "Reference" "C23" (at 87.63 186.69 0)
+    (property "Reference" "C22" (at 87.63 186.69 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10u" (at 87.63 181.61 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0603_Fab" (at 92.71 187.96 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 92.71 187.96 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 90.17 184.15 0)
@@ -10689,7 +10268,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C23") (unit 1)
+          (reference "C22") (unit 1)
         )
       )
       (project "Avada"
@@ -10772,7 +10351,7 @@
   (symbol (lib_id "power:GND") (at 77.47 127 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid a1534975-2af1-49e1-9978-ea071f19a30f)
-    (property "Reference" "#PWR051" (at 79.756 127.508 0)
+    (property "Reference" "#PWR041" (at 79.756 127.508 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 77.47 129.032 0)
@@ -10788,7 +10367,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR051") (unit 1)
+          (reference "#PWR041") (unit 1)
         )
       )
       (project "Avada"
@@ -10802,13 +10381,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 227.33 226.06 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid a183b3d3-20b9-49f0-8612-379b34323c3d)
-    (property "Reference" "R22" (at 227.33 223.52 90)
+    (property "Reference" "R20" (at 227.33 223.52 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "100R" (at 227.33 226.06 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 224.79 224.028 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 224.79 224.028 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 231.14 224.028 90)
@@ -10837,7 +10416,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R22") (unit 1)
+          (reference "R20") (unit 1)
         )
       )
     )
@@ -10846,7 +10425,7 @@
   (symbol (lib_id "power:GND") (at 243.84 170.18 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid a2576077-d813-433e-b237-6c4da170b123)
-    (property "Reference" "#PWR063" (at 244.348 167.894 0)
+    (property "Reference" "#PWR053" (at 244.348 167.894 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 245.872 170.18 0)
@@ -10862,7 +10441,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR063") (unit 1)
+          (reference "#PWR053") (unit 1)
         )
       )
     )
@@ -10933,7 +10512,7 @@
   (symbol (lib_id "power:+3v3") (at 121.92 161.29 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid a3fc7e3e-30b8-43eb-94f9-3845182a2d3d)
-    (property "Reference" "#PWR058" (at 121.92 162.306 0)
+    (property "Reference" "#PWR048" (at 121.92 162.306 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+3v3" (at 120.65 160.02 0)
@@ -10949,7 +10528,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR058") (unit 1)
+          (reference "#PWR048") (unit 1)
         )
       )
     )
@@ -10964,7 +10543,7 @@
     (property "Value" "18pF" (at 173.99 107.95 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 179.07 111.76 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 179.07 111.76 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 177.8 106.68 0)
@@ -11019,7 +10598,7 @@
   (symbol (lib_id "Transistors_kl:P_3PIN") (at 375.92 228.6 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid a5027569-b0e7-42cd-9c1d-de5921a387d0)
-    (property "Reference" "Q9" (at 375.92 221.615 0)
+    (property "Reference" "Q10" (at 375.92 221.615 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "SI2301" (at 375.92 223.9264 0)
@@ -11049,7 +10628,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "Q9") (unit 1)
+          (reference "Q10") (unit 1)
         )
       )
       (project "Avada"
@@ -11063,7 +10642,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 373.38 90.17 0) (mirror y) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid a5c3b21f-0512-4d1e-bee5-e0ecb9386fee)
-    (property "Reference" "XL8" (at 375.92 82.55 0)
+    (property "Reference" "XL7" (at 375.92 82.55 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 373.38 85.09 0)
@@ -11081,7 +10660,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL8") (unit 1)
+          (reference "XL7") (unit 1)
         )
       )
     )
@@ -11090,7 +10669,7 @@
   (symbol (lib_id "power:GND") (at 243.84 161.29 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid a6070b5a-324f-4fd4-a6d4-5ccc2801d811)
-    (property "Reference" "#PWR059" (at 244.348 159.004 0)
+    (property "Reference" "#PWR049" (at 244.348 159.004 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 245.872 161.29 0)
@@ -11106,7 +10685,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR059") (unit 1)
+          (reference "#PWR049") (unit 1)
         )
       )
     )
@@ -11115,7 +10694,7 @@
   (symbol (lib_id "power:GND") (at 243.84 226.06 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid a91c513f-c15d-461c-a3ac-c845e2c1860d)
-    (property "Reference" "#PWR085" (at 244.348 223.774 0)
+    (property "Reference" "#PWR078" (at 244.348 223.774 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 245.872 226.06 0)
@@ -11131,7 +10710,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR085") (unit 1)
+          (reference "#PWR078") (unit 1)
         )
       )
     )
@@ -11200,7 +10779,7 @@
   (symbol (lib_id "power:GND") (at 30.48 275.59 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid adc554e7-5172-439b-bfea-c96899bdf62d)
-    (property "Reference" "#PWR099" (at 32.766 276.098 0)
+    (property "Reference" "#PWR095" (at 32.766 276.098 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 30.48 277.622 0)
@@ -11216,7 +10795,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR099") (unit 1)
+          (reference "#PWR095") (unit 1)
         )
       )
       (project "Avada"
@@ -11230,7 +10809,7 @@
   (symbol (lib_id "power:GND") (at 189.23 270.51 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid ae3bfb2b-4ea3-438f-bb3b-f5a00d1d6ea8)
-    (property "Reference" "#PWR0102" (at 189.738 268.224 0)
+    (property "Reference" "#PWR092" (at 189.738 268.224 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 191.262 270.51 0)
@@ -11246,7 +10825,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR0102") (unit 1)
+          (reference "#PWR092") (unit 1)
         )
       )
       (project "Avada"
@@ -11260,7 +10839,7 @@
   (symbol (lib_id "power:GND") (at 180.34 109.22 90) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid af40ea8c-1fac-4283-91fb-f075b066560e)
-    (property "Reference" "#PWR034" (at 180.848 111.506 0)
+    (property "Reference" "#PWR026" (at 180.848 111.506 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 182.372 109.22 0)
@@ -11276,7 +10855,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR034") (unit 1)
+          (reference "#PWR026") (unit 1)
         )
       )
       (project "CndMainPcb"
@@ -11290,13 +10869,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 227.33 189.23 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid b01d1beb-4c09-473d-9425-2a6baf27e95b)
-    (property "Reference" "R17" (at 227.33 186.69 90)
+    (property "Reference" "R15" (at 227.33 186.69 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "100R" (at 227.33 189.23 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 224.79 187.198 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 224.79 187.198 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 231.14 187.198 90)
@@ -11325,7 +10904,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R17") (unit 1)
+          (reference "R15") (unit 1)
         )
       )
     )
@@ -11364,7 +10943,7 @@
   (symbol (lib_id "power:GND") (at 292.1 283.21 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid b0fd1806-4a2f-47ff-8d4e-3c202552205a)
-    (property "Reference" "#PWR0106" (at 294.386 283.718 0)
+    (property "Reference" "#PWR098" (at 294.386 283.718 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 292.1 285.242 0)
@@ -11380,7 +10959,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR0106") (unit 1)
+          (reference "#PWR098") (unit 1)
         )
       )
       (project "Avada"
@@ -11394,7 +10973,7 @@
   (symbol (lib_id "power:GND") (at 72.39 127 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid b1adb3bd-3077-4e80-9347-b3c3abfb1b4a)
-    (property "Reference" "#PWR050" (at 74.676 127.508 0)
+    (property "Reference" "#PWR040" (at 74.676 127.508 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 72.39 129.032 0)
@@ -11410,7 +10989,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR050") (unit 1)
+          (reference "#PWR040") (unit 1)
         )
       )
       (project "Avada"
@@ -11424,7 +11003,7 @@
   (symbol (lib_id "power:+PwrUnst") (at 93.98 175.26 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid b2b849e6-3ea0-421c-8323-a81cb11c60ea)
-    (property "Reference" "#PWR088" (at 93.98 176.276 0)
+    (property "Reference" "#PWR055" (at 93.98 176.276 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+PwrUnst" (at 95.25 173.99 0)
@@ -11440,12 +11019,12 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR088") (unit 1)
+          (reference "#PWR055") (unit 1)
         )
       )
       (project "Flute2"
         (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "#PWR023") (unit 1)
+          (reference "#PWR?") (unit 1)
         )
       )
     )
@@ -11485,7 +11064,7 @@
   (symbol (lib_id "power:+PwrMCU") (at 33.02 114.3 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid b55efb7a-c5ba-40a8-ab10-9cb8e006349b)
-    (property "Reference" "#PWR037" (at 33.02 113.03 0)
+    (property "Reference" "#PWR030" (at 33.02 113.03 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+PwrMCU" (at 31.8516 113.03 0)
@@ -11501,7 +11080,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR037") (unit 1)
+          (reference "#PWR030") (unit 1)
         )
       )
       (project "Avada"
@@ -11515,13 +11094,13 @@
   (symbol (lib_id "Tittar_kl:C") (at 82.55 184.15 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid b574f135-c836-4dfa-a6b1-40ca01021a49)
-    (property "Reference" "C22" (at 80.01 186.69 0)
+    (property "Reference" "C21" (at 80.01 186.69 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "0.1u" (at 80.01 181.61 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 85.09 187.96 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 85.09 187.96 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 82.55 184.15 0)
@@ -11559,7 +11138,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C22") (unit 1)
+          (reference "C21") (unit 1)
         )
       )
       (project "Flute2"
@@ -11573,7 +11152,7 @@
   (symbol (lib_id "power:GND") (at 344.17 71.12 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid b6ae25aa-41fc-4331-b39e-63e69a95a006)
-    (property "Reference" "#PWR018" (at 346.456 71.628 0)
+    (property "Reference" "#PWR011" (at 346.456 71.628 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 344.17 73.152 0)
@@ -11589,7 +11168,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR018") (unit 1)
+          (reference "#PWR011") (unit 1)
         )
       )
     )
@@ -11598,7 +11177,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 207.01 273.05 0) (mirror y) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid b6d0b03c-3431-44ee-b1e0-ce0fd16cf686)
-    (property "Reference" "XL24" (at 208.28 278.13 0)
+    (property "Reference" "XL20" (at 208.28 278.13 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 207.01 267.97 0)
@@ -11616,7 +11195,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL24") (unit 1)
+          (reference "XL20") (unit 1)
         )
       )
     )
@@ -11625,7 +11204,7 @@
   (symbol (lib_id "power:GND") (at 375.92 153.67 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid b846e5b6-336c-43a8-a5c2-1fd9c6aec159)
-    (property "Reference" "#PWR055" (at 378.206 154.178 0)
+    (property "Reference" "#PWR045" (at 378.206 154.178 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 375.92 155.702 0)
@@ -11641,7 +11220,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR055") (unit 1)
+          (reference "#PWR045") (unit 1)
         )
       )
       (project "Avada"
@@ -11652,50 +11231,10 @@
     )
   )
 
-  (symbol (lib_id "power:+5vUSB") (at 208.28 39.37 0) (mirror y) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid b931c3a8-5c93-4efb-b6f3-1e0c3bd234ca)
-    (property "Reference" "#PWR06" (at 208.28 40.386 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Value" "+5vUSB" (at 207.01 38.1 0)
-      (effects (font (size 0.762 0.762)))
-    )
-    (property "Footprint" "" (at 208.28 39.37 0)
-      (effects (font (size 1.524 1.524)))
-    )
-    (property "Datasheet" "" (at 208.28 39.37 0)
-      (effects (font (size 1.524 1.524)))
-    )
-    (pin "1" (uuid 05449c55-8d6f-4c95-829a-e2a4b486071c))
-    (instances
-      (project "IR_PCB"
-        (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR06") (unit 1)
-        )
-      )
-      (project "LipteMain"
-        (path "/49eb80ac-5687-4461-a6b8-6d93d26c2f61"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "CndMainPcb"
-        (path "/55608349-d84b-4a4e-a012-f774c7983080"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Silmire"
-        (path "/e008740a-195f-4c81-a5db-9603d1217109"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-    )
-  )
-
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 331.47 198.12 0) (unit 1)
     (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid baa73794-1fe6-43db-80a6-1c8336574fb9)
-    (property "Reference" "XL16" (at 336.55 196.85 0)
+    (property "Reference" "XL12" (at 336.55 196.85 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 331.47 193.04 0)
@@ -11713,52 +11252,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL16") (unit 1)
-        )
-      )
-    )
-  )
-
-  (symbol (lib_id "power:GND") (at 246.38 31.75 90) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid bb58242b-02d3-40d2-838b-c3f8580c707c)
-    (property "Reference" "#PWR05" (at 246.888 29.464 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Value" "GND" (at 248.412 31.75 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Footprint" "" (at 246.38 31.75 0)
-      (effects (font (size 1.524 1.524)))
-    )
-    (property "Datasheet" "" (at 246.38 31.75 0)
-      (effects (font (size 1.524 1.524)))
-    )
-    (pin "1" (uuid 059ac4ad-c384-4cf8-989e-f6f12c8fa1df))
-    (instances
-      (project "IR_PCB"
-        (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR05") (unit 1)
-        )
-      )
-      (project "LipteMain"
-        (path "/49eb80ac-5687-4461-a6b8-6d93d26c2f61"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "CndMainPcb"
-        (path "/55608349-d84b-4a4e-a012-f774c7983080"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Flute2"
-        (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Silmire"
-        (path "/e008740a-195f-4c81-a5db-9603d1217109"
-          (reference "#PWR?") (unit 1)
+          (reference "XL12") (unit 1)
         )
       )
     )
@@ -11767,7 +11261,7 @@
   (symbol (lib_id "power:+5vUSB") (at 55.88 219.71 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid bb6b6e24-5652-457b-89e9-268973493aad)
-    (property "Reference" "#PWR0110" (at 55.88 220.726 0)
+    (property "Reference" "#PWR075" (at 55.88 220.726 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+5vUSB" (at 54.61 218.44 0)
@@ -11783,7 +11277,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR0110") (unit 1)
+          (reference "#PWR075") (unit 1)
         )
       )
       (project "LipteMain"
@@ -11813,7 +11307,7 @@
     (property "Value" "0.1u" (at 279.4 113.03 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 283.21 114.3 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 283.21 114.3 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 278.13 113.03 0)
@@ -11862,74 +11356,10 @@
     )
   )
 
-  (symbol (lib_id "Tittar_kl:R") (at 256.54 60.96 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid c136e404-e4fa-487a-b9c0-3a7cde788f41)
-    (property "Reference" "R3" (at 257.81 59.69 0)
-      (effects (font (size 1.27 1.27)) (justify left))
-    )
-    (property "Value" "5k1" (at 257.81 62.23 0)
-      (effects (font (size 1.27 1.27)) (justify left))
-    )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 258.572 58.42 90)
-      (effects (font (size 0.7112 0.7112)) hide)
-    )
-    (property "Datasheet" "" (at 258.572 64.77 90)
-      (effects (font (size 1.524 1.524)) hide)
-    )
-    (property "Price" "0.5" (at 261.112 62.23 90)
-      (effects (font (size 1.524 1.524)) hide)
-    )
-    (property "SolderPoints" "2" (at 263.652 59.69 90)
-      (effects (font (size 1.524 1.524)) hide)
-    )
-    (property "Description" "1% resistor" (at 256.54 60.96 0)
-      (effects (font (size 2.0066 2.0066)) hide)
-    )
-    (property "PN" "-" (at 256.54 60.96 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Tolerance" "1%" (at 256.54 60.96 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Type" "Resistor" (at 256.54 60.96 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid 3ba10c7c-5ab5-4222-96f6-88495a2c55e7))
-    (pin "2" (uuid ba955167-d4c6-45c1-8dc1-82460506fc27))
-    (instances
-      (project "IR_PCB"
-        (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R3") (unit 1)
-        )
-      )
-      (project "LipteMain"
-        (path "/49eb80ac-5687-4461-a6b8-6d93d26c2f61"
-          (reference "R?") (unit 1)
-        )
-      )
-      (project "CndMainPcb"
-        (path "/55608349-d84b-4a4e-a012-f774c7983080"
-          (reference "R?") (unit 1)
-        )
-      )
-      (project "Flute2"
-        (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "R?") (unit 1)
-        )
-      )
-      (project "Silmire"
-        (path "/e008740a-195f-4c81-a5db-9603d1217109"
-          (reference "R?") (unit 1)
-        )
-      )
-    )
-  )
-
   (symbol (lib_id "power:GND") (at 189.23 177.8 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid c239a514-e6bd-41f7-86c3-98c71e0e785c)
-    (property "Reference" "#PWR065" (at 189.738 175.514 0)
+    (property "Reference" "#PWR056" (at 189.738 175.514 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 191.262 177.8 0)
@@ -11945,7 +11375,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR065") (unit 1)
+          (reference "#PWR056") (unit 1)
         )
       )
       (project "Avada"
@@ -12007,10 +11437,51 @@
     )
   )
 
+  (symbol (lib_id "Connectors_kl:USB_MICRO_3H") (at 229.87 45.72 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid c5585b5a-1eee-4a7d-acfd-3b5dbf9df74d)
+    (property "Reference" "XL4" (at 224.79 34.29 0)
+      (effects (font (size 1.524 1.524)))
+    )
+    (property "Value" "DS1105-11" (at 224.79 36.83 0)
+      (effects (font (size 1.524 1.524)))
+    )
+    (property "Footprint" "Connectors:USBmicro_Connfly_DS1105-11" (at 229.87 45.72 0)
+      (effects (font (size 1.524 1.524)) hide)
+    )
+    (property "Datasheet" "" (at 229.87 45.72 0)
+      (effects (font (size 1.524 1.524)) hide)
+    )
+    (property "PN" "DS1105-11-05SS8BNRS" (at 229.87 45.72 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "URL" "https://onelec.ru/products/ds1105-11-05ss8bnrs" (at 229.87 45.72 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Price" "49" (at 229.87 45.72 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "H3" (uuid ac9e7281-8e18-421f-9112-5028b897ca03))
+    (pin "1" (uuid b928f0fe-8a9d-419c-8aed-a9cd2b37afcf))
+    (pin "2" (uuid 8f4026b8-2aa9-448b-be92-dc2b9c1a3cc2))
+    (pin "3" (uuid 840a0177-95a5-48f8-85aa-fc7d42ef873d))
+    (pin "4" (uuid 24846e37-0032-456d-a6f2-21873040e49b))
+    (pin "5" (uuid e9eee31c-1dd2-4ba9-9d37-e318955e9424))
+    (pin "H1" (uuid b7acec91-6fcf-4087-bb89-5ba3563cc6dd))
+    (pin "H2" (uuid f9127295-a4ae-4e7c-9217-9dc3e7589785))
+    (instances
+      (project "IR_PCB"
+        (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
+          (reference "XL4") (unit 1)
+        )
+      )
+    )
+  )
+
   (symbol (lib_id "power:GND") (at 284.48 96.52 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid c62c9090-bca6-4151-8050-0de593017d52)
-    (property "Reference" "#PWR024" (at 284.988 94.234 0)
+    (property "Reference" "#PWR018" (at 284.988 94.234 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "~" (at 286.512 96.52 0)
@@ -12026,7 +11497,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR024") (unit 1)
+          (reference "#PWR018") (unit 1)
         )
       )
       (project "CndMainPcb"
@@ -12045,13 +11516,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 372.11 194.31 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid c7af482f-a23b-4bbb-b5fd-21bb9c0c8c56)
-    (property "Reference" "R18" (at 369.57 194.31 90)
+    (property "Reference" "R16" (at 369.57 194.31 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "10k" (at 372.11 194.31 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 370.078 196.85 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 370.078 196.85 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 370.078 190.5 90)
@@ -12080,7 +11551,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R18") (unit 1)
+          (reference "R16") (unit 1)
         )
       )
     )
@@ -12089,7 +11560,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 194.31 208.28 0) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid c80dca62-ba71-4cd7-be4e-3c391f242870)
-    (property "Reference" "XL18" (at 193.04 213.36 0)
+    (property "Reference" "XL14" (at 193.04 213.36 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 194.31 203.2 0)
@@ -12107,7 +11578,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL18") (unit 1)
+          (reference "XL14") (unit 1)
         )
       )
     )
@@ -12116,7 +11587,7 @@
   (symbol (lib_id "power:+PwrUnst") (at 88.9 224.79 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid c84a25f7-2818-4050-8d6e-a5caf70b6892)
-    (property "Reference" "#PWR0108" (at 88.9 225.806 0)
+    (property "Reference" "#PWR077" (at 88.9 225.806 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+PwrUnst" (at 90.17 223.52 0)
@@ -12132,12 +11603,12 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR0108") (unit 1)
+          (reference "#PWR077") (unit 1)
         )
       )
       (project "Flute2"
         (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "#PWR023") (unit 1)
+          (reference "#PWR?") (unit 1)
         )
       )
     )
@@ -12146,7 +11617,7 @@
   (symbol (lib_id "power:GND") (at 41.91 54.61 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid c926f6d0-879a-451f-bd54-e24cf6a913c1)
-    (property "Reference" "#PWR012" (at 42.418 52.324 0)
+    (property "Reference" "#PWR07" (at 42.418 52.324 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 43.942 54.61 0)
@@ -12162,7 +11633,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR012") (unit 1)
+          (reference "#PWR07") (unit 1)
         )
       )
     )
@@ -12171,13 +11642,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 162.56 76.2 270) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid cb075cb0-4b61-4334-b1be-0fdff7842366)
-    (property "Reference" "R6" (at 162.56 73.66 90)
+    (property "Reference" "R4" (at 162.56 73.66 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "1k" (at 162.56 76.2 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 165.1 74.168 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 165.1 74.168 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 158.75 74.168 90)
@@ -12206,7 +11677,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R6") (unit 1)
+          (reference "R4") (unit 1)
         )
       )
       (project "Avada"
@@ -12220,7 +11691,7 @@
   (symbol (lib_id "power:+3v3") (at 123.19 241.3 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid cbac97eb-4267-4f13-a4c6-e8e4eba5b48f)
-    (property "Reference" "#PWR090" (at 123.19 242.316 0)
+    (property "Reference" "#PWR081" (at 123.19 242.316 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+3v3" (at 121.92 240.03 0)
@@ -12236,7 +11707,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR090") (unit 1)
+          (reference "#PWR081") (unit 1)
         )
       )
     )
@@ -12245,7 +11716,7 @@
   (symbol (lib_id "power:GND") (at 317.5 39.37 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid ce272c3e-3ef5-4050-91f7-cbb2e6acf67b)
-    (property "Reference" "#PWR09" (at 319.786 39.878 0)
+    (property "Reference" "#PWR05" (at 319.786 39.878 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 317.5 41.402 0)
@@ -12261,7 +11732,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR09") (unit 1)
+          (reference "#PWR05") (unit 1)
         )
       )
       (project "Avada"
@@ -12326,13 +11797,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 393.7 101.6 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid d277f609-220f-4255-a199-226dfbbfaa6f)
-    (property "Reference" "R9" (at 393.7 99.06 90)
+    (property "Reference" "R7" (at 393.7 99.06 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "100R" (at 393.7 101.6 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 391.16 99.568 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 391.16 99.568 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 397.51 99.568 90)
@@ -12361,7 +11832,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R9") (unit 1)
+          (reference "R7") (unit 1)
         )
       )
     )
@@ -12408,13 +11879,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 227.33 170.18 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid d69f6c38-ceba-44e8-8c08-587cd3b1dab3)
-    (property "Reference" "R15" (at 227.33 167.64 90)
+    (property "Reference" "R13" (at 227.33 167.64 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "100R" (at 227.33 170.18 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 224.79 168.148 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 224.79 168.148 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 231.14 168.148 90)
@@ -12443,7 +11914,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R15") (unit 1)
+          (reference "R13") (unit 1)
         )
       )
     )
@@ -12452,13 +11923,13 @@
   (symbol (lib_id "Tittar_kl:C") (at 60.96 270.51 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid d7410f2d-f3a7-4db2-a47d-2778572f5c30)
-    (property "Reference" "C26" (at 58.42 273.05 0)
+    (property "Reference" "C25" (at 58.42 273.05 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10u" (at 58.42 267.97 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0603_Fab" (at 63.5 274.32 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 63.5 274.32 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 60.96 270.51 0)
@@ -12499,7 +11970,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C26") (unit 1)
+          (reference "C25") (unit 1)
         )
       )
       (project "Avada"
@@ -12519,7 +11990,7 @@
     (property "Value" "0.1u" (at 309.88 35.56 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 320.04 38.1 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 320.04 38.1 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 314.96 36.83 0)
@@ -12612,13 +12083,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 391.16 170.18 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid d84daf9b-72b5-469a-ad14-7c0e2e12e64e)
-    (property "Reference" "R16" (at 391.16 167.64 90)
+    (property "Reference" "R14" (at 391.16 167.64 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "51R" (at 391.16 170.18 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 388.62 168.148 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 388.62 168.148 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 394.97 168.148 90)
@@ -12647,7 +12118,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R16") (unit 1)
+          (reference "R14") (unit 1)
         )
       )
     )
@@ -12656,7 +12127,7 @@
   (symbol (lib_id "power:GND") (at 22.86 275.59 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid e38aca80-c514-4d67-9292-3f3c33a94dda)
-    (property "Reference" "#PWR098" (at 25.146 276.098 0)
+    (property "Reference" "#PWR094" (at 25.146 276.098 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 22.86 277.622 0)
@@ -12672,7 +12143,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR098") (unit 1)
+          (reference "#PWR094") (unit 1)
         )
       )
       (project "Avada"
@@ -12686,7 +12157,7 @@
   (symbol (lib_id "power:+3v3") (at 321.31 198.12 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid e4667ab1-f645-4e5b-a8f3-9cf372bc0070)
-    (property "Reference" "#PWR072" (at 321.31 199.136 0)
+    (property "Reference" "#PWR071" (at 321.31 199.136 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+3v3" (at 320.04 196.85 0)
@@ -12702,7 +12173,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR072") (unit 1)
+          (reference "#PWR071") (unit 1)
         )
       )
     )
@@ -12711,7 +12182,7 @@
   (symbol (lib_id "pcb_details:TESTPOINT") (at 25.4 166.37 0) (unit 1)
     (in_bom no) (on_board yes) (dnp no)
     (uuid e645e829-37c7-4af6-a947-2a5ce30652a0)
-    (property "Reference" "TP3" (at 17.78 166.37 0)
+    (property "Reference" "TP2" (at 17.78 166.37 0)
       (effects (font (size 1.524 1.524)))
     )
     (property "Value" "TESTPOINT" (at 24.765 160.655 0)
@@ -12736,7 +12207,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "TP3") (unit 1)
+          (reference "TP2") (unit 1)
         )
       )
       (project "Flute2"
@@ -12788,7 +12259,7 @@
   (symbol (lib_id "power:+3v3") (at 80.01 264.16 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid e79dc211-fa84-40b9-86ac-0e5d3dd26988)
-    (property "Reference" "#PWR0104" (at 80.01 265.176 0)
+    (property "Reference" "#PWR090" (at 80.01 265.176 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+3v3" (at 78.74 262.89 0)
@@ -12804,7 +12275,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR0104") (unit 1)
+          (reference "#PWR090") (unit 1)
         )
       )
     )
@@ -12813,7 +12284,7 @@
   (symbol (lib_id "power:GND") (at 280.67 115.57 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid e8ab6fc6-e239-4546-9ed2-c8afe7a80d52)
-    (property "Reference" "#PWR042" (at 282.956 116.078 0)
+    (property "Reference" "#PWR033" (at 282.956 116.078 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 280.67 117.602 0)
@@ -12829,7 +12300,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR042") (unit 1)
+          (reference "#PWR033") (unit 1)
         )
       )
       (project "CndMainPcb"
@@ -12843,7 +12314,7 @@
   (symbol (lib_id "power:GND") (at 304.8 39.37 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid eab84610-b6b6-42c2-882e-511d0f88a296)
-    (property "Reference" "#PWR08" (at 307.086 39.878 0)
+    (property "Reference" "#PWR04" (at 307.086 39.878 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 304.8 41.402 0)
@@ -12859,7 +12330,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR08") (unit 1)
+          (reference "#PWR04") (unit 1)
         )
       )
     )
@@ -12868,7 +12339,7 @@
   (symbol (lib_id "Tittar_kl:C") (at 383.54 176.53 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid eb09ca7f-a094-4aab-8460-db9b15bafddb)
-    (property "Reference" "C21" (at 381 179.07 0)
+    (property "Reference" "C20" (at 381 179.07 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "47u" (at 381 173.99 0)
@@ -12915,7 +12386,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C21") (unit 1)
+          (reference "C20") (unit 1)
         )
       )
       (project "Avada"
@@ -12960,7 +12431,7 @@
   (symbol (lib_id "power:+3v3") (at 382.27 187.96 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid ed0586e0-28a1-49c9-92a6-0f1fd748d4b4)
-    (property "Reference" "#PWR080" (at 382.27 188.976 0)
+    (property "Reference" "#PWR063" (at 382.27 188.976 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+3v3" (at 383.54 186.69 0)
@@ -12976,52 +12447,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR080") (unit 1)
-        )
-      )
-    )
-  )
-
-  (symbol (lib_id "power:GND") (at 210.82 31.75 90) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid ed0bb96d-0c7e-4501-a76c-a2f63349f39a)
-    (property "Reference" "#PWR04" (at 211.328 29.464 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Value" "GND" (at 212.852 31.75 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Footprint" "" (at 210.82 31.75 0)
-      (effects (font (size 1.524 1.524)))
-    )
-    (property "Datasheet" "" (at 210.82 31.75 0)
-      (effects (font (size 1.524 1.524)))
-    )
-    (pin "1" (uuid f07b2ff6-fc7b-481f-8b99-9ad3cc409b21))
-    (instances
-      (project "IR_PCB"
-        (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR04") (unit 1)
-        )
-      )
-      (project "LipteMain"
-        (path "/49eb80ac-5687-4461-a6b8-6d93d26c2f61"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "CndMainPcb"
-        (path "/55608349-d84b-4a4e-a012-f774c7983080"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Flute2"
-        (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Silmire"
-        (path "/e008740a-195f-4c81-a5db-9603d1217109"
-          (reference "#PWR?") (unit 1)
+          (reference "#PWR063") (unit 1)
         )
       )
     )
@@ -13105,7 +12531,7 @@
   (symbol (lib_id "power:GND") (at 189.23 242.57 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid eee1e56c-e21b-47da-8d2e-2f27d5602dc5)
-    (property "Reference" "#PWR091" (at 189.738 240.284 0)
+    (property "Reference" "#PWR082" (at 189.738 240.284 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 191.262 242.57 0)
@@ -13121,7 +12547,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR091") (unit 1)
+          (reference "#PWR082") (unit 1)
         )
       )
       (project "Avada"
@@ -13211,7 +12637,7 @@
   (symbol (lib_id "power:+3v3") (at 349.25 157.48 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid f2704cba-4473-4315-b189-812d0796dc1c)
-    (property "Reference" "#PWR057" (at 349.25 158.496 0)
+    (property "Reference" "#PWR047" (at 349.25 158.496 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+3v3" (at 350.52 156.21 0)
@@ -13227,7 +12653,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR057") (unit 1)
+          (reference "#PWR047") (unit 1)
         )
       )
     )
@@ -13236,7 +12662,7 @@
   (symbol (lib_id "power:GND") (at 326.39 195.58 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid f2f565a1-ddf2-4808-9ddf-f31c0e47547b)
-    (property "Reference" "#PWR077" (at 326.898 193.294 0)
+    (property "Reference" "#PWR068" (at 326.898 193.294 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 328.422 195.58 0)
@@ -13252,7 +12678,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR077") (unit 1)
+          (reference "#PWR068") (unit 1)
         )
       )
       (project "Avada"
@@ -13266,13 +12692,13 @@
   (symbol (lib_id "Tittar_kl:C") (at 175.26 121.92 90) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid f31f9e0c-c27d-4757-8892-cf3523331b0f)
-    (property "Reference" "C11" (at 180.34 120.65 90)
+    (property "Reference" "C14" (at 180.34 120.65 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "18pF" (at 173.99 120.65 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0402_Fab" (at 179.07 124.46 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 179.07 124.46 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 177.8 119.38 0)
@@ -13313,7 +12739,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C11") (unit 1)
+          (reference "C14") (unit 1)
         )
       )
       (project "CndMainPcb"
@@ -13327,13 +12753,13 @@
   (symbol (lib_id "Tittar_kl:R") (at 342.9 157.48 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid f46739d7-e617-44b7-a4c4-3a3f87447976)
-    (property "Reference" "R12" (at 342.9 154.94 90)
+    (property "Reference" "R10" (at 342.9 154.94 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "51R" (at 342.9 157.48 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 340.36 155.448 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 340.36 155.448 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 346.71 155.448 90)
@@ -13362,7 +12788,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R12") (unit 1)
+          (reference "R10") (unit 1)
         )
       )
     )
@@ -13377,7 +12803,7 @@
     (property "Value" "10u" (at 50.8 119.38 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitors:CAP_0603_Fab" (at 55.88 125.73 90)
+    (property "Footprint" "Capacitors:CAP_0603_Silks" (at 55.88 125.73 90)
       (effects (font (size 0.7112 0.7112)) (justify bottom) hide)
     )
     (property "Datasheet" "" (at 53.34 121.92 0)
@@ -13429,61 +12855,16 @@
     )
   )
 
-  (symbol (lib_id "power:GND") (at 256.54 67.31 0) (mirror y) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid f57bfb20-13bb-44cf-8974-1915001facfc)
-    (property "Reference" "#PWR016" (at 254.254 67.818 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Value" "GND" (at 256.54 69.342 0)
-      (effects (font (size 0.762 0.762)) hide)
-    )
-    (property "Footprint" "" (at 256.54 67.31 0)
-      (effects (font (size 1.524 1.524)) hide)
-    )
-    (property "Datasheet" "" (at 256.54 67.31 0)
-      (effects (font (size 1.524 1.524)) hide)
-    )
-    (pin "1" (uuid 90d8df0d-a413-4d0f-bf80-5e96328f7416))
-    (instances
-      (project "IR_PCB"
-        (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR016") (unit 1)
-        )
-      )
-      (project "LipteMain"
-        (path "/49eb80ac-5687-4461-a6b8-6d93d26c2f61"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "CndMainPcb"
-        (path "/55608349-d84b-4a4e-a012-f774c7983080"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Flute2"
-        (path "/dc417cb5-0bd5-46ec-99ee-b6d919e132aa"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-      (project "Silmire"
-        (path "/e008740a-195f-4c81-a5db-9603d1217109"
-          (reference "#PWR?") (unit 1)
-        )
-      )
-    )
-  )
-
   (symbol (lib_id "Tittar_kl:R") (at 227.33 77.47 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid f5d6152e-c613-4139-b2aa-6892d6ac5731)
-    (property "Reference" "R7" (at 228.6 74.93 90)
+    (property "Reference" "R5" (at 228.6 74.93 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "2R0" (at 228.6 80.01 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Resistors:RES_0402_Fab" (at 224.79 75.438 90)
+    (property "Footprint" "Resistors:RES_0603_Silks" (at 224.79 75.438 90)
       (effects (font (size 0.7112 0.7112)) hide)
     )
     (property "Datasheet" "" (at 231.14 75.438 90)
@@ -13515,7 +12896,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "R7") (unit 1)
+          (reference "R5") (unit 1)
         )
       )
       (project "LipteMain"
@@ -13574,7 +12955,7 @@
   (symbol (lib_id "power:GND") (at 335.28 168.91 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid f7217b34-534d-4350-bb0c-750fdc2ef6e3)
-    (property "Reference" "#PWR062" (at 337.566 169.418 0)
+    (property "Reference" "#PWR052" (at 337.566 169.418 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "GND" (at 335.28 170.942 0)
@@ -13590,7 +12971,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR062") (unit 1)
+          (reference "#PWR052") (unit 1)
         )
       )
       (project "Avada"
@@ -13604,7 +12985,7 @@
   (symbol (lib_id "power:GND") (at 309.88 104.14 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid f843b65e-fd5b-4f1d-9b62-0fa36fdeda32)
-    (property "Reference" "#PWR030" (at 310.388 101.854 0)
+    (property "Reference" "#PWR022" (at 310.388 101.854 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "~" (at 311.912 104.14 0)
@@ -13620,7 +13001,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR030") (unit 1)
+          (reference "#PWR022") (unit 1)
         )
       )
       (project "CndMainPcb"
@@ -13639,7 +13020,7 @@
   (symbol (lib_id "power:+PwrMCU") (at 97.79 264.16 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid f8a8dde7-b5f8-4c25-b5d4-46cbb00f5774)
-    (property "Reference" "#PWR0105" (at 97.79 262.89 0)
+    (property "Reference" "#PWR091" (at 97.79 262.89 0)
       (effects (font (size 0.762 0.762)) hide)
     )
     (property "Value" "+PwrMCU" (at 98.9584 262.89 0)
@@ -13655,7 +13036,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "#PWR0105") (unit 1)
+          (reference "#PWR091") (unit 1)
         )
       )
       (project "Avada"
@@ -13738,7 +13119,7 @@
   (symbol (lib_id "Tittar_kl:C") (at 383.54 148.59 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid fb7c1db4-6b01-4ee0-a62f-334635a7b820)
-    (property "Reference" "C17" (at 381 151.13 0)
+    (property "Reference" "C16" (at 381 151.13 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "47u" (at 381 146.05 0)
@@ -13785,7 +13166,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "C17") (unit 1)
+          (reference "C16") (unit 1)
         )
       )
       (project "Avada"
@@ -13799,7 +13180,7 @@
   (symbol (lib_id "Connectors_kl:SOCKET_3") (at 356.87 198.12 0) (mirror y) (unit 1)
     (in_bom no) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid fcf904ae-848a-48f7-9a69-f347473881d0)
-    (property "Reference" "XL17" (at 351.79 196.85 0)
+    (property "Reference" "XL13" (at 351.79 196.85 0)
       (effects (font (size 1.016 1.016)) (justify left))
     )
     (property "Value" "SOCKET_3" (at 356.87 193.04 0)
@@ -13817,7 +13198,7 @@
     (instances
       (project "IR_PCB"
         (path "/26b21aaa-6dc4-45a1-9290-a267c2da2d18"
-          (reference "XL17") (unit 1)
+          (reference "XL13") (unit 1)
         )
       )
     )
