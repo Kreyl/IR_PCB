@@ -1582,7 +1582,7 @@
 
   (footprint "Capacitors:CAP_0603_Silks" (layer "F.Cu")
     (tstamp 5e82980e-5350-4844-86ed-f66522baf044)
-    (at 136.4 109.6 -90)
+    (at 136.4 109.8 -90)
     (property "Description" "X5R or X7R capacitor, 6.3V or higher")
     (property "Dielectric" "X5R or X7R")
     (property "Manufacturer" "-")
@@ -4131,7 +4131,7 @@
 
   (footprint "Resistors:RES_0603_Silks" (layer "F.Cu")
     (tstamp ef347f7e-37e2-47f3-966b-6e659d4c6574)
-    (at 136.4 112.7 90)
+    (at 136.4 112.9 90)
     (property "Description" "1% resistor")
     (property "PN" "-")
     (property "Price" "0.5")

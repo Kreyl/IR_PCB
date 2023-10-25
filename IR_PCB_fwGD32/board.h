@@ -1,0 +1,156 @@
+/*
+ * board.h
+ *
+ *  Created on: 28.08.2023
+ *      Author: Kreyl
+ */
+
+#ifndef BOARD_H__
+#define BOARD_H__
+
+// ==== General ====
+#define BOARD_NAME          "IR_PCBv3"
+#define APP_NAME            "IR_PCB"
+
+#ifndef TRUE
+#define TRUE    1
+#endif
+#ifndef FALSE
+#define FALSE   0
+#endif
+
+// Freq of external crystal if any. Leave it here even if not used.
+#define CRYSTAL_FREQ_HZ             12000000UL
+
+#if 1 // ==== MCU info ====
+// Configuration of the Cortex-M4 processor and core peripherals
+#define __CM4_REV                   0x0001   // Core revision r0p1
+#define __MPU_PRESENT               0        // GD32E11x do not provide MPU
+#define CORTEX_SIMPLIFIED_PRIORITY  FALSE
+#define CORTEX_PRIORITY_BITS        4        // GD32E11x uses 4 bits for the priority levels
+#define __FPU_PRESENT               1        // FPU present
+
+#define CORTEX_USE_FPU              __FPU_PRESENT
+#define CORTEX_MODEL                4
+#endif
+
+#if 1 // ==== OS timer settings ====
+#define SYS_TIM                     TIM11 // XXX
+#define SYS_TIM_IRQn                TIMER7_BRK_TIMER11_IRQn
+#define SYS_TIM_IRQ_HANDLER         TIMER7_BRK_TIMER11_IRQHandler
+#define SYS_TIM_IRQ_PRIORITY        2
+#endif
+
+#if 1 // ========================== GPIO =======================================
+// EXTI
+#define INDIVIDUAL_EXTI_IRQ_REQUIRED    FALSE
+
+// User GPIOs
+#define Gpio1           PB2
+#define Gpio2           PB10
+#define Gpio3           PB11
+#define Gpio4           PA8
+
+// UART
+#define UART_TX_PIN     PA2
+#define UART_RX_PIN     PA3
+
+// Green LED
+#define LUMOS_PIN       { PA10, TIM0, 2, invNotInverted, Gpio::PushPull, 255 }
+
+// Front LEDs
+#define LED_FRONT1      { PB8, TIM3, 2, invNotInverted, Gpio::PushPull, 255 }
+#define LED_FRONT2      { PB9, TIM3, 3, invNotInverted, Gpio::PushPull, 255 }
+#define FRONT_LEDS_CNT  2
+
+// Side LEDs
+#define LED_PWM1        { PA6, TIM2, 0, invInverted, Gpio::PushPull, 255 }
+#define LED_PWM2        { PA7, TIM2, 1, invInverted, Gpio::PushPull, 255 }
+#define LED_PWM3        { PB0, TIM2, 2, invInverted, Gpio::PushPull, 255 }
+#define LED_PWM4        { PB1, TIM2, 3, invInverted, Gpio::PushPull, 255 }
+#define SIDE_LEDS_CNT   4
+
+// Beeper
+#define BEEPER_TOP      22 // 22 < 255: needed to increase frequency
+#define BEEPER_PIN      { PB14, TIM11, 0, invInverted, Gpio::PushPull, BEEPER_TOP }
+
+// IR LED
+#define IR_LED          PA4 // DAC
+#define IR_CARRIER_HZ   38000UL
+#define IR_BIT_CNT_MAX  16L     // Just for buffer reservation
+
+// IR Rcvr
+#define IR_RX_DATA_PIN  PA3
+
+#endif // GPIO
+
+#if 1 // ========================= Timer =======================================
+// IR LED
+//#define TMR_DAC_SMPL    TIM7
+//// IR Receiver
+//#define TMR_IR_RX       TIM15
+//#define TMR_IR_RX_IRQ   TIM15_IRQn
+//#define TMR_IR_RX_IRQ_HNDLR   Vector90
+#endif // Timer
+
+#if 1 // ==== USB ====
+#define USB_SOF_CB_EN       FALSE // SOF callback not used
+#define USB_IRQ_PRIO        14
+#define USB_TXBUF_CNT       4   // 4 buffers of size=EP_BULK_SZ each
+// Crystalless mode: IRC48M utilized, it syncs using SOF pulses at PA8. Therefore, PA8 is occupied.
+#define USB_CRYSTALLESS_EN  TRUE
+// Next options: set to 1U if enabled, 0U if disabled. Required for Setup Request reply.
+#define USB_REMOTE_WKUP_EN  0U
+#define USB_SELF_POWERED    0U  // if not self powered, then it is bus powered
+// Hardware depended, do not touch
+#define USB_SET_ADDRESS_ACK_BY_HW   FALSE
+#define USB_SEQUENCE_WORKAROUND     TRUE    // XXX CheckMe
+#define USB_SET_ADDR_AFTER_ZEROPKT  FALSE
+#define USB_NUM_EP_MAX              3U // Excluding Ep0
+#define USB_IRQ_HANDLER             USBFS_IRQHandler // 0x14C
+#define USB_IRQ_NUMBER              USBFS_IRQn // 67
+
+#endif
+
+#if 1 // =========================== I2C =======================================
+#define I2C0_ENABLED    FALSE
+#define I2C1_ENABLED    FALSE
+
+#define I2C_BAUDRATE_HZ 400000UL
+#define I2C_DUTYCYC     I2C_DUTYCYCLE_2
+#endif
+
+#if 1 // ======================== Inner ADC ====================================
+#define ADC_REQUIRED    FALSE
+
+#endif
+
+#if 1 // =========================== DMA =======================================
+// ==== Uart ====
+// Remap is made automatically if required
+#define UART_DMA_TX         DMA0_Channel6
+#define DMA0_CH6_IRQ_EN     TRUE
+#define UART_DMA_RX         DMA0_Channel5
+#define DMA0_CH5_IRQ_EN     FALSE // No need in RX DMA IRQ
+#define UART_DMA_TX_MODE    (DMA_PRIORITY_LOW    | DMA_MSIZE_8_BIT | DMA_PSIZE_8_BIT | DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE)
+#define UART_DMA_RX_MODE    (DMA_PRIORITY_MEDIUM | DMA_MSIZE_8_BIT | DMA_PSIZE_8_BIT | DMA_MEM_INC | DMA_DIR_PER2MEM | DMA_CIRC)
+
+
+#endif // DMA
+
+#if 1 // ========================== USART ======================================
+//#define PRINTF_FLOAT_EN TRUE
+#define UART_TXBUF_SZ   8192
+#define UART_RXBUF_SZ   128
+#define CMD_BUF_SZ      128
+#define UART_RX_POLL_MS 99
+
+#define CMD_UART        USART1
+
+#define CMD_UART_PARAMS \
+    CMD_UART, UART_TX_PIN, UART_RX_PIN, \
+    UART_DMA_TX, UART_DMA_RX, UART_DMA_TX_MODE, UART_DMA_RX_MODE
+
+#endif
+
+#endif //BOARD_H__
