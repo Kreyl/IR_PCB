@@ -502,6 +502,55 @@ struct TIM_TypeDef {
 #define TIM_CNT    14 // [TIM0; TIM13]
 #endif // timer
 
+#if 1 // ============================= SPI =====================================
+#define SPI_CTL0_SPIEN      (1UL << 6)
+
+#define SPI_CTL1_DMAREN     (1UL << 0)
+#define SPI_CTL1_DMATEN     (1UL << 1)
+#define SPI_CTL1_NSSDRV     (1UL << 2)
+#define SPI_CTL1_NSSP       (1UL << 3)
+#define SPI_CTL1_ERRIE      (1UL << 5)
+#define SPI_CTL1_RBNEIE     (1UL << 6)
+#define SPI_CTL1_TBEIE      (1UL << 7)
+
+
+struct SPI_TypeDef {
+    volatile uint32_t CTL0;    /*!< Control register 0,      Address offset: 0x00 */
+    volatile uint32_t CTL1;    /*!< Control register 1,      Address offset: 0x04 */
+    volatile uint32_t STAT;    /*!< Status register,         Address offset: 0x08 */
+    volatile uint32_t DATA;    /*!< Data register,           Address offset: 0x0C */
+    volatile uint32_t CRCPOLY; /*!< CRC polynomial register, Address offset: 0x10 */
+    volatile uint32_t RCRC;    /*!< RX CRC register,         Address offset: 0x14 */
+    volatile uint32_t TCRC;    /*!< TX CRC register,         Address offset: 0x18 */
+    volatile uint32_t I2SCTL;  /*!< I2S control register,    Address offset: 0x1C */
+    volatile uint32_t I2SPSC;  /*!< I2S control register,    Address offset: 0x20 */
+    volatile uint32_t resvd[23];
+    volatile uint32_t QCTL;    /*!< Quad-SPI mode control register, Address offset: 0x80 */
+
+    void Enable()  { CTL0 |=  SPI_CTL0_SPIEN; }
+    void Disable() { CTL0 &= ~SPI_CTL0_SPIEN; }
+
+    // DMA
+    void EnTxDma()  { CTL1 |=  SPI_CTL1_DMATEN; }
+    void DisTxDma() { CTL1 &= ~SPI_CTL1_DMATEN; }
+    void EnRxDma()  { CTL1 |=  SPI_CTL1_DMAREN; }
+    void DisRxDma() { CTL1 &= ~SPI_CTL1_DMAREN; }
+
+    // IRQ
+    void EnRxBufNotEmptyIrq()  { CTL1 |=  SPI_CTL1_RBNEIE; }
+    void DisRxBufNotEmptyIrq() { CTL1 &= ~SPI_CTL1_RBNEIE; }
+
+    // Rx/Tx
+    void SetRxOnly()     { PSpi->CR1 |=  SPI_CR1_RXONLY; }
+    void SetFullDuplex() { PSpi->CR1 &= ~SPI_CR1_RXONLY; }
+
+};
+
+#define SPI0    ((SPI_TypeDef*)SPI0_BASE)
+#define SPI1    ((SPI_TypeDef*)SPI1_BASE)
+#define SPI2    ((SPI_TypeDef*)SPI2_BASE)
+#endif
+
 #if 1 // =========================== Debug MCU =================================
 struct DBGMCU_TypeDef {
     volatile uint32_t ID;  /*!< 0x00 MCU device ID code */
@@ -705,6 +754,12 @@ struct RCU_TypeDef {
         else if(PTimer == TIM11) APB1EN |= 1UL <<  6;
         else if(PTimer == TIM12) APB1EN |= 1UL <<  7;
         else if(PTimer == TIM13) APB1EN |= 1UL <<  8;
+    }
+
+    void EnSpi(const SPI_TypeDef *PSpi) {
+        if     (PSpi == SPI0) APB2EN |= 1UL << 12;
+        else if(PSpi == SPI1) APB1EN |= 1UL << 14;
+        else if(PSpi == SPI2) APB1EN |= 1UL << 15;
     }
 #endif
 
@@ -1195,7 +1250,6 @@ struct USB_Typedef {
 #define I2C_STAT1_MASTER    (1UL << 0)
 #define I2C_STAT1_I2CBSY    (1UL << 1)
 
-
 struct I2C_TypeDef {
     volatile uint32_t CTL0;   /*!< I2C Control register 1,   Address offset: 0x00 */
     volatile uint32_t CTL1;   /*!< I2C Control register 2,   Address offset: 0x04 */
@@ -1258,7 +1312,6 @@ struct I2C_TypeDef {
     void EnAck()         { CTL0 |= I2C_CTL0_ACKEN; }
     void DisAck()        { CTL0 &= ~I2C_CTL0_ACKEN; }
     void FlushDatabuf()  { while(IsRxNotEmpty()) (void)DATA; } // Read DR until it empty
-
 };
 
 #define I2C0    ((I2C_TypeDef*)I2C0_BASE)

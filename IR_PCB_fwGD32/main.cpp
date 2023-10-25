@@ -56,9 +56,7 @@ void main(void) {
     // Disable JTAG, leaving SWD. Otherwise PB3 & PB4 are occupied by JTDO & JTRST
     AFIO->DisableJtagDP();
 
-    // USART1
     Uart.Init();
-
     // RTOS & Event queue
     Sys::Init();
     EvtQMain.Init();
@@ -68,22 +66,11 @@ void main(void) {
 //    if(!XtalIsOk) Printf("XTAL Fail\r");
     TmrUartCheck.StartOrRestart();
 
-    // Enable 5V
-//    Gpio::SetupOut(PIN_5V_PWR_EN, Gpio::PushPull);
-//    Gpio::SetHi(PIN_5V_PWR_EN);
 
-    // LED
-//    AFIO->RemapTim2_PB4501();
-//    LedR.Init();
-//    LedG.Init();
-//    LedB.Init();
 
     // DEBUG
 //    Gpio::SetupOut(PB0, Gpio::PushPull);
 
-    // I2C0
-//    AFIO->RemapI2C0_PB89();
-//    i2c0.Init();
 
     // Main evt cycle
     while(true) {

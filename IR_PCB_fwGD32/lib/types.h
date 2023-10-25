@@ -72,5 +72,6 @@ typedef void (*ftVoidPVoid)(void*p);
 typedef void (*ftVoidPVoidW32)(void*p, uint32_t W32);
 
 enum Inverted_t {invNotInverted, invInverted};
+enum class BitOrder {MSB, LSB};
 
 #endif /* LIB_TYPES_H_ */
