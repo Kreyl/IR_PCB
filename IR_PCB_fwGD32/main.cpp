@@ -5,6 +5,8 @@
 #include "usb_cdc.h"
 #include "usb.h"
 #include "SpiFlash.h"
+#include "led.h"
+#include "Sequences.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Debug pin
@@ -18,6 +20,11 @@ EvtMsgQ_t<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
 static const UartParams_t CmdUartParams(115200, CMD_UART_PARAMS);
 CmdUart_t Uart{CmdUartParams};
 void OnCmd(Shell_t *PShell);
+
+LedSmooth_t Lumos{LUMOS_PIN};
+LedSmooth_t SideLEDs[SIDE_LEDS_CNT] = { {LED_PWM1}, {LED_PWM2}, {LED_PWM3}, {LED_PWM4} };
+LedSmooth_t FrontLEDs[FRONT_LEDS_CNT] = { {LED_FRONT1}, {LED_FRONT2} };
+
 
 SpiFlash_t SpiFlash(SPI0);
 
@@ -65,6 +72,18 @@ void main(void) {
     EvtQMain.Init();
     Printf("\r%S %S\r\n", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk::PrintFreqs();
+
+    // LEDs
+    for(auto &Led : SideLEDs) {
+        Led.Init();
+        Led.StartOrRestart(lsqFadeInOut);
+        Sys::SleepMilliseconds(207);
+    }
+    for(auto &Led : FrontLEDs) {
+        Led.Init();
+        Led.StartOrRestart(lsqFadeInOut);
+        Sys::SleepMilliseconds(207);
+    }
 
     AFIO->RemapSPI0_PB345();
     SpiFlash.Init();

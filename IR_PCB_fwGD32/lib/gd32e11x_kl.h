@@ -481,6 +481,7 @@ struct TIM_TypeDef {
     void SetTopValue(uint32_t Value) { CAR = Value; }
     void SetChnlValue(const uint32_t Chnl, uint32_t Value) { *(uint32_t*)(&CH0CV + Chnl) = Value; }
     void Enable() { CTL0 |= TIM_CTL0_CEN; }
+    void GenerateUpdateEvt() { SWEVG = (1UL << 0); }
 };
 
 // Timers

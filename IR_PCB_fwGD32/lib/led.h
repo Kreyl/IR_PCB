@@ -2,7 +2,7 @@
 #define LED_H_
 
 #include "color.h"
-#include "ChunkTypes.h"
+#include "BaseSequencer.h"
 #include "gd_lib.h"
 
 #if 0 // ==================== LED on/off, no sequences =========================
@@ -33,7 +33,7 @@ public:
 };
 #endif
 
-#if 0 // ======================== Single Led Smooth ============================
+#if 1 // ======================== Single Led Smooth ============================
 class LedSmooth_t : public BaseSequencer_t<LedSmoothChunk_t> {
 protected:
     const PinOutputPWM_t IChnl;

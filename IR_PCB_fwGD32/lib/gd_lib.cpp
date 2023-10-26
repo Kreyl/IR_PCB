@@ -9,6 +9,13 @@
 #include "core_cm4.h"
 #include "shell.h"
 
+// Universal callback to run IrqHandler by timer
+void VTmrUniversalCb(void *p) {
+    Sys::LockFromIRQ();
+    ((IrqHandler_t*)p)->IIrqHandlerI();
+    Sys::UnlockFromIRQ();
+}
+
 namespace Random { // ======================== Random ==========================
 static uint32_t next = 1;
 

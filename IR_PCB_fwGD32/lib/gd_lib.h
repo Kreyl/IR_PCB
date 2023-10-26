@@ -25,7 +25,7 @@
 // Virtual class for IRQ handlers and timer callbacks
 class IrqHandler_t {
 public:
-    virtual void IIrqHandler() = 0;
+    virtual void IIrqHandlerI() = 0;
 };
 
 // ==== Math ====
@@ -153,26 +153,6 @@ struct PwmSetup_t {
             uint32_t ATopValue) : PGpio(APGpio), Pin(APin), PTimer(APTimer),
                     TimerChnl(ATimerChnl), Inverted(AInverted), OutputType(AOutputType),
                     TopValue(ATopValue) {}
-};
-
-class PinOutputPWM_t {
-private:
-    const PwmSetup_t ISetup;
-public:
-    void Set(uint32_t AValue) const { ISetup.PTimer->SetChnlValue(ISetup.TimerChnl, AValue); }
-//    uint32_t Get() const { return *TMR_PCCR(ITmr, ISetup.TimerChnl); }
-    void Init() const;
-//    void Deinit() const { Timer_t::Deinit(); PinSetupAnalog(ISetup.PGpio, ISetup.Pin); }
-//    void SetFrequencyHz(uint32_t FreqHz) const { Timer_t::SetUpdateFrequencyChangingPrescaler(FreqHz); }
-    void SetTopValue(uint32_t Value) const { ISetup.PTimer->SetTopValue(Value); }
-//    void SetTmrClkFreq(uint32_t FreqHz) const { Timer_t::SetTmrClkFreq(FreqHz); }
-//    void SetPrescaler(uint32_t PrescalerValue) const { Timer_t::SetPrescaler(PrescalerValue); }
-    PinOutputPWM_t(const PwmSetup_t &ASetup) : ISetup(ASetup) {}
-//    PinOutputPWM_t(GPIO_TypeDef *PGpio, uint16_t Pin,
-//            TIM_TypeDef *PTimer, uint32_t TimerChnl,
-//            Inverted_t Inverted, Gpio::OutMode_t OutputType, uint32_t TopValue) :
-//                PGpio(PGpio), Pin(Pin), ITmr(PTimer), TimerChnl(TimerChnl),
-//                Inverted(Inverted), OutputType(OutputType), TopValue(TopValue) {}
 };
 
 #if 1 // =========================== I2C =======================================
@@ -347,5 +327,34 @@ uint32_t GetTimInputFreq(const uint32_t TimerN);
 uint32_t GetTimInputFreq(const TIM_TypeDef *PTimer);
 
 } // namespace
+
+class PinOutputPWM_t {
+private:
+    const PwmSetup_t ISetup;
+public:
+    void Set(uint32_t AValue) const { ISetup.PTimer->SetChnlValue(ISetup.TimerChnl, AValue); }
+//    uint32_t Get() const { return *TMR_PCCR(ITmr, ISetup.TimerChnl); }
+    void Init() const;
+//    void Deinit() const { Timer_t::Deinit(); PinSetupAnalog(ISetup.PGpio, ISetup.Pin); }
+    void SetFrequencyHz(uint32_t FreqHz) const { // Set freq changing prescaler
+        // Figure out input timer freq
+        uint32_t UpdFreqMax = Clk::GetTimInputFreq(ISetup.PTimer) / (ISetup.PTimer->CAR + 1);
+        uint32_t Psc = UpdFreqMax / FreqHz;
+        if(Psc != 0) Psc--;
+    //    Printf("InputFreq=%u; UpdFreqMax=%u; div=%u; ARR=%u\r", InputFreq, UpdFreqMax, div, ITmr->ARR);
+        ISetup.PTimer->PSC = Psc;
+        ISetup.PTimer->CNT = 0;  // Reset counter to start from scratch
+        ISetup.PTimer->GenerateUpdateEvt();
+    }
+    void SetTopValue(uint32_t Value) const { ISetup.PTimer->SetTopValue(Value); }
+//    void SetTmrClkFreq(uint32_t FreqHz) const { Timer_t::SetTmrClkFreq(FreqHz); }
+//    void SetPrescaler(uint32_t PrescalerValue) const { Timer_t::SetPrescaler(PrescalerValue); }
+    PinOutputPWM_t(const PwmSetup_t &ASetup) : ISetup(ASetup) {}
+//    PinOutputPWM_t(GPIO_TypeDef *PGpio, uint16_t Pin,
+//            TIM_TypeDef *PTimer, uint32_t TimerChnl,
+//            Inverted_t Inverted, Gpio::OutMode_t OutputType, uint32_t TopValue) :
+//                PGpio(PGpio), Pin(Pin), ITmr(PTimer), TimerChnl(TimerChnl),
+//                Inverted(Inverted), OutputType(OutputType), TopValue(TopValue) {}
+};
 
 #endif /* LIB_GD_LIB_H_ */
