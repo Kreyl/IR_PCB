@@ -30,25 +30,22 @@
 class SpiFlash_t {
 private:
     Spi_t spi;
-    Pin_t Nss;
+    Pin_t Nss{FLASH_NSS};
+    DMA_t DmaTx, DmaRx;
+    Thread_t* PThd = nullptr;
     uint8_t WriteCmdRead1Byte(uint8_t Cmd);
     void WriteCmdAndAddr(uint8_t Cmd, uint32_t Addr);
     void WriteEnable();
     retv BusyWait();
+    friend void SpiFlashDmaCb(void *p, uint32_t W32);
 public:
-    SpiFlash_t(SPI_TypeDef *pspi) : spi(pspi) {}
-    void Init(
-            GPIO_TypeDef *AGpioNss, uint32_t APinNss,
-            GPIO_TypeDef *AGpioSck, uint32_t APinSck,
-            GPIO_TypeDef *AGpioMiso, uint32_t APinMiso,
-            GPIO_TypeDef *AGpioMosi, uint32_t APinMosi,
-            GPIO_TypeDef *AGpioIO2, uint32_t APinIO2,
-            GPIO_TypeDef *AGpioIO3, uint32_t APinIO3
-            );
+    SpiFlash_t(SPI_TypeDef *pspi);
+    void Init();
 
     // ==== Instructions ====
     // Read / Write / Erase
     retv Read(uint32_t Addr, uint8_t *PBuf, uint32_t ALen);
+    retv ReadQ(uint32_t Addr, uint8_t *PBuf, uint32_t ALen);
 
     retv WritePage(uint32_t Addr, uint8_t *PBuf, uint32_t ALen);
     retv WritePageQ(uint32_t Addr, uint8_t *PBuf, uint32_t ALen);

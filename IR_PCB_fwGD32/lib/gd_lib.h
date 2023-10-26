@@ -233,7 +233,8 @@ private:
     uint32_t ChnlN; // Required for IRQ flags cleanup
 public:
     DMA_t(DMAChannel_t *APChnl,
-            ftVoidPVoidW32 PIrqFunc = nullptr, void *PIrqParam = nullptr,
+            ftVoidPVoidW32 PIrqFunc = nullptr,
+            void *PIrqParam = nullptr,
             uint32_t AIrqPrio = IRQ_PRIO_MEDIUM);
     void Init() const;
     void Init(volatile void* PeriphAddr, void* MemAddr, uint32_t AMode, uint16_t Cnt) const;
@@ -263,9 +264,18 @@ public:
     void Setup(BitOrder BitOrdr, cpol CPOL, cpha CPHA,
             int32_t Bitrate_Hz, BitNumber BitNum = BitNumber::n8) const;
 
-    void Enable()  { PSpi->Enable(); }
-    void Disable() { PSpi->Disable(); }
-//    void PrintFreq() const;
+    void Enable()    { PSpi->Enable(); }
+    void Disable()   { PSpi->Disable(); }
+    void SetRxOnly()     { PSpi->CTL0 |=  SPI_CTL0_RO; }
+    void SetFullDuplex() { PSpi->CTL0 &= ~SPI_CTL0_RO; }
+
+    // DMA
+    void EnTxDma()    { PSpi->CTL1 |=  SPI_CTL1_DMATEN; }
+    void DisTxDma()   { PSpi->CTL1 &= ~SPI_CTL1_DMATEN; }
+    void EnRxDma()    { PSpi->CTL1 |=  SPI_CTL1_DMAREN; }
+    void DisRxDma()   { PSpi->CTL1 &= ~SPI_CTL1_DMAREN; }
+    void EnRxTxDma()  { PSpi->CTL1 |=  (SPI_CTL1_DMATEN | SPI_CTL1_DMAREN); }
+    void DisRxTxDma() { PSpi->CTL1 &= ~(SPI_CTL1_DMATEN | SPI_CTL1_DMAREN); }
 
     // IRQ
     void EnNvicIrq(const uint32_t Priority) const {
@@ -279,6 +289,8 @@ public:
         else if(PSpi == SPI2) Nvic::DisableVector(SPI2_IRQn);
     }
 //    void SetupRxIrqCallback(ftVoidVoid AIrqHandler) const;
+
+    void ClearRxBuf() { while(PSpi->STAT & SPI_STAT_RBNE) (void)PSpi->DATA; }
 
     void Write(uint32_t AData) {
         PSpi->WaitForTBEHi();

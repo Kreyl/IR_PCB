@@ -9,39 +9,47 @@
 #include "yartos.h"
 
 // DMA
-#define MEM_RX_DMA_MODE STM32_DMA_CR_CHSEL(0) |   /* dummy */ \
-                        DMA_PRIORITY_HIGH | \
-                        STM32_DMA_CR_MSIZE_BYTE | \
-                        STM32_DMA_CR_PSIZE_BYTE | \
-                        STM32_DMA_CR_MINC |       /* Memory pointer increase */ \
-                        STM32_DMA_CR_DIR_P2M |    /* Direction is peripheral to memory */ \
-                        STM32_DMA_CR_TCIE         /* Enable Transmission Complete IRQ */
+#define DMA_RX_MODE DMA_PRIO_HIGH | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | \
+    DMA_MEM_INC | DMA_DIR_PER2MEM | DMA_TCIE
 
-void SpiFlash_t::Init(
-        GPIO_TypeDef *AGpioNss, uint32_t APinNss,
-        GPIO_TypeDef *AGpioSck, uint32_t APinSck,
-        GPIO_TypeDef *AGpioMiso, uint32_t APinMiso,
-        GPIO_TypeDef *AGpioMosi, uint32_t APinMosi,
-        GPIO_TypeDef *AGpioIO2, uint32_t APinIO2,
-        GPIO_TypeDef *AGpioIO3, uint32_t APinIO3) {
+// Mode for reading, i.e. no irq, no mem inc (as it is required to send zeroes only)
+#define DMA_TX_MODE_NOIRQ_NOINC DMA_PRIO_HIGH | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | DMA_DIR_MEM2PER
+// Mode for writing
+#define DMA_TX_MODE_IRQ_INC DMA_PRIO_HIGH | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | \
+    DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE
+
+void SpiFlashDmaCb(void *p, uint32_t W32) {
+    Sys::IrqPrologue();
+    Sys::LockFromIRQ();
+    Sys::WakeI(&((SpiFlash_t*)p)->PThd, retv::Ok);
+    Sys::UnlockFromIRQ();
+    Sys::IrqEpilogue();
+}
+
+SpiFlash_t::SpiFlash_t(SPI_TypeDef *pspi) : spi(pspi),
+        DmaTx(SPIFLASH_DMA_TX, SpiFlashDmaCb, this),
+        DmaRx(SPIFLASH_DMA_RX, SpiFlashDmaCb, this)
+        {}
+
+void SpiFlash_t::Init() {
     // Init GPIO
-    Nss.PGpio = AGpioNss;
-    Nss.PinN = APinNss;
     Nss.SetupOut(Gpio::PushPull, Gpio::speed50MHz);
     Nss.SetHi();
-    Gpio::SetupAlterFunc(AGpioSck,  APinSck,  Gpio::PushPull, Gpio::speed50MHz);
-    Gpio::SetupAlterFunc(AGpioMiso, APinMiso, Gpio::PushPull, Gpio::speed50MHz);
-    Gpio::SetupAlterFunc(AGpioMosi, APinMosi, Gpio::PushPull, Gpio::speed50MHz);
-    Gpio::SetupAlterFunc(AGpioIO2,  APinIO2,  Gpio::PushPull, Gpio::speed50MHz);
-    Gpio::SetupAlterFunc(AGpioIO2,  APinIO3,  Gpio::PushPull, Gpio::speed50MHz);
-
+    Gpio::SetupAlterFunc(FLASH_SCK,  Gpio::PushPull, Gpio::speed50MHz);
+    Gpio::SetupAlterFunc(FLASH_MISO, Gpio::PushPull, Gpio::speed50MHz);
+    Gpio::SetupAlterFunc(FLASH_MOSI, Gpio::PushPull, Gpio::speed50MHz);
+    Gpio::SetupAlterFunc(FLASH_IO2,  Gpio::PushPull, Gpio::speed50MHz);
+    Gpio::SetupAlterFunc(FLASH_IO3,  Gpio::PushPull, Gpio::speed50MHz);
     // ==== SPI ====    MSB first, master, ClkLowIdle, FirstEdge, BitNum = 8
 //    spi.Setup(BitOrder::MSB, Spi_t::cpol::IdleLow, Spi_t::cpha::FirstEdge, SPIFLASH_CLK_FREQ_Hz);
     spi.Setup(BitOrder::MSB, Spi_t::cpol::IdleLow, Spi_t::cpha::FirstEdge, 1000000);
     spi.Enable();
-    // DMA
-
-    //
+    // ==== DMA ====
+    DmaRx.Init();
+    DmaRx.SetPeriphAddr(&spi.PSpi->DATA);
+    DmaRx.SetMode(DMA_RX_MODE);
+    DmaTx.Init();
+    DmaTx.SetPeriphAddr(&spi.PSpi->DATA);
 }
 
 // ========================= Read / Write / Erase ==============================
@@ -50,30 +58,72 @@ retv SpiFlash_t::Read(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
     WriteCmdAndAddr(0x0B, Addr); // Cmd FastRead
     spi.WriteRead(0x00); // 8 dummy clocks
     // ==== Read Data ====
-    while(ALen--) {
-        *PBuf++ = spi.WriteRead(0);
-    }
-
-
-//    spi.Disable();
-//    spi.SetRxOnly();   // Will not set if enabled
-//    spi.EnableRxDma();
-//    dmaStreamSetMemory0(SPI1_DMA_RX, PBuf);
-//    dmaStreamSetTransactionSize(SPI1_DMA_RX, ALen);
-//    dmaStreamSetMode   (SPI1_DMA_RX, MEM_RX_DMA_MODE);
+    spi.ClearRxBuf();
+    spi.Disable();
+    spi.SetRxOnly();   // Will not set if enabled
+    spi.EnRxDma();
+    DmaRx.SetMemoryAddr(PBuf);
+    DmaRx.SetTransferDataCnt(ALen);
     // Start
-//    dmaStreamEnable    (SPI1_DMA_RX);
-//    spi.Enable();
-//    chThdSuspendS(&trp);    // Wait IRQ
-//    dmaStreamDisable(SPI1_DMA_RX);
+    Sys::Lock();
+    PThd = Sys::GetSelfThd();
+    DmaRx.Enable();
+    spi.Enable();
+    retv r = Sys::SleepS(TIME_MS2I(270)); // Wait IRQ
+    // Will be here after timeout or IRQ
+    DmaRx.Disable();
+    Sys::Unlock();
     Nss.SetHi();
-//    ISpi.Disable();
-//    ISpi.SetFullDuplex();   // Remove read-only mode
-//    ISpi.DisableRxDma();
-//    ISpi.Enable();
-//    ISpi.ClearRxBuf();
-//    chSysUnlock();
-    return retv::Ok;
+    spi.Disable();
+    spi.SetFullDuplex();   // Remove read-only mode
+    spi.DisRxDma();
+    spi.Enable();
+    spi.PSpi->WaitForTBEHiAndTransLo(); // }
+    spi.ClearRxBuf();                   // } Clear bufs and flags
+    return r;
+}
+
+retv SpiFlash_t::ReadQ(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
+    Nss.SetLo();
+    spi.WriteRead(0xEB); // Write cmd in single mode
+    spi.ClearRxBuf();
+    spi.EnQuadWrite();
+    // Send Addr and 2 dummy clocks
+    spi.WriteRead(0xFF & (Addr >> 16));
+    spi.WriteRead(0xFF & (Addr >> 8));
+    spi.WriteRead(0xFF & (Addr >> 0));
+    spi.WriteRead(0xF0); // 2 dummy clocks, must be Fx (see memory datasheet)
+    // Switch to read mode
+    spi.EnQuadRead();
+    // Send 4 more clocks
+    spi.Write(0x00);
+    spi.Write(0x00);
+    // ==== Read Data ====
+    DmaRx.SetMemoryAddr(PBuf);
+    DmaRx.SetTransferDataCnt(ALen);
+    uint8_t Dummy = 0;
+    DmaTx.SetMemoryAddr(&Dummy);
+    DmaTx.SetTransferDataCnt(ALen);
+    DmaTx.SetMode(DMA_TX_MODE_NOIRQ_NOINC);
+    spi.PSpi->WaitForTBEHiAndTransLo();
+    spi.ClearRxBuf();
+    spi.EnRxTxDma();
+    // Start
+    Sys::Lock();
+    PThd = Sys::GetSelfThd();
+    DmaRx.Enable();
+    DmaTx.Enable();
+    retv r = Sys::SleepS(TIME_MS2I(270)); // Wait IRQ
+    // Will be here after timeout or IRQ
+    DmaRx.Disable();
+    DmaTx.Disable();
+    Sys::Unlock();
+    Nss.SetHi();
+    spi.DisRxTxDma();
+    spi.PSpi->WaitForTBEHiAndTransLo(); // }
+    spi.ClearRxBuf();                   // } Clear bufs and flags
+    spi.DisQuad();
+    return r;
 }
 
 
@@ -88,14 +138,33 @@ retv SpiFlash_t::WritePage(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
 }
 
 retv SpiFlash_t::WritePageQ(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
-    // XXX
     WriteEnable();
     Nss.SetLo();
-    WriteCmdAndAddr(0x02, Addr);
+    spi.WriteRead(0x32); // Write cmd and addr in single mode
+    // Send Addr and 2 dummy clocks
+    spi.WriteRead(0xFF & (Addr >> 16));
+    spi.WriteRead(0xFF & (Addr >> 8));
+    spi.WriteRead(0xFF & (Addr >> 0));
     // Write data
-    for(uint32_t i=0; i < ALen; i++) spi.WriteRead(*PBuf++);
+    DmaTx.SetMemoryAddr(PBuf);
+    DmaTx.SetTransferDataCnt(ALen);
+    DmaTx.SetMode(DMA_TX_MODE_IRQ_INC);
+    spi.EnQuadWrite();
+    spi.EnTxDma();
+    Sys::Lock();
+    PThd = Sys::GetSelfThd();
+    DmaTx.Enable();
+    retv r = Sys::SleepS(TIME_MS2I(270)); // Wait IRQ
+    // Will be here after timeout or IRQ
+    DmaTx.Disable();
+    Sys::Unlock();
+    spi.PSpi->WaitForTBEHiAndTransLo(); // }
+    spi.ClearRxBuf();                   // } Clear bufs and flags
     Nss.SetHi();
-    return BusyWait(); // Wait completion
+    spi.DisTxDma();
+    spi.DisQuad();
+    if(r == retv::Ok) return BusyWait(); // Wait completion
+    else return r;
 }
 
 retv SpiFlash_t::EraseSector4k(uint32_t Addr) {
@@ -164,7 +233,7 @@ SpiFlash_t::MfrDevId_t SpiFlash_t::ReadMfrDevIdQ() {
     spi.Write(0x00);
     spi.Write(0x00);
     spi.PSpi->WaitForTBEHiAndTransLo();
-    spi.PSpi->ClearRxBuf();
+    spi.ClearRxBuf();
     // Read payload
     r.Mfr = spi.WriteRead(0x00);
     r.DevID = spi.WriteRead(0x00);

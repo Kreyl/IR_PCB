@@ -67,7 +67,7 @@ void main(void) {
     Clk::PrintFreqs();
 
     AFIO->RemapSPI0_PB345();
-    SpiFlash.Init(FLASH_NSS, FLASH_SCK, FLASH_MISO, FLASH_MOSI, FLASH_IO2, FLASH_IO3);
+    SpiFlash.Init();
     SpiFlash.Reset();
     Printf("FlashID: %X\r", SpiFlash.ReleasePowerDown());
 
@@ -179,11 +179,42 @@ void OnCmd(Shell_t *PShell) {
         uint32_t Addr, Len;
         if(PCmd->GetParams<uint32_t>(2, &Addr, &Len) == retv::Ok) {
             uint8_t Buf[Len];
-            SpiFlash.Read(Addr, Buf, Len);
-            Printf("%A\r", Buf, Len, ' ');
+            if(SpiFlash.Read(Addr, Buf, Len) == retv::Ok) Printf("%A\r", Buf, Len, ' ');
+            else PShell->Failure();
         }
         else PShell->BadParam();
     }
+
+    else if(PCmd->NameIs("FRQ")) {
+        uint32_t Addr, Len;
+        if(PCmd->GetParams<uint32_t>(2, &Addr, &Len) == retv::Ok) {
+            uint8_t Buf[Len];
+            if(SpiFlash.ReadQ(Addr, Buf, Len) == retv::Ok) Printf("%A\r", Buf, Len, ' ');
+            else PShell->Failure();
+        }
+        else PShell->BadParam();
+    }
+
+    else if(PCmd->NameIs("FE")) {
+        uint32_t Addr;
+        if(PCmd->GetNext(&Addr) == retv::Ok) {
+            if(SpiFlash.EraseSector4k(Addr) == retv::Ok) PShell->Ok();
+            else PShell->Failure();
+        }
+        else PShell->BadParam();
+    }
+
+    else if(PCmd->NameIs("FW")) {
+        uint32_t Addr;
+        if(PCmd->GetNext(&Addr) == retv::Ok) {
+            uint8_t Buf[16];
+            for(uint32_t i=0; i<16; i++) Buf[i] = i;
+            if(SpiFlash.WritePageQ(Addr, Buf, 16) == retv::Ok) PShell->Ok();
+            else PShell->Failure();
+        }
+        else PShell->BadParam();
+    }
+
 
     /*
     else if(PCmd->NameIs("ShaFw")) {

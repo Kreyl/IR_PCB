@@ -408,18 +408,18 @@ struct DMAChannel_t {
 
 #define DMA_MEM2MEM_MODE        (1UL << 14)
 
-#define DMA_PRIORITY_LOW        (0b00UL << 12)
-#define DMA_PRIORITY_MEDIUM     (0b01UL << 12)
-#define DMA_PRIORITY_HIGH       (0b10UL << 12)
-#define DMA_PRIORITY_VERYHIGH   (0b11UL << 12)
+#define DMA_PRIO_LOW            (0b00UL << 12)
+#define DMA_PRIO_MEDIUM         (0b01UL << 12)
+#define DMA_PRIO_HIGH           (0b10UL << 12)
+#define DMA_PRIO_VERYHIGH       (0b11UL << 12)
 
-#define DMA_MSIZE_8_BIT         (0b00UL << 10)
-#define DMA_MSIZE_16_BIT        (0b01UL << 10)
-#define DMA_MSIZE_32_BIT        (0b10UL << 10)
+#define DMA_MEMSZ_8_BIT         (0b00UL << 10)
+#define DMA_MEMSZ_16_BIT        (0b01UL << 10)
+#define DMA_MEMESZ_32_BIT       (0b10UL << 10)
 
-#define DMA_PSIZE_8_BIT         (0b00UL << 8)
-#define DMA_PSIZE_16_BIT        (0b01UL << 8)
-#define DMA_PSIZE_32_BIT        (0b10UL << 8)
+#define DMA_PERSZ_8_BIT         (0b00UL << 8)
+#define DMA_PERSZ_16_BIT        (0b01UL << 8)
+#define DMA_PERSZ_32_BIT        (0b10UL << 8)
 
 #define DMA_MEM_INC             (1UL << 7)
 #define DMA_PER_INC             (1UL << 6)
@@ -546,26 +546,15 @@ struct SPI_TypeDef {
     void Enable()  { CTL0 |=  SPI_CTL0_SPIEN; }
     void Disable() { CTL0 &= ~SPI_CTL0_SPIEN; }
 
-    // DMA
-    void EnTxDma()  { CTL1 |=  SPI_CTL1_DMATEN; }
-    void DisTxDma() { CTL1 &= ~SPI_CTL1_DMATEN; }
-    void EnRxDma()  { CTL1 |=  SPI_CTL1_DMAREN; }
-    void DisRxDma() { CTL1 &= ~SPI_CTL1_DMAREN; }
-
     // IRQ
     void EnRxBufNotEmptyIrq()  { CTL1 |=  SPI_CTL1_RBNEIE; }
     void DisRxBufNotEmptyIrq() { CTL1 &= ~SPI_CTL1_RBNEIE; }
-
-    // Rx/Tx
-    void SetRxOnly()     { CTL0 |=  SPI_CTL0_RO; }
-    void SetFullDuplex() { CTL0 &= ~SPI_CTL0_RO; }
 
     // Flags and buf
     void WaitForTransLo() { while(STAT & SPI_STAT_TRANS); }
     void WaitForTBEHi()   { while(!(STAT & SPI_STAT_TBE)); }
     void WaitForRBNEHi()  { while(!(STAT & SPI_STAT_RBNE)); }
     void WaitForTBEHiAndTransLo() { while((STAT & (SPI_STAT_TBE | SPI_STAT_TRANS)) != SPI_STAT_TBE); }
-    void ClearRxBuf()     { while(STAT & SPI_STAT_RBNE) (void)DATA; }
     void ClearRxOvrErr()  { (void)DATA; (void)STAT; (void)DATA; }
 };
 
