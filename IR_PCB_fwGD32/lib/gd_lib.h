@@ -240,7 +240,6 @@ public:
 #endif // DMA
 
 #if 1 // ============================== SPI ====================================
-
 //enum SpiClkDivider_t {
 //    sclkDiv2   = 0b000,
 //    sclkDiv4   = 0b001,
@@ -263,7 +262,7 @@ public:
     void Setup(BitOrder BitOrder, cpol CPOL, cpha CPHA,
             int32_t Bitrate_Hz, BitNumber BitNum = BitNumber::n8) const;
 
-    void PrintFreq() const;
+//    void PrintFreq() const;
 
     // IRQ
     void EnNvicIrq(const uint32_t Priority) const {
@@ -271,81 +270,33 @@ public:
         else if(PSpi == SPI1) Nvic::EnableVector(SPI1_IRQn, Priority);
         else if(PSpi == SPI2) Nvic::EnableVector(SPI2_IRQn, Priority);
     }
-    void DisableIrq() const {
+    void DisNvicIrq() const {
         if     (PSpi == SPI0) Nvic::DisableVector(SPI0_IRQn);
         else if(PSpi == SPI1) Nvic::DisableVector(SPI1_IRQn);
         else if(PSpi == SPI2) Nvic::DisableVector(SPI2_IRQn);
     }
-    void SetupRxIrqCallback(ftVoidVoid AIrqHandler) const;
+//    void SetupRxIrqCallback(ftVoidVoid AIrqHandler) const;
 
-
-    // Flags
-#if defined STM32F072xB
-    void WaitFTLVLZero() const { while(PSpi->SR & SPI_SR_FTLVL); }
-#endif
-    void WaitBsyHi2Lo()  const { while(PSpi->SR & SPI_SR_BSY); }
-    void WaitTxEHi()     const { while(!(PSpi->SR & SPI_SR_TXE)); }
-    void ClearRxBuf()    const { while(PSpi->SR & SPI_SR_RXNE) (void)PSpi->DR; }
-    void ClearOVR()      const { (void)PSpi->DR; (void)PSpi->SR; (void)PSpi->DR; }
-
-    // Read/Write
-    uint8_t ReadByte() const { return PSpi->DR; }
-    void WriteByte(uint8_t AByte) const { *((volatile uint8_t*)&PSpi->DR) = AByte; }
-
-    uint8_t ReadWriteByte(uint8_t AByte) const {
-        *((volatile uint8_t*)&PSpi->DR) = AByte;
-        while(!(PSpi->SR & SPI_SR_RXNE));  // Wait for SPI transmission to complete
-        return *((volatile uint8_t*)&PSpi->DR);
-    }
-    uint16_t ReadWriteWord(uint16_t Word) const {
-        PSpi->DR = Word;
-        while(!(PSpi->SR & SPI_SR_RXNE));
-        return PSpi->DR;
-    }
-    void Transmit(uint8_t Params, uint8_t *ptr, uint32_t Len) {
-        PSpi->CR1 &= ~SPI_CR1_SPE; // Disable SPI
-        PSpi->CR1 = SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_MSTR;
-        if(Params & 0x80) PSpi->CR1 |= SPI_CR1_LSBFIRST; // 0 = MSB, 1 = LSB
-        if(Params & 0x40) PSpi->CR1 |= SPI_CR1_CPOL;     // 0 = IdleLow, 1 = IdleHigh
-        if(Params & 0x20) PSpi->CR1 |= SPI_CR1_CPHA;     // 0 = FirstEdge, 1 = SecondEdge
-        PSpi->CR1 |= (Params & 0x07) << 3; // Setup divider
-#if defined SPI_CR2_FRXTH
-        PSpi->CR2 = ((uint16_t)0b0111 << 8) | SPI_CR2_FRXTH;   // 8 bit, RXNE generated when 8 bit is received
-#else
-        PSpi->CR2 = ((uint16_t)0b0111 << 8);
-#endif
-        (void)PSpi->SR; // Read Status reg to clear some flags
+    void Transmit(uint8_t Params, uint8_t *ptr, uint32_t Len) const {
+        PSpi->Disable();
+//        PSpi->CR1 = SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_MSTR;
+//        if(Params & 0x80) PSpi->CR1 |= SPI_CR1_LSBFIRST; // 0 = MSB, 1 = LSB
+//        if(Params & 0x40) PSpi->CR1 |= SPI_CR1_CPOL;     // 0 = IdleLow, 1 = IdleHigh
+//        if(Params & 0x20) PSpi->CR1 |= SPI_CR1_CPHA;     // 0 = FirstEdge, 1 = SecondEdge
+//        PSpi->CR1 |= (Params & 0x07) << 3; // Setup divider
+//        PSpi->CR2 = ((uint16_t)0b0111 << 8);
+//        (void)PSpi->SR; // Read Status reg to clear some flags
         // Do it
-        PSpi->CR1 |=  SPI_CR1_SPE; // Enable SPI
+        PSpi->Enable();
         while(Len) {
-            *((volatile uint8_t*)&PSpi->DR) = *ptr;
-            while(!(PSpi->SR & SPI_SR_RXNE));  // Wait for SPI transmission to complete
-            *ptr = *((volatile uint8_t*)&PSpi->DR);
+            PSpi->Write(*ptr);
+            PSpi->WaitRBNEHi(); // Wait for SPI transmission to complete
+            *ptr = PSpi->Read();
             ptr++;
             Len--;
         }
     }
-#if defined STM32L4XX
-//    void WriteRead2Bytes(uint8_t b1, uint8_t b2) const {
-//        *((volatile uint8_t*)&PSpi->DR) = b1;
-//        *((volatile uint8_t*)&PSpi->DR) = b2;
-//        while(!(PSpi->SR & SPI_SR_RXNE));
-//        b1 = *((volatile uint8_t*)&PSpi->DR);
-//        while(!(PSpi->SR & SPI_SR_RXNE));
-//        b2 = *((volatile uint8_t*)&PSpi->DR);
-//    }
-    void WriteRead3Bytes(uint8_t *ptr) const {
-        *((volatile uint8_t*)&PSpi->DR) = ptr[0];
-        *((volatile uint8_t*)&PSpi->DR) = ptr[1];
-        *((volatile uint8_t*)&PSpi->DR) = ptr[2];
-        while(!(PSpi->SR & SPI_SR_RXNE));
-        ptr[0] = *((volatile uint8_t*)&PSpi->DR);
-        while(!(PSpi->SR & SPI_SR_RXNE));
-        ptr[1] = *((volatile uint8_t*)&PSpi->DR);
-        while(!(PSpi->SR & SPI_SR_RXNE));
-        ptr[2] = *((volatile uint8_t*)&PSpi->DR);
-    }
-#endif
+
 };
 #endif
 

@@ -484,6 +484,47 @@ DMA_IRQ_HANDLER(1, 4);
 } // extern C
 #endif // DMA
 
+#if 1 // ================================= SPI =================================
+void Spi_t::Setup(BitOrder BitOrder, cpol CPOL, cpha CPHA, int32_t Bitrate_Hz, BitNumber BitNum) const {
+    RCU->EnSpi(PSpi); // Clocking
+    // Mode: Master, NSS software controlled and is 1, 8bit, NoCRC, FullDuplex
+    PSpi->CTL0 = SPI_CTL0_SWNSSEN | SPI_CTL0_SWNSS | SPI_CTL0_MSTMOD;
+    if(BitOrder == boLSB) PSpi->CR1 |= SPI_CR1_LSBFIRST;    // MSB/LSB
+    if(CPOL == cpolIdleHigh) PSpi->CR1 |= SPI_CR1_CPOL;     // CPOL
+    if(CPHA == cphaSecondEdge) PSpi->CR1 |= SPI_CR1_CPHA;   // CPHA
+    // Baudrate
+    int32_t div;
+#if defined STM32L1XX || defined STM32F4XX || defined STM32F2XX || defined STM32L4XX || defined STM32F1XX
+    if(PSpi == SPI1) div = Clk.APB2FreqHz / Bitrate_Hz;
+    else div = Clk.APB1FreqHz / Bitrate_Hz;
+#elif defined STM32F030 || defined STM32F0
+    div = Clk.APBFreqHz / Bitrate_Hz;
+#elif defined STM32F7XX
+    if(PSpi == SPI2 or PSpi == SPI3) div = Clk.APB1FreqHz / Bitrate_Hz;
+    else div = Clk.APB2FreqHz / Bitrate_Hz;
+#else
+#error "SPI div not defined"
+#endif
+    SpiClkDivider_t ClkDiv = sclkDiv2;
+    if     (div > 128) ClkDiv = sclkDiv256;
+    else if(div > 64) ClkDiv = sclkDiv128;
+    else if(div > 32) ClkDiv = sclkDiv64;
+    else if(div > 16) ClkDiv = sclkDiv32;
+    else if(div > 8)  ClkDiv = sclkDiv16;
+    else if(div > 4)  ClkDiv = sclkDiv8;
+    else if(div > 2)  ClkDiv = sclkDiv4;
+    PSpi->CR1 |= ((uint16_t)ClkDiv) << 3;
+    // Bit number
+#if defined STM32L1XX || defined STM32F10X_LD_VL || defined STM32F2XX || defined STM32F4XX
+    if(BitNumber == bitn16) PSpi->CR1 |= SPI_CR1_DFF;
+    PSpi->CR2 = 0;
+#elif defined STM32F030 || defined STM32F072xB || defined STM32L4XX || defined STM32F7XX
+    if(BitNumber == bitn16) PSpi->CR2 = (uint16_t)0b1111 << 8;  // 16 bit, RXNE generated when 16 bit is received
+    else PSpi->CR2 = ((uint16_t)0b0111 << 8) | SPI_CR2_FRXTH;   // 8 bit, RXNE generated when 8 bit is received
+#endif
+}
+#endif
+
 namespace Clk { // ======================== Clocking ===========================
 uint32_t AHBFreqHz, APB1FreqHz, APB2FreqHz;
 

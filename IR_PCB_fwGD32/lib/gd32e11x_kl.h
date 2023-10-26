@@ -503,7 +503,11 @@ struct TIM_TypeDef {
 #endif // timer
 
 #if 1 // ============================= SPI =====================================
+#define SPI_CTL0_MSTMOD     (1UL << 2)
 #define SPI_CTL0_SPIEN      (1UL << 6)
+#define SPI_CTL0_SWNSS      (1UL << 8)
+#define SPI_CTL0_SWNSSEN    (1UL << 9)
+#define SPI_CTL0_RO         (1UL << 10)
 
 #define SPI_CTL1_DMAREN     (1UL << 0)
 #define SPI_CTL1_DMATEN     (1UL << 1)
@@ -513,6 +517,10 @@ struct TIM_TypeDef {
 #define SPI_CTL1_RBNEIE     (1UL << 6)
 #define SPI_CTL1_TBEIE      (1UL << 7)
 
+#define SPI_STAT_RBNE       (1UL << 0)
+#define SPI_STAT_TBE        (1UL << 1)
+#define SPI_STAT_RXORERR    (1UL << 6)
+#define SPI_STAT_TRANS      (1UL << 7) // Busy
 
 struct SPI_TypeDef {
     volatile uint32_t CTL0;    /*!< Control register 0,      Address offset: 0x00 */
@@ -541,8 +549,26 @@ struct SPI_TypeDef {
     void DisRxBufNotEmptyIrq() { CTL1 &= ~SPI_CTL1_RBNEIE; }
 
     // Rx/Tx
-    void SetRxOnly()     { PSpi->CR1 |=  SPI_CR1_RXONLY; }
-    void SetFullDuplex() { PSpi->CR1 &= ~SPI_CR1_RXONLY; }
+    void SetRxOnly()     { CTL0 |=  SPI_CTL0_RO; }
+    void SetFullDuplex() { CTL0 &= ~SPI_CTL0_RO; }
+
+    // Flags and buf
+    void WaitTransHi2Lo() { while(STAT & SPI_STAT_TRANS); }
+    void WaitTBEHi()      { while(!(STAT & SPI_STAT_TBE)); }
+    void WaitRBNEHi()     { while(!(STAT & SPI_STAT_RBNE)); }
+    void ClearRxBuf()     { while(STAT & SPI_STAT_RBNE) (void)DATA; }
+    void ClearRxOvrErr()  { (void)DATA; (void)STAT; (void)DATA; }
+
+    // Read/Write
+    uint16_t Read() { return DATA; }
+    void Write(uint32_t AData) { DATA = AData; } // This register can be accessed by half-word (16-bit) or word (32-bit).
+
+    uint16_t WriteRead(uint32_t AData) {
+        DATA = AData;
+        while(!(STAT & SPI_STAT_RBNE));  // Wait for SPI transmission to complete
+        return DATA;
+    }
+
 
 };
 
@@ -711,10 +737,7 @@ struct RCU_TypeDef {
     void EnAFIO() { APB2EN |= 1UL <<  0; }
     void EnADC0() { APB2EN |= 1UL <<  9; }
     void EnADC1() { APB2EN |= 1UL << 10; }
-    void EnSPI0() { APB2EN |= 1UL << 12; }
 
-    void EnSPI1() { APB1EN |= 1UL << 14; }
-    void EnSPI2() { APB1EN |= 1UL << 15; }
     void EnI2C0() { APB1EN |= 1UL << 21; }
     void EnI2C1() { APB1EN |= 1UL << 22; }
     void EnBckp() { APB1EN |= 1UL << 27; }
