@@ -294,7 +294,7 @@ struct AFIO_TypeDef {
 
     void DisableJtagDP() { SET_BITS(PCF0, 0b111UL, 0b010UL, 24); }
 
-    void RemapSPI0_PB567()  { PCF0 |= 1 << 0; } // Remap SPI0 from PA 5,6,7 to PB 3,4,5
+    void RemapSPI0_PB345()  { PCF0 |= 1 << 0; } // Remap SPI0 from PA 5,6,7 to PB 3,4,5
     void RemapI2C0_PB89()   { PCF0 |= 1 << 1; } // Remap I2C0 from PB 6,7 to PB 8,9
     void RemapUSART0_PB67() { PCF0 |= 1 << 2; } // Remap USART0 from PA 9,10 to PB 6,7
     void RemapUSART1_PD56() { PCF0 |= 1 << 3; } // Remap USART1 from PA 2,3 to PD 5,6
@@ -503,11 +503,15 @@ struct TIM_TypeDef {
 #endif // timer
 
 #if 1 // ============================= SPI =====================================
+#define SPI_CTL0_CKPH       (1UL << 0)
+#define SPI_CTL0_CKPL       (1UL << 1)
 #define SPI_CTL0_MSTMOD     (1UL << 2)
 #define SPI_CTL0_SPIEN      (1UL << 6)
+#define SPI_CTL0_LF         (1UL << 7)
 #define SPI_CTL0_SWNSS      (1UL << 8)
 #define SPI_CTL0_SWNSSEN    (1UL << 9)
 #define SPI_CTL0_RO         (1UL << 10)
+#define SPI_CTL0_FF16       (1UL << 11)
 
 #define SPI_CTL1_DMAREN     (1UL << 0)
 #define SPI_CTL1_DMATEN     (1UL << 1)
@@ -521,6 +525,10 @@ struct TIM_TypeDef {
 #define SPI_STAT_TBE        (1UL << 1)
 #define SPI_STAT_RXORERR    (1UL << 6)
 #define SPI_STAT_TRANS      (1UL << 7) // Busy
+
+#define SPI_QCTL_IO23DR     (1UL << 2)
+#define SPI_QCTL_QRD        (1UL << 1)
+#define SPI_QCTL_QMOD       (1UL << 0)
 
 struct SPI_TypeDef {
     volatile uint32_t CTL0;    /*!< Control register 0,      Address offset: 0x00 */
@@ -553,23 +561,12 @@ struct SPI_TypeDef {
     void SetFullDuplex() { CTL0 &= ~SPI_CTL0_RO; }
 
     // Flags and buf
-    void WaitTransHi2Lo() { while(STAT & SPI_STAT_TRANS); }
-    void WaitTBEHi()      { while(!(STAT & SPI_STAT_TBE)); }
-    void WaitRBNEHi()     { while(!(STAT & SPI_STAT_RBNE)); }
+    void WaitForTransLo() { while(STAT & SPI_STAT_TRANS); }
+    void WaitForTBEHi()   { while(!(STAT & SPI_STAT_TBE)); }
+    void WaitForRBNEHi()  { while(!(STAT & SPI_STAT_RBNE)); }
+    void WaitForTBEHiAndTransLo() { while((STAT & (SPI_STAT_TBE | SPI_STAT_TRANS)) != SPI_STAT_TBE); }
     void ClearRxBuf()     { while(STAT & SPI_STAT_RBNE) (void)DATA; }
     void ClearRxOvrErr()  { (void)DATA; (void)STAT; (void)DATA; }
-
-    // Read/Write
-    uint16_t Read() { return DATA; }
-    void Write(uint32_t AData) { DATA = AData; } // This register can be accessed by half-word (16-bit) or word (32-bit).
-
-    uint16_t WriteRead(uint32_t AData) {
-        DATA = AData;
-        while(!(STAT & SPI_STAT_RBNE));  // Wait for SPI transmission to complete
-        return DATA;
-    }
-
-
 };
 
 #define SPI0    ((SPI_TypeDef*)SPI0_BASE)

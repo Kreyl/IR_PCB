@@ -76,6 +76,12 @@ namespace Nvic {
 
 #endif
 
+static inline void GetMcuSerialNum(uint32_t Ser[3]) {
+    Ser[0] = *(volatile uint32_t *)(0x1FFFF7E8);
+    Ser[1] = *(volatile uint32_t *)(0x1FFFF7EC);
+    Ser[2] = *(volatile uint32_t *)(0x1FFFF7F0);
+}
+
 namespace Gpio { // ========================== GPIO ============================
 
 enum PullUpDown_t { PullNone = 0b00, PullUp = 0b01, PullDown = 0b10 };
@@ -116,9 +122,15 @@ void SetupAlterFunc(GPIO_TypeDef *PGpio, const uint32_t PinN,
 
 class Pin_t {
 public:
+    Pin_t() : PGpio(nullptr), PinN(0) {}
     Pin_t(GPIO_TypeDef *APGpio, uint32_t APinN) : PGpio(APGpio), PinN(APinN) {}
-    GPIO_TypeDef const *PGpio;
-    const uint32_t PinN;
+    GPIO_TypeDef *PGpio;
+    uint32_t PinN;
+    inline void SetHi() { Gpio::SetHi(PGpio, PinN); }
+    inline void SetLo() { Gpio::SetLo(PGpio, PinN); }
+    void SetupOut(const Gpio::OutMode_t OutMode, const Gpio::Speed_t ASpeed = Gpio::speed10MHz) {
+        Gpio::SetupOut(PGpio, PinN, OutMode, ASpeed);
+    }
 };
 
 // ==== PWM output ====
@@ -240,17 +252,6 @@ public:
 #endif // DMA
 
 #if 1 // ============================== SPI ====================================
-//enum SpiClkDivider_t {
-//    sclkDiv2   = 0b000,
-//    sclkDiv4   = 0b001,
-//    sclkDiv8   = 0b010,
-//    sclkDiv16  = 0b011,
-//    sclkDiv32  = 0b100,
-//    sclkDiv64  = 0b101,
-//    sclkDiv128 = 0b110,
-//    sclkDiv256 = 0b111,
-//};
-
 class Spi_t {
 public:
     SPI_TypeDef *PSpi;
@@ -259,9 +260,11 @@ public:
     enum class cpol {IdleLow, IdleHigh};
     enum class BitNumber {n8, n16};
     // Example: boMSB, cpolIdleLow, cphaFirstEdge, sbFdiv2, bitn8
-    void Setup(BitOrder BitOrder, cpol CPOL, cpha CPHA,
+    void Setup(BitOrder BitOrdr, cpol CPOL, cpha CPHA,
             int32_t Bitrate_Hz, BitNumber BitNum = BitNumber::n8) const;
 
+    void Enable()  { PSpi->Enable(); }
+    void Disable() { PSpi->Disable(); }
 //    void PrintFreq() const;
 
     // IRQ
@@ -277,25 +280,40 @@ public:
     }
 //    void SetupRxIrqCallback(ftVoidVoid AIrqHandler) const;
 
-    void Transmit(uint8_t Params, uint8_t *ptr, uint32_t Len) const {
-        PSpi->Disable();
-//        PSpi->CR1 = SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_MSTR;
-//        if(Params & 0x80) PSpi->CR1 |= SPI_CR1_LSBFIRST; // 0 = MSB, 1 = LSB
-//        if(Params & 0x40) PSpi->CR1 |= SPI_CR1_CPOL;     // 0 = IdleLow, 1 = IdleHigh
-//        if(Params & 0x20) PSpi->CR1 |= SPI_CR1_CPHA;     // 0 = FirstEdge, 1 = SecondEdge
-//        PSpi->CR1 |= (Params & 0x07) << 3; // Setup divider
-//        PSpi->CR2 = ((uint16_t)0b0111 << 8);
-//        (void)PSpi->SR; // Read Status reg to clear some flags
-        // Do it
-        PSpi->Enable();
-        while(Len) {
-            PSpi->Write(*ptr);
-            PSpi->WaitRBNEHi(); // Wait for SPI transmission to complete
-            *ptr = PSpi->Read();
-            ptr++;
-            Len--;
-        }
+    void Write(uint32_t AData) {
+        PSpi->WaitForTBEHi();
+        PSpi->DATA = AData;
     }
+
+    uint16_t WriteRead(uint32_t AData) {
+        PSpi->DATA = AData;
+        PSpi->WaitForRBNEHi(); // Wait for SPI transmission to complete
+        return PSpi->DATA;
+    }
+
+    void EnQuadRead();
+    void EnQuadWrite();
+    void DisQuad();
+
+//    void Transmit(uint8_t Params, uint8_t *ptr, uint32_t Len) const {
+//        PSpi->Disable();
+////        PSpi->CR1 = SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_MSTR;
+////        if(Params & 0x80) PSpi->CR1 |= SPI_CR1_LSBFIRST; // 0 = MSB, 1 = LSB
+////        if(Params & 0x40) PSpi->CR1 |= SPI_CR1_CPOL;     // 0 = IdleLow, 1 = IdleHigh
+////        if(Params & 0x20) PSpi->CR1 |= SPI_CR1_CPHA;     // 0 = FirstEdge, 1 = SecondEdge
+////        PSpi->CR1 |= (Params & 0x07) << 3; // Setup divider
+////        PSpi->CR2 = ((uint16_t)0b0111 << 8);
+////        (void)PSpi->SR; // Read Status reg to clear some flags
+//        // Do it
+//        PSpi->Enable();
+//        while(Len) {
+//            PSpi->Write(*ptr);
+//            PSpi->WaitRBNEHi(); // Wait for SPI transmission to complete
+//            *ptr = PSpi->Read();
+//            ptr++;
+//            Len--;
+//        }
+//    }
 
 };
 #endif

@@ -4,6 +4,7 @@
 #include "MsgQ.h"
 #include "usb_cdc.h"
 #include "usb.h"
+#include "SpiFlash.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Debug pin
@@ -17,6 +18,8 @@ EvtMsgQ_t<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
 static const UartParams_t CmdUartParams(115200, CMD_UART_PARAMS);
 CmdUart_t Uart{CmdUartParams};
 void OnCmd(Shell_t *PShell);
+
+SpiFlash_t SpiFlash(SPI0);
 
 EvtTimer_t TmrUartCheck(TIME_MS2I(UART_RX_POLL_MS), EvtId::UartCheckTime, EvtTimer_t::Type::Periodic);
 
@@ -62,6 +65,12 @@ void main(void) {
     EvtQMain.Init();
     Printf("\r%S %S\r\n", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk::PrintFreqs();
+
+    AFIO->RemapSPI0_PB345();
+    SpiFlash.Init(FLASH_NSS, FLASH_SCK, FLASH_MISO, FLASH_MOSI, FLASH_IO2, FLASH_IO3);
+    SpiFlash.Reset();
+    Printf("FlashID: %X\r", SpiFlash.ReleasePowerDown());
+
 
 //    if(!XtalIsOk) Printf("XTAL Fail\r");
     TmrUartCheck.StartOrRestart();
@@ -146,6 +155,34 @@ void OnCmd(Shell_t *PShell) {
             return;
         }
         PShell->BadParam();
+    }
+
+    else if(PCmd->NameIs("FSta")) {
+        Printf("0x%02X 0x%02X 0x%02X\r",
+                SpiFlash.ReadStatusReg1(),
+                SpiFlash.ReadStatusReg2(),
+                SpiFlash.ReadStatusReg3());
+    }
+
+    else if(PCmd->NameIs("FMfr")) {
+        SpiFlash_t::MfrDevId_t r;
+        r = SpiFlash.ReadMfrDevId();
+        Printf("0x%02X 0x%02X\r", r.Mfr, r.DevID);
+    }
+    else if(PCmd->NameIs("FMfrQ")) {
+        SpiFlash_t::MfrDevId_t r;
+        r = SpiFlash.ReadMfrDevIdQ();
+        Printf("0x%02X 0x%02X\r", r.Mfr, r.DevID);
+    }
+
+    else if(PCmd->NameIs("FR")) {
+        uint32_t Addr, Len;
+        if(PCmd->GetParams<uint32_t>(2, &Addr, &Len) == retv::Ok) {
+            uint8_t Buf[Len];
+            SpiFlash.Read(Addr, Buf, Len);
+            Printf("%A\r", Buf, Len, ' ');
+        }
+        else PShell->BadParam();
     }
 
     /*

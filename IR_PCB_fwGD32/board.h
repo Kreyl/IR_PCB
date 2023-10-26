@@ -82,6 +82,15 @@
 // IR Rcvr
 #define IR_RX_DATA_PIN  PA3
 
+// Spi Flash
+#define SPI_FLASH_TYPE  W25Q32
+#define FLASH_NSS       PA15
+#define FLASH_SCK       PB3
+#define FLASH_MISO      PB4
+#define FLASH_MOSI      PB5
+#define FLASH_IO2       PB6
+#define FLASH_IO3       PB7
+
 #endif // GPIO
 
 #if 1 // ========================= Timer =======================================
