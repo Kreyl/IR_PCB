@@ -6,6 +6,7 @@
 #include "usb.h"
 #include "SpiFlash.h"
 #include "led.h"
+#include "beeper.h"
 #include "Sequences.h"
 
 #if 1 // ======================== Variables and defines ========================
@@ -25,6 +26,7 @@ LedSmooth_t Lumos{LUMOS_PIN};
 LedSmooth_t SideLEDs[SIDE_LEDS_CNT] = { {LED_PWM1}, {LED_PWM2}, {LED_PWM3}, {LED_PWM4} };
 LedSmooth_t FrontLEDs[FRONT_LEDS_CNT] = { {LED_FRONT1}, {LED_FRONT2} };
 
+Beeper_t Beeper {BEEPER_PIN};
 
 SpiFlash_t SpiFlash(SPI0);
 
@@ -59,9 +61,6 @@ void main(void) {
     }
     Clk::UpdateFreqValues();
 
-    Gpio::SetupOut(PA10, Gpio::PushPull);
-    Gpio::SetHi(PA10);
-
     RCU->EnAFIO();
     // Disable JTAG, leaving SWD. Otherwise PB3 & PB4 are occupied by JTDO & JTRST
     AFIO->DisableJtagDP();
@@ -73,6 +72,8 @@ void main(void) {
     Printf("\r%S %S\r\n", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk::PrintFreqs();
 
+    Beeper.Init();
+//    Beeper.StartOrRestart(bsqShot);
     // LEDs
     for(auto &Led : SideLEDs) {
         Led.Init();
@@ -84,6 +85,10 @@ void main(void) {
         Led.StartOrRestart(lsqFadeInOut);
         Sys::SleepMilliseconds(207);
     }
+//    Lumos.Init();
+//    Lumos.StartOrRestart(lsqFadeIn);
+    Gpio::SetupOut(PA10, Gpio::PushPull);
+    Gpio::SetHi(PA10); // XXX
 
     AFIO->RemapSPI0_PB345();
     SpiFlash.Init();

@@ -37,12 +37,13 @@ struct LedHSVChunk_t : public BaseChunk_t {
 
 // LED Smooth
 struct LedSmoothChunk_t : public BaseChunk_t {
-    uint8_t Brightness;
+    uint32_t Brightness;
 };
 
 // Beeper
 struct BeepChunk_t : public BaseChunk_t {
-    uint16_t Freq_Hz;
+    uint32_t Freq_Hz;
+    uint32_t FreqSmooth = 0;
 };
 
 

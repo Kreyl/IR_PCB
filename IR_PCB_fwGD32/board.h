@@ -35,9 +35,9 @@
 #endif
 
 #if 1 // ==== OS timer settings ====
-#define SYS_TIM                     TIM11 // XXX
-#define SYS_TIM_IRQn                TIMER7_BRK_TIMER11_IRQn
-#define SYS_TIM_IRQ_HANDLER         TIMER7_BRK_TIMER11_IRQHandler
+#define SYS_TIM                     TIM10
+#define SYS_TIM_IRQn                TIMER0_TRG_CMT_TIMER10_IRQn
+#define SYS_TIM_IRQ_HANDLER         TIMER0_TRG_CMT_TIMER10_IRQHandler
 #define SYS_TIM_IRQ_PRIORITY        2
 #endif
 

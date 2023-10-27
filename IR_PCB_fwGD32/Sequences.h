@@ -13,32 +13,32 @@
 #if 0 // ======================== Simple LED blink =============================
 #define BLINK_DELAY_MS      180
 const BaseChunk_t lbsqOk[] = {
-        {csSetup, 1},
-        {csWait, 720},
-        {csSetup, 0},
-        {csEnd}
+        {Chunk::Setup, 1},
+        {Chunk::Wait, 720},
+        {Chunk::Setup, 0},
+        {Chunk::End}
 };
 
 const BaseChunk_t lbsqBlink3[] = {
-        {csSetup, 1},
-        {csWait, BLINK_DELAY_MS},
-        {csSetup, 0},
-        {csWait, BLINK_DELAY_MS},
-        {csRepeat, 3},
-        {csEnd}
+        {Chunk::Setup, 1},
+        {Chunk::Wait, BLINK_DELAY_MS},
+        {Chunk::Setup, 0},
+        {Chunk::Wait, BLINK_DELAY_MS},
+        {Chunk::Repeat, 3},
+        {Chunk::End}
 };
 
 const BaseChunk_t lbsqCharging[] = {
-        {csSetup, 1},
-        {csWait, 720},
-        {csSetup, 0},
-        {csWait, 270},
-        {csGoto, 0}
+        {Chunk::Setup, 1},
+        {Chunk::Wait, 720},
+        {Chunk::Setup, 0},
+        {Chunk::Wait, 270},
+        {Chunk::Goto, 0}
 };
 
 const BaseChunk_t lbsqChargingDone[] = {
-        {csSetup, 1},
-        {csEnd}
+        {Chunk::Setup, 1},
+        {Chunk::End}
 };
 #endif
 
@@ -98,7 +98,7 @@ const LedSmoothChunk_t lsqUsbCmd[] = {
 };
 #endif
 
-#if 0 // ============================= Beeper ==================================
+#if 1 // ============================= Beeper ==================================
 #define BEEP_VOLUME     1   // Maximum 10
 #define BEEP_VOLUME_MAX 11
 
@@ -138,17 +138,17 @@ const LedSmoothChunk_t lsqUsbCmd[] = {
 #define OneHalfth       (OneSixteenth * 8)
 #define OneWhole        (OneSixteenth * 16)
 
-#define NOTE(Note, Dur) {csSetup, BEEP_VOLUME, Note}, {csWait, Dur}, {csSetup, 0}, {csWait, 18}
+#define NOTE(Note, Dur) {Chunk::Setup, BEEP_VOLUME, Note}, {Chunk::Wait, Dur}, {Chunk::Setup, 0}, {Chunk::Wait, 18}
 #endif
 
 // MORSE
-#define MORSE_TONE {csSetup, BEEP_VOLUME, Do_3}
+#define MORSE_TONE {Chunk::Setup, BEEP_VOLUME, Do_3}
 #define MORSE_DOT_LENGTH 180
 #define MORSE_DASH_LENGTH MORSE_DOT_LENGTH * 3
 #define MORSE_PAUSE_LENGTH MORSE_DOT_LENGTH
-#define MORSE_PAUSE {csSetup, 0}, {csWait, MORSE_PAUSE_LENGTH}
-#define MORSE_DOT MORSE_TONE, {csWait, MORSE_DOT_LENGTH}, MORSE_PAUSE
-#define MORSE_DASH MORSE_TONE, {csWait, MORSE_DASH_LENGTH}, MORSE_PAUSE
+#define MORSE_PAUSE {Chunk::Setup, 0}, {Chunk::Wait, MORSE_PAUSE_LENGTH}
+#define MORSE_DOT MORSE_TONE, {Chunk::Wait, MORSE_DOT_LENGTH}, MORSE_PAUSE
+#define MORSE_DASH MORSE_TONE, {Chunk::Wait, MORSE_DASH_LENGTH}, MORSE_PAUSE
 
 // We are the champions
 const BeepChunk_t bsqWeAreTheChampions[] = {
@@ -160,99 +160,99 @@ const BeepChunk_t bsqWeAreTheChampions[] = {
         NOTE(Do_3, OneFourth),
         NOTE(La_2, OneEighth),
         NOTE(Re_3, OneHalfth),
-        {csEnd}
+        {Chunk::End}
 };
 
 // Type, BEEP_VOLUME, freq
 
 const BeepChunk_t bsqShot[] = {
-        {csSetup, BEEP_VOLUME_MAX, 6000, 0},
-        {csWait, 40},
-        {csSetup, BEEP_VOLUME_MAX, 1000, 18000},
-        {csSetup, 0},
-        {csEnd}
+        {Chunk::Setup, BEEP_VOLUME_MAX, 6000, 0},
+        {Chunk::Wait, 40},
+        {Chunk::Setup, BEEP_VOLUME_MAX, 1000, 18000},
+        {Chunk::Setup, 0},
+        {Chunk::End}
 };
 
 const BeepChunk_t bsqReloading[] = {
-        {csSetup, BEEP_VOLUME, Si_3},   {csWait, RELOADING_BLINK_DELAY},
-        {csSetup, 0},                   {csWait, RELOADING_BLINK_DELAY},
-        {csSetup, BEEP_VOLUME, Re_D_4}, {csWait, RELOADING_BLINK_DELAY},
-        {csSetup, 0},                   {csWait, RELOADING_BLINK_DELAY},
-        {csSetup, BEEP_VOLUME, Fa_D_4}, {csWait, RELOADING_BLINK_DELAY},
-        {csSetup, 0},                   {csWait, RELOADING_BLINK_DELAY},
-        {csGoto, 0}
+        {Chunk::Setup, BEEP_VOLUME, Si_3},   {Chunk::Wait, RELOADING_BLINK_DELAY},
+        {Chunk::Setup, 0},                   {Chunk::Wait, RELOADING_BLINK_DELAY},
+        {Chunk::Setup, BEEP_VOLUME, Re_D_4}, {Chunk::Wait, RELOADING_BLINK_DELAY},
+        {Chunk::Setup, 0},                   {Chunk::Wait, RELOADING_BLINK_DELAY},
+        {Chunk::Setup, BEEP_VOLUME, Fa_D_4}, {Chunk::Wait, RELOADING_BLINK_DELAY},
+        {Chunk::Setup, 0},                   {Chunk::Wait, RELOADING_BLINK_DELAY},
+        {Chunk::Goto, 0}
 };
 
 const BeepChunk_t bsqMagazReloaded[] = {
-        {csSetup, BEEP_VOLUME_MAX, 1950, 0},
-        {csWait, 40},
-        {csSetup, BEEP_VOLUME_MAX, 2950, 120000},
-        {csSetup, 0},
-        {csEnd}
+        {Chunk::Setup, BEEP_VOLUME_MAX, 1950, 0},
+        {Chunk::Wait, 40},
+        {Chunk::Setup, BEEP_VOLUME_MAX, 2950, 120000},
+        {Chunk::Setup, 0},
+        {Chunk::End}
 };
 
 const BeepChunk_t bsqMagazEnded[] = {
-        {csSetup, BEEP_VOLUME_MAX, 2250, 0},
-        {csWait, 40},
-        {csSetup, BEEP_VOLUME_MAX, 1050, 90000},
-        {csSetup, 0},
-        {csEnd}
+        {Chunk::Setup, BEEP_VOLUME_MAX, 2250, 0},
+        {Chunk::Wait, 40},
+        {Chunk::Setup, BEEP_VOLUME_MAX, 1050, 90000},
+        {Chunk::Setup, 0},
+        {Chunk::End}
 };
 
 const BeepChunk_t bsqHit[] = {
-        {csSetup, BEEP_VOLUME_MAX, 100, 0},
-        {csWait, 20},
-        {csSetup, BEEP_VOLUME_MAX, 2700, 1000},
-        {csWait, 10},
-        {csSetup, BEEP_VOLUME_MAX, 100, 1000},
-        {csWait, 100},
-        {csSetup, 0},
-        {csEnd}
+        {Chunk::Setup, BEEP_VOLUME_MAX, 100, 0},
+        {Chunk::Wait, 20},
+        {Chunk::Setup, BEEP_VOLUME_MAX, 2700, 1000},
+        {Chunk::Wait, 10},
+        {Chunk::Setup, BEEP_VOLUME_MAX, 100, 1000},
+        {Chunk::Wait, 100},
+        {Chunk::Setup, 0},
+        {Chunk::End}
 };
 
 const BeepChunk_t bsqHitsEnded[] = {
-        {csSetup, BEEP_VOLUME_MAX, 260, 0},
-        {csWait, 200},
-        {csSetup, BEEP_VOLUME_MAX, 160, 0},
-        {csWait, 200},
-        {csSetup, 0},
-        {csRepeat, 3},
-        {csEnd}
+        {Chunk::Setup, BEEP_VOLUME_MAX, 260, 0},
+        {Chunk::Wait, 200},
+        {Chunk::Setup, BEEP_VOLUME_MAX, 160, 0},
+        {Chunk::Wait, 200},
+        {Chunk::Setup, 0},
+        {Chunk::Repeat, 3},
+        {Chunk::End}
 };
 
 const BeepChunk_t bsqBeepBeep[] = {
-        {csSetup, BEEP_VOLUME, 1975},
-        {csWait, 54},
-        {csSetup, 0},
-        {csWait, 54},
-        {csSetup, BEEP_VOLUME, 1975},
-        {csWait, 54},
-        {csSetup, 0},
-        {csEnd}
+        {Chunk::Setup, BEEP_VOLUME, 1975},
+        {Chunk::Wait, 54},
+        {Chunk::Setup, 0},
+        {Chunk::Wait, 54},
+        {Chunk::Setup, BEEP_VOLUME, 1975},
+        {Chunk::Wait, 54},
+        {Chunk::Setup, 0},
+        {Chunk::End}
 };
 
 #if 1 // ==== Extensions ====
 // Pill
 const BeepChunk_t bsqBeepPillOk[] = {
-        {csSetup, BEEP_VOLUME, Si_3},
-        {csWait, 180},
-        {csSetup, BEEP_VOLUME, Re_D_4},
-        {csWait, 180},
-        {csSetup, BEEP_VOLUME, Fa_D_4},
-        {csWait, 180},
-        {csSetup, 0},
-        {csEnd}
+        {Chunk::Setup, BEEP_VOLUME, Si_3},
+        {Chunk::Wait, 180},
+        {Chunk::Setup, BEEP_VOLUME, Re_D_4},
+        {Chunk::Wait, 180},
+        {Chunk::Setup, BEEP_VOLUME, Fa_D_4},
+        {Chunk::Wait, 180},
+        {Chunk::Setup, 0},
+        {Chunk::End}
 };
 
 const BeepChunk_t bsqBeepPillBad[] = {
-        {csSetup, BEEP_VOLUME, Fa_4},
-        {csWait, 180},
-        {csSetup, BEEP_VOLUME, Re_4},
-        {csWait, 180},
-        {csSetup, BEEP_VOLUME, Si_3},
-        {csWait, 180},
-        {csSetup, 0},
-        {csEnd}
+        {Chunk::Setup, BEEP_VOLUME, Fa_4},
+        {Chunk::Wait, 180},
+        {Chunk::Setup, BEEP_VOLUME, Re_4},
+        {Chunk::Wait, 180},
+        {Chunk::Setup, BEEP_VOLUME, Si_3},
+        {Chunk::Wait, 180},
+        {Chunk::Setup, 0},
+        {Chunk::End}
 };
 #endif // ext
 #endif // beeper
