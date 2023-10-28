@@ -8,6 +8,7 @@
 #include "led.h"
 #include "beeper.h"
 #include "Sequences.h"
+#include "ir.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Debug pin
@@ -71,6 +72,7 @@ void main(void) {
     EvtQMain.Init();
     Printf("\r%S %S\r\n", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk::PrintFreqs();
+    //    if(!XtalIsOk) Printf("XTAL Fail\r");
 
     Beeper.Init();
 //    Beeper.StartOrRestart(bsqShot);
@@ -93,13 +95,11 @@ void main(void) {
     AFIO->RemapSPI0_PB345();
     SpiFlash.Init();
     SpiFlash.Reset();
-    Printf("FlashID: %X\r", SpiFlash.ReleasePowerDown());
+//    Printf("FlashID: %X\r", SpiFlash.ReleasePowerDown());
 
-
-//    if(!XtalIsOk) Printf("XTAL Fail\r");
     TmrUartCheck.StartOrRestart();
 
-
+    irLed::Init();
 
     // DEBUG
 //    Gpio::SetupOut(PB0, Gpio::PushPull);
@@ -239,51 +239,14 @@ void OnCmd(Shell_t *PShell) {
         else PShell->BadParam();
     }
 
-
-    /*
-    else if(PCmd->NameIs("ShaFw")) {
-        uint32_t Sz;
-//        if(PCmd->GetNext(&Sz) != retvOk) Sz = ZMODULE_FW_SZ;
-        uint8_t hash[32];
-        const char* key = "1234567890";
-        DBG_HI();
-//        Sha256DoHash((uint8_t*)ZModuleFw, Sz, hash);
-        Sha256DoHash((uint8_t*)key, strlen(key), hash);
-        DBG_LO();
-        Printf("%A\r", hash, 32, ' ');
-    }
-
-    // ==== Crypto ====
-    else if(PCmd->NameIs("GetSn")) { Printf("%S\r", CraCry.SNStr); }
-    else if(PCmd->NameIs("SignIt")) {
-        char *S = PCmd->GetNextString();
-        uint32_t Sz = strlen(S);
-        if(Sz) {
-            CraCry.SignIt(S, Sz);
-            Printf("%A\r", CraCry.Digest, SHA256HashSize, ' ');
+    else if(PCmd->NameIs("IRTX")) {
+        uint16_t w;
+        if(PCmd->GetNext(&w) == retv::Ok) {
+            irLed::TransmitWord(w, 16, 255, nullptr);
         }
         else PShell->BadParam();
     }
-*/
 
-//    else if(PCmd->NameIs("HMAC")) {
-//        uint8_t hash[32];
-//        uint32_t KeySz, MsgSz;
-//        if(PCmd->GetNext(&KeySz) == retvOk and PCmd->GetNext(&MsgSz) == retvOk) {
-//            uint8_t *pKey = (uint8_t*)ZModuleFw;
-//            uint8_t *pMsg = pKey + MsgSz;
-//            DBG_HI();
-//            HMAC_SHA256(pMsg, MsgSz, pKey, KeySz, hash);
-//            DBG_LO();
-//            Printf("Key %u, Msg %u: %A\r", KeySz, MsgSz, hash, 32, ' ');
-//        }
-//        else {
-//            const char* txt = "The quick brown fox jumps over the lazy dog";
-//            const char* key = "key";
-//            HMAC_SHA256((uint8_t*)txt, strlen(txt), (uint8_t*)key, strlen(key), hash);
-//            Printf("%A\r", hash, 32, ' ');
-//        }
-//    }
 
     else PShell->CmdUnknown();
 }

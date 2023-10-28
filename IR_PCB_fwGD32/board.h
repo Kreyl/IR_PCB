@@ -135,13 +135,13 @@
 #endif
 
 #if 1 // =========================== DMA =======================================
-// ==== SPI FLASH ====
+// SPI FLASH
 #define SPIFLASH_DMA_RX     DMA0_Channel1
 #define DMA0_CH1_IRQ_EN     TRUE
 #define SPIFLASH_DMA_TX     DMA0_Channel2
 #define DMA0_CH2_IRQ_EN     TRUE
 
-// ==== Uart ====
+// Uart
 #define UART_DMA_TX         DMA0_Channel6
 #define DMA0_CH6_IRQ_EN     TRUE
 #define UART_DMA_RX         DMA0_Channel5
@@ -149,6 +149,9 @@
 #define UART_DMA_TX_MODE    (DMA_PRIO_LOW    | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE)
 #define UART_DMA_RX_MODE    (DMA_PRIO_MEDIUM | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | DMA_MEM_INC | DMA_DIR_PER2MEM | DMA_CIRC)
 
+// DAC
+#define DAC_DMA             DMA1_Channel2
+#define DMA1_CH2_IRQ_EN     FALSE // No need in DAC DMA IRQ
 
 #endif // DMA
 

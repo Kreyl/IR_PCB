@@ -1377,4 +1377,53 @@ struct ADC_TypeDef {
 
 #endif
 
+#if 1 // ============================== DAC ====================================
+
+struct DAC_TypeDef {
+    volatile uint32_t CTL;        /*!< Control register,                        0x00 */
+    volatile uint32_t SWT;        /*!< Software trigger register,               0x04 */
+    volatile uint32_t DAC0_R12DH; /*!< DAC0 12-bit right-aligned data register, 0x08 */
+    volatile uint32_t DAC0_L12DH; /*!< DAC0 12-bit left-aligned data register,  0x0C */
+    volatile uint32_t DAC0_R8DH;  /*!< DAC0 8-bit right-aligned data register,  0x10 */
+    volatile uint32_t DAC1_R12DH; /*!< DAC1 12-bit right-aligned data register, 0x14 */
+    volatile uint32_t DAC1_L12DH; /*!< DAC1 12-bit left-aligned data register,  0x18 */
+    volatile uint32_t DAC1_R8DH;  /*!< DAC1 8-bit right-aligned data register,  0x1C */
+    volatile uint32_t DACC_R12DH; /*!< concurrent mode 12-bit right-aligned data register, 0x20 */
+    volatile uint32_t DACC_L12DH; /*!< concurrent mode 12-bit left-aligned data register,  0x24 */
+    volatile uint32_t DACC_R8DH;  /*!< concurrent mode 8-bit right-aligned data register,  0x28 */
+    volatile uint32_t DAC0_DO;    /*!< DAC0 data output register,               0x2C */
+    volatile uint32_t DAC1_DO;    /*!< DAC0 data output register,               0x30 */
+
+    enum class Trigger { Tim5TRGO = 0b000, Tim2TRGO = 0b001, Tim6TRGO = 0b010, Tim4TRGO = 0b011,
+        Tim1TRGO = 0b100, Tim3TRGO = 0b101, EXTIline9 = 0b110, Software = 0b111 };
+
+    void Enable0()  { CTL |=  (1UL << 0);  }
+    void Enable1()  { CTL |=  (1UL << 16); }
+    void Disable0() { CTL &= ~(1UL << 0);  }
+    void Disable1() { CTL &= ~(1UL << 16); }
+
+    void EnDma0()  { CTL |= 1UL << 12; }
+    void EnDma1()  { CTL |= 1UL << 28; }
+
+    void SetTrigger0(Trigger tg) { SET_BITS(CTL, 0b111UL, (uint32_t)tg, 3); }
+    void SetTrigger1(Trigger tg) { SET_BITS(CTL, 0b111UL, (uint32_t)tg, 19); }
+
+    void EnTrigger0() { CTL |= 1UL << 2; }
+    void EnTrigger1() { CTL |= 1UL << 18; }
+
+    void EnOutBuf0()  { CTL &= ~(1UL << 1); }
+    void EnOutBuf1()  { CTL &= ~(1UL << 17); }
+    void DisOutBuf0() { CTL |=  (1UL << 1); }
+    void DisOutBuf1() { CTL |=  (1UL << 17); }
+
+    void ActivateSwTrigger0() { SWT = (1UL << 0); }
+    void ActivateSwTrigger1() { SWT = (1UL << 1); }
+
+    void PutDataR0(uint32_t Data) { DAC0_R12DH = Data; }
+    void PutDataL0(uint32_t Data) { DAC0_L12DH = Data; }
+};
+
+#define DAC     ((DAC_TypeDef*)DAC_BASE)
+#endif
+
 #endif /* LIB_GD32E11X_KL_H_ */
