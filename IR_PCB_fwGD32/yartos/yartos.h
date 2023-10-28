@@ -239,8 +239,8 @@ Thread_t *GetSelfThd();
 void RescheduleS();
 
 // Time and sleep
-static inline systime_t GetSysTime() { return (systime_t)SYS_TIM->CNT; }
-inline systime_t TimeElapsedSince(systime_t start) { return (systime_t)(GetSysTime() - start); }
+static inline systime_t GetSysTimeX() { return (systime_t)SYS_TIM->CNT; }
+inline systime_t TimeElapsedSince(systime_t start) { return (systime_t)(GetSysTimeX() - start); }
 retv Sleep(systime_t Delay_st);
 retv SleepS(systime_t Delay_st);
 retv SleepMilliseconds(uint32_t Delay_ms);

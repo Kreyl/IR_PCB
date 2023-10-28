@@ -185,7 +185,7 @@ retv UsbCDC_t::ReceiveBinaryToBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_m
     IStartTransmissionIfNotYet();
     // Wait for data to be received
     Sys::Lock();
-    systime_t Start = Sys::GetSysTime();
+    systime_t Start = Sys::GetSysTimeX();
     systime_t TimeLeft, Timeout_st = TIME_MS2I(Timeout_ms);
     while(Len != 0) {
         // Calculate time left to wait
@@ -212,7 +212,7 @@ retv UsbCDC_t::TransmitBinaryFromBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeou
     retv r = retv::Timeout;
     Sys::Lock();
     OutQ::Action = OutQ::TransferAction::WakeThd; // Do not send evt to main q on buf reception
-    systime_t Start = Sys::GetSysTime();
+    systime_t Start = Sys::GetSysTimeX();
     systime_t TimeLeft, Timeout_st = TIME_MS2I(Timeout_ms);
     // Wait '>'
     while(r == retv::Timeout) {

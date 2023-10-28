@@ -161,7 +161,7 @@ void VtDoTickI() {
     VirtualTimer_t *vtp = vtlist.next;
     while(true) {
         // Get the system time as a reference
-        now = Sys::GetSysTime();
+        now = Sys::GetSysTimeX();
         nowdelta = TimeDiff(vtlist.lasttime, now);
         /* The list scan is limited by the timers header having
           "ch.vtlist.vt_delta == (systime_t)-1" which is greater than all deltas */
@@ -209,7 +209,7 @@ void VirtualTimer_t::DoSetI(systime_t delay, vtfunc_t vtfunc, void *APtr) {
     dbg.Check((vtfunc != NULL) && (delay != TIME_IMMEDIATE), "Bad vt params");
     ptr = APtr;
     pCallback = vtfunc;
-    systime_t now = Sys::GetSysTime();
+    systime_t now = Sys::GetSysTimeX();
     // If the delay is lower than the minimum safe delta then it is raised to the minimum safe value
     if(delay < (systime_t)SYS_ST_TIMEDELTA) delay = (systime_t)SYS_ST_TIMEDELTA;
     // Special case when the timers list is empty
@@ -284,7 +284,7 @@ void VirtualTimer_t::DoResetI() {
     // The delta of the removed timer is added to the new first timer
     vtlist.next->delta += delta;
     // Distance in ticks between the last alarm event and current time
-    systime_t nowdelta = TimeDiff(vtlist.lasttime, Sys::GetSysTime());
+    systime_t nowdelta = TimeDiff(vtlist.lasttime, Sys::GetSysTimeX());
     /* If the current time surpassed the time of the next element in list
      then the event interrupt is already pending, just return.*/
     if(nowdelta >= vtlist.next->delta) return;

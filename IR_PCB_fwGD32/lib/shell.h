@@ -38,7 +38,7 @@ public:
             Completed = false;
             Cnt = 0;
         }
-        LastCharTimestamp = Sys::GetSysTime();
+        LastCharTimestamp = Sys::GetSysTimeX();
         // Process char
         if(c == '\b') { if(Cnt > 0) Cnt--; }    // do backspace
         else if((c == '\r') or (c == '\n')) {   // end of line, check if cmd completed

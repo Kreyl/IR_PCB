@@ -699,7 +699,11 @@ void ClearPending(IRQn_Type IrqN) { NVIC->ICPR[(uint32_t)IrqN >> 5] = 1 << ((uin
 } // namespace
 
 #if 1 // ========================== HW Timer ===================================
-void Timer_t::SetUpdateFrequencyChangingPrescaler(uint32_t FreqHz) const {
+void HwTim::SetInputFreqChangingPrescaler(uint32_t FreqHz) const {
+    ITmr->PSC = (Clk::GetTimInputFreq(ITmr) / FreqHz) - 1;
+}
+
+void HwTim::SetUpdateFreqChangingPrescaler(uint32_t FreqHz) const {
     // Figure out input timer freq
     uint32_t UpdFreqMax = Clk::GetTimInputFreq(ITmr) / (GetTopValue() + 1);
     uint32_t Psc = UpdFreqMax / FreqHz;
@@ -709,7 +713,7 @@ void Timer_t::SetUpdateFrequencyChangingPrescaler(uint32_t FreqHz) const {
     GenerateUpdateEvt();
 }
 
-void Timer_t::SetUpdateFrequencyChangingTopValue(uint32_t FreqHz) const {
+void HwTim::SetUpdateFreqChangingTopValue(uint32_t FreqHz) const {
     uint32_t UpdFreqMax = Clk::GetTimInputFreq(ITmr) / (GetPrescaler() + 1);
     uint32_t TopVal  = (UpdFreqMax / FreqHz);
     if(TopVal != 0) TopVal--;
@@ -718,10 +722,10 @@ void Timer_t::SetUpdateFrequencyChangingTopValue(uint32_t FreqHz) const {
     GenerateUpdateEvt();
 }
 
-void Timer_t::SetUpdateFrequencyChangingBoth(uint32_t FreqHz) const {
+void HwTim::SetUpdateFreqChangingBoth(uint32_t FreqHz) const {
     uint32_t Psc = (Clk::GetTimInputFreq(ITmr) / FreqHz) / 0x10000;
     SetPrescaler(Psc);
-    SetUpdateFrequencyChangingTopValue(FreqHz);
+    SetUpdateFreqChangingTopValue(FreqHz);
 }
 #endif
 

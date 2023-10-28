@@ -449,6 +449,8 @@ struct DMAChannel_t {
 #define TIM_DMAINTEN_UPIE   (1UL << 0)
 #define TIM_DMAINTEN_CH0IE  (1UL << 1)
 #define TIM_DMAINTEN_CH1IE  (1UL << 2)
+#define TIM_DMAINTEN_CH2IE  (1UL << 3)
+#define TIM_DMAINTEN_CH3IE  (1UL << 4)
 #define TIM_DMAINTEN_TRGDEN (1UL << 14)
 #define TIM_INTF_UPIF       (1UL << 0)
 #define TIM_INTF_CH0IF      (1UL << 1)

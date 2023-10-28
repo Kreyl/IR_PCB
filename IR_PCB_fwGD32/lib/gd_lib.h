@@ -33,6 +33,7 @@ public:
 #define MIN_(a, b)   ( ((a)<(b))? (a) : (b) )
 #define MAX_(a, b)   ( ((a)>(b))? (a) : (b) )
 #define ABS(a)      ( ((a) < 0)? -(a) : (a) )
+#define IS_LIKE(v, precise, deviation)  (((precise - deviation) < v) and (v < (precise + deviation)))
 
 // IRQ priorities
 #define IRQ_PRIO_LOW            15  // Minimum
@@ -73,7 +74,7 @@ namespace Nvic {
 
 
 #if 1 // ========================== HW Timer ===================================
-class Timer_t {
+class HwTim {
 protected:
     TIM_TypeDef* ITmr;
 public:
@@ -83,38 +84,40 @@ public:
         Compare0=0x40, Compare1=0x50, Compare2=0x60, Compare3=0x70};
     enum class SlaveMode {Disable=0, QDecoder0=1, QDecoder1=2, QDecoder2=3,
         Restart=4, Pause=5, Event=6, ExtClk=7};
-//    enum InputPrescaler_t{pscDiv1=0UL, pscDiv2=01UL, pscDiv4=2UL, pscDiv8=3UL};
+    enum class InputPsc {Div1=0UL, Div2=01UL, Div4=2UL, Div8=3UL};
+    enum class ChnlMode {Output=0UL, ITS=3UL,
+        CI0FE0=1UL, CI1FE0=2UL, CI1FE1=1UL, CI0FE1=2UL, CI2FE2=1UL, CI3FE2=2UL, CI3FE3=1UL, CI2FE3=2UL};
 
-
-    Timer_t(TIM_TypeDef *APTimer) : ITmr(APTimer) {}
+    HwTim(TIM_TypeDef *APTimer) : ITmr(APTimer) {}
     void Init()    const { RCU->EnTimer(ITmr);  }
     void Deinit()  const { RCU->DisTimer(ITmr); }
     void Enable()  const { ITmr->Enable(); }
     void Disable() const { ITmr->Disable(); }
-    void SetUpdateFrequencyChangingPrescaler(uint32_t FreqHz) const;
-    void SetUpdateFrequencyChangingTopValue(uint32_t FreqHz) const;
-    void SetUpdateFrequencyChangingBoth(uint32_t FreqHz) const;
+    void SetInputFreqChangingPrescaler(uint32_t FreqHz) const;
+
+    void SetUpdateFreqChangingPrescaler(uint32_t FreqHz) const;
+    void SetUpdateFreqChangingTopValue(uint32_t FreqHz) const;
+    void SetUpdateFreqChangingBoth(uint32_t FreqHz) const;
 //    void SetTmrClkFreq(uint32_t FreqHz) const;
     void SetTopValue(uint32_t Value) const { ITmr->SetTopValue(Value); }
     uint32_t GetTopValue() const { return ITmr->GetTopValue(); }
     void EnableAutoreloadBuffering()  const { ITmr->CTL0 |=  TIM_CTL0_ARSE; }
     void DisableAutoreloadBuffering() const { ITmr->CTL0 &= ~TIM_CTL0_ARSE; }
-//    void SetupPrescaler(uint32_t PrescaledFreqHz) const;
     void SetPrescaler(uint32_t PrescalerValue) const { ITmr->SetPrescaler(PrescalerValue); }
     uint32_t GetPrescaler() const { return ITmr->GetPrescaler(); }
     void SetCounter(uint32_t Value) const { ITmr->CNT = Value; }
     uint32_t GetCounter() const { return ITmr->CNT; }
 
     // Compare
-    void SetChnl0(uint32_t AValue) const { ITmr->CH0CV = AValue; }
-    void SetChnl1(uint32_t AValue) const { ITmr->CH1CV = AValue; }
-    void SetChnl2(uint32_t AValue) const { ITmr->CH2CV = AValue; }
-    void SetChnl3(uint32_t AValue) const { ITmr->CH3CV = AValue; }
+    void SetChnl0Value(uint32_t AValue) const { ITmr->CH0CV = AValue; }
+    void SetChnl1Value(uint32_t AValue) const { ITmr->CH1CV = AValue; }
+    void SetChnl2Value(uint32_t AValue) const { ITmr->CH2CV = AValue; }
+    void SetChnl3Value(uint32_t AValue) const { ITmr->CH3CV = AValue; }
 
-    uint32_t GetChnl0() const { return ITmr->CH0CV; }
-    uint32_t GetChnl1() const { return ITmr->CH1CV; }
-    uint32_t GetChnl2() const { return ITmr->CH2CV; }
-    uint32_t GetChnl3() const { return ITmr->CH3CV; }
+    uint32_t GetChnl0Value() const { return ITmr->CH0CV; }
+    uint32_t GetChnl1Value() const { return ITmr->CH1CV; }
+    uint32_t GetChnl2Value() const { return ITmr->CH2CV; }
+    uint32_t GetChnl3Value() const { return ITmr->CH3CV; }
 
     // Master/Slave
     void SetTriggerInput(TriggerIn TrgInput) const { ITmr->SMCFG = (ITmr->SMCFG & ~(0b111UL << 4)) | (uint32_t)TrgInput; }
@@ -125,74 +128,73 @@ public:
     void SelectMasterMode(MasterMode Mode) const { ITmr->CTL1 = (ITmr->CTL1 & ~(0b111UL << 4)) | (uint32_t)Mode; }
     void SelectSlaveMode(SlaveMode Mode) const { ITmr->SMCFG = (ITmr->SMCFG & ~0b111UL) | (uint32_t)Mode; }
 
-    // Inputs
-    /*
-    void SetupInput1(uint32_t Mode, InputPrescaler_t Psc, RiseFall_t Rsfll) const {
-        ITmr->CCMR1 = (ITmr->CCMR1 & 0xFF00) | ((uint32_t)Psc << 2)  | (Mode << 0);
-        uint16_t bits = (Rsfll == rfRising)? 0b0000U : (Rsfll == rfFalling)? 0b0010U : 0b1010;
-        ITmr->CCER = (ITmr->CCER & ~(0xAU << 0)) | (bits << 0);
+    // Channels setup
+    void SetChnlMode(uint32_t ChnlN, ChnlMode Mode) const {
+        if     (ChnlN == 0) SET_BITS(ITmr->CHCTL0, 0b11UL, (uint32_t)Mode, 0);
+        else if(ChnlN == 1) SET_BITS(ITmr->CHCTL0, 0b11UL, (uint32_t)Mode, 8);
+        else if(ChnlN == 2) SET_BITS(ITmr->CHCTL1, 0b11UL, (uint32_t)Mode, 0);
+        else if(ChnlN == 3) SET_BITS(ITmr->CHCTL1, 0b11UL, (uint32_t)Mode, 8);
     }
-    void SetupInput2(uint32_t Mode, InputPrescaler_t Psc, RiseFall_t Rsfll) const {
-        ITmr->CCMR1 = (ITmr->CCMR1 & 0x00FF) | ((uint32_t)Psc << 10) | (Mode << 8);
-        uint16_t bits = (Rsfll == rfRising)? 0b0000U : (Rsfll == rfFalling)? 0b0010U : 0b1010;
-        ITmr->CCER = (ITmr->CCER & ~(0xAU << 4)) | (bits << 4);
+    void SetInputPsc(uint32_t ChnlN, InputPsc Psc) const {
+        if     (ChnlN == 0) SET_BITS(ITmr->CHCTL0, 0b11UL, (uint32_t)Psc, 2);
+        else if(ChnlN == 1) SET_BITS(ITmr->CHCTL0, 0b11UL, (uint32_t)Psc, 10);
+        else if(ChnlN == 2) SET_BITS(ITmr->CHCTL1, 0b11UL, (uint32_t)Psc, 2);
+        else if(ChnlN == 3) SET_BITS(ITmr->CHCTL1, 0b11UL, (uint32_t)Psc, 10);
     }
-    void SetupInput3(uint32_t Mode, InputPrescaler_t Psc, RiseFall_t Rsfll) const {
-        ITmr->CCMR2 = (ITmr->CCMR2 & 0xFF00) | ((uint32_t)Psc << 2)  | (Mode << 0);
-        uint16_t bits = (Rsfll == rfRising)? 0b0000U : (Rsfll == rfFalling)? 0b0010U : 0b1010;
-        ITmr->CCER = (ITmr->CCER & ~(0xAU << 8)) | (bits << 8);
+    void SetInputActiveEdge(uint32_t InputN, RiseFall Rsfll) const {
+        uint32_t bits = (Rsfll == RiseFall::Rising)? 0b0000UL : (Rsfll == RiseFall::Falling)? 0b0010UL : 0b1010L;
+        if     (InputN == 0) SET_BITS(ITmr->CHCTL2, 0b1010UL, bits, 0);  // CI0FE0 and CI1FE0
+        else if(InputN == 1) SET_BITS(ITmr->CHCTL2, 0b1010UL, bits, 4);  // CI1FE1 and CI0FE1
+        else if(InputN == 2) SET_BITS(ITmr->CHCTL2, 0b1010UL, bits, 8);  // CI2FE2 and CI3FE2
+        else if(InputN == 3) SET_BITS(ITmr->CHCTL2, 0b1010UL, bits, 12); // CI3FE3 and CI2FE3
     }
-    void SetupInput4(uint32_t Mode, InputPrescaler_t Psc, RiseFall_t Rsfll) const {
-        ITmr->CCMR2 = (ITmr->CCMR2 & 0x00FF) | ((uint32_t)Psc << 10) | (Mode << 8);
-        uint16_t bits = (Rsfll == rfRising)? 0b0000U : (Rsfll == rfFalling)? 0b0010U : 0b1010;
-        ITmr->CCER = (ITmr->CCER & ~(0xAU << 12)) | (bits << 12);
+    void EnChnl(uint32_t ChnlN) const {
+        if     (ChnlN == 0) ITmr->CHCTL2 |= 1UL << 0;
+        else if(ChnlN == 1) ITmr->CHCTL2 |= 1UL << 4;
+        else if(ChnlN == 2) ITmr->CHCTL2 |= 1UL << 8;
+        else if(ChnlN == 3) ITmr->CHCTL2 |= 1UL << 12;
     }
 
+/*
     // Outputs
     void SetupOutput1(uint32_t Mode) const { ITmr->CCMR1 = (ITmr->CCMR1 & 0xFFFEFF00) | ((Mode & 8UL) << 13) | ((Mode & 7UL) << 4); }
     void SetupOutput2(uint32_t Mode) const { ITmr->CCMR1 = (ITmr->CCMR1 & 0xFEFF00FF) | ((Mode & 8UL) << 21) | ((Mode & 7UL) << 12); }
     void SetupOutput3(uint32_t Mode) const { ITmr->CCMR2 = (ITmr->CCMR2 & 0xFFFEFF00) | ((Mode & 8UL) << 13) | ((Mode & 7UL) << 4); }
     void SetupOutput4(uint32_t Mode) const { ITmr->CCMR2 = (ITmr->CCMR2 & 0xFEFF00FF) | ((Mode & 8UL) << 21) | ((Mode & 7UL) << 12); }
-    void EnableCCOutput1() const { ITmr->CCER |= TIM_CCER_CC1E; }
-    void EnableCCOutput2() const { ITmr->CCER |= TIM_CCER_CC2E; }
-    void EnableCCOutput3() const { ITmr->CCER |= TIM_CCER_CC3E; }
-    void EnableCCOutput4() const { ITmr->CCER |= TIM_CCER_CC4E; }
 */
     // DMA, Irq, Evt
     void EnableDmaOnTrigger() const { ITmr->DMAINTEN |= TIM_DMAINTEN_TRGDEN; }
     void EnableDMAOnCapture(uint32_t CaptureReq) const { ITmr->DMAINTEN |= (1UL << (CaptureReq + 9UL)); }
     void GenerateUpdateEvt()  const { ITmr->GenerateUpdateEvt(); }
-    /*
     // Enable
-    void EnableIrq(uint32_t IrqChnl, uint32_t IrqPriority) const { nvicEnableVector(IrqChnl, IrqPriority); }
-    void EnableIrqOnUpdate()  const { ITmr->DIER |= TIM_DIER_UIE; }
-    void EnableIrqOnCompare1() const { ITmr->DIER |= TIM_DIER_CC1IE; }
-    void EnableIrqOnCompare2() const { ITmr->DIER |= TIM_DIER_CC2IE; }
-    void EnableIrqOnCompare3() const { ITmr->DIER |= TIM_DIER_CC3IE; }
-    void EnableIrqOnCompare4() const { ITmr->DIER |= TIM_DIER_CC4IE; }
+    void EnableIrqOnUpdate()  const  { ITmr->DMAINTEN |= TIM_DMAINTEN_UPIE; }
+    void EnableIrqOnCompare0() const { ITmr->DMAINTEN |= TIM_DMAINTEN_CH0IE; }
+    void EnableIrqOnCompare1() const { ITmr->DMAINTEN |= TIM_DMAINTEN_CH1IE; }
+    void EnableIrqOnCompare2() const { ITmr->DMAINTEN |= TIM_DMAINTEN_CH2IE; }
+    void EnableIrqOnCompare3() const { ITmr->DMAINTEN |= TIM_DMAINTEN_CH3IE; }
     // Disable
-    void DisableIrqOnCompare1() const { ITmr->DIER &= ~TIM_DIER_CC1IE; }
-    void DisableIrqOnCompare2() const { ITmr->DIER &= ~TIM_DIER_CC2IE; }
-    void DisableIrqOnCompare3() const { ITmr->DIER &= ~TIM_DIER_CC3IE; }
-    void DisableIrqOnCompare4() const { ITmr->DIER &= ~TIM_DIER_CC4IE; }
+    void DisableIrqOnUpdate()   const { ITmr->DMAINTEN &= ~TIM_DMAINTEN_UPIE; }
+    void DisableIrqOnCompare0() const { ITmr->DMAINTEN &= ~TIM_DMAINTEN_CH0IE; }
+    void DisableIrqOnCompare1() const { ITmr->DMAINTEN &= ~TIM_DMAINTEN_CH1IE; }
+    void DisableIrqOnCompare2() const { ITmr->DMAINTEN &= ~TIM_DMAINTEN_CH2IE; }
+    void DisableIrqOnCompare3() const { ITmr->DMAINTEN &= ~TIM_DMAINTEN_CH3IE; }
     // Clear
-    void ClearUpdateIrqPendingBit()   const { ITmr->SR &= ~TIM_SR_UIF; }
-    void ClearCompare1IrqPendingBit() const { ITmr->SR &= ~TIM_SR_CC1IF; }
-    void ClearCompare2IrqPendingBit() const { ITmr->SR &= ~TIM_SR_CC2IF; }
-    void ClearCompare3IrqPendingBit() const { ITmr->SR &= ~TIM_SR_CC3IF; }
-    void ClearCompare4IrqPendingBit() const { ITmr->SR &= ~TIM_SR_CC4IF; }
+    void ClearUpdateIrqPendingBit()   const { ITmr->INTF &= ~TIM_INTF_UPIF; }
+    void ClearCompare0IrqPendingBit() const { ITmr->INTF &= ~TIM_INTF_CH0IF; }
+    void ClearCompare1IrqPendingBit() const { ITmr->INTF &= ~TIM_INTF_CH1IF; }
+    void ClearCompare2IrqPendingBit() const { ITmr->INTF &= ~TIM_INTF_CH2IF; }
+    void ClearCompare3IrqPendingBit() const { ITmr->INTF &= ~TIM_INTF_CH3IF; }
     // Check
-    bool IsEnabled() const { return (ITmr->CR1 & TIM_CR1_CEN); }
-    bool IsUpdateIrqFired() const { return (ITmr->SR & TIM_SR_UIF); }
-    bool IsCompare1IrqFired() const { return (ITmr->SR & TIM_SR_CC1IF); }
-    bool IsCompare2IrqFired() const { return (ITmr->SR & TIM_SR_CC2IF); }
-    bool IsCompare3IrqFired() const { return (ITmr->SR & TIM_SR_CC3IF); }
-    bool IsCompare4IrqFired() const { return (ITmr->SR & TIM_SR_CC4IF); }
-    bool IsCompare1IrqEnabled() const { return (ITmr->DIER & TIM_DIER_CC1IE); }
-    bool IsCompare2IrqEnabled() const { return (ITmr->DIER & TIM_DIER_CC2IE); }
-    bool IsCompare3IrqEnabled() const { return (ITmr->DIER & TIM_DIER_CC3IE); }
-    bool IsCompare4IrqEnabled() const { return (ITmr->DIER & TIM_DIER_CC4IE); }
-    */
+    bool IsEnabled()            const { return (ITmr->CTL0 & TIM_CTL0_CEN); }
+    bool IsUpdateIrqFired()     const { return (ITmr->INTF & TIM_INTF_UPIF); }
+    bool IsCompare0IrqFired()   const { return (ITmr->INTF & TIM_INTF_CH0IF); }
+    bool IsCompare1IrqFired()   const { return (ITmr->INTF & TIM_INTF_CH1IF); }
+    bool IsCompare2IrqFired()   const { return (ITmr->INTF & TIM_INTF_CH2IF); }
+    bool IsCompare3IrqFired()   const { return (ITmr->INTF & TIM_INTF_CH3IF); }
+    bool IsCompare0IrqEnabled() const { return (ITmr->DMAINTEN & TIM_DMAINTEN_CH0IE); }
+    bool IsCompare1IrqEnabled() const { return (ITmr->DMAINTEN & TIM_DMAINTEN_CH1IE); }
+    bool IsCompare2IrqEnabled() const { return (ITmr->DMAINTEN & TIM_DMAINTEN_CH2IE); }
+    bool IsCompare3IrqEnabled() const { return (ITmr->DMAINTEN & TIM_DMAINTEN_CH3IE); }
 };
 #endif
 

@@ -280,7 +280,7 @@ void SpiFlash_t::WriteEnable() {
 }
 
 retv SpiFlash_t::BusyWait() {
-    systime_t Start = Sys::GetSysTime();
+    systime_t Start = Sys::GetSysTimeX();
     retv r = retv::Timeout;
     Nss.SetLo();
     spi.WriteRead(0x05); // Read StatusReg1

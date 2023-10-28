@@ -97,9 +97,9 @@
 // IR LED
 #define TMR_DAC_SMPL    TIM6
 // IR Receiver
-//#define TMR_IR_RX       TIM15
-//#define TMR_IR_RX_IRQ   TIM15_IRQn
-//#define TMR_IR_RX_IRQ_HNDLR   Vector90
+#define TMR_IR_RX       TIM1
+#define TMR_IR_RX_IRQ   TIMER1_IRQn
+#define TMR_IR_RX_IRQ_HNDLR   TIMER1_IRQHandler
 #endif // Timer
 
 #if 1 // ==== USB ====

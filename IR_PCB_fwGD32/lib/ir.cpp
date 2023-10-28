@@ -9,24 +9,11 @@
 #include "gd_uart.h"
 
 #if IR_TX_ENABLED // ========================== IR TX ==========================
-//#define DBG_PINS
-#ifdef DBG_PINS
-#define DBG_GPIO1   GPIOC
-#define DBG_PIN1    8
-#define DBG_PIN_INIT()  PinSetupOut(DBG_GPIO1, DBG_PIN1, omPushPull)
-#define DBG1_SET()  PinSetHi(DBG_GPIO1, DBG_PIN1)
-#define DBG1_CLR()  PinSetLo(DBG_GPIO1, DBG_PIN1)
-#else
-#define DBG_PIN_INIT()
-#define DBG1_SET()
-#define DBG1_CLR()
-#endif
-
 namespace irLed {
 
 #define IRLED_DMA_MODE  DMA_PRIO_HIGH |  DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE
 
-Timer_t SamplingTmr{TMR_DAC_SMPL};
+HwTim SamplingTmr{TMR_DAC_SMPL};
 ftVoidVoid ICallbackI = nullptr;
 static uint32_t TransactionSz;
 void DmaTxEndIrqHandler(void *p, uint32_t flags);
@@ -84,23 +71,19 @@ void Init() {
     Gpio::SetupAnalog(IR_LED);
     // ==== DAC ====
     RCU->EnDAC();
-    // Enable DAC, enable DMA, TIM6 TRGO evt as trigger, trigger enable
-    // DAC->DisOutBuf0(); // Disable buffer
     DAC->SetTrigger0(DAC_TypeDef::Trigger::Tim6TRGO);
     DAC->EnTrigger0();
     DAC->EnDma0();
     DAC->Enable0();
-
     // ==== DMA ====
     DmaTx.Init(&DAC->DAC0_R8DH, IRLED_DMA_MODE);
-
     // ==== Sampling timer ====
     SamplingTmr.Init();
-    SamplingTmr.SetUpdateFrequencyChangingTopValue(SAMPLING_FREQ_HZ);
-    SamplingTmr.SelectMasterMode(Timer_t::MasterMode::Update);
+    SamplingTmr.SetUpdateFreqChangingTopValue(SAMPLING_FREQ_HZ);
+    SamplingTmr.SelectMasterMode(HwTim::MasterMode::Update);
 }
 
-// Power is DAC value
+// Power is 8-bit DAC value
 void TransmitWord(uint16_t wData, uint32_t BitCnt, uint8_t Power, ftVoidVoid CallbackI) {
     ICallbackI = CallbackI;
     // ==== Fill buffer depending on data ====
@@ -136,39 +119,43 @@ void ResetI() {
 
 #if IR_RX_ENABLED // ========================== IR RX ==========================
 /* ==== Timer ====
+Here Input1 is used for resetting on falling edge and capturing on rising one.
+Two outputs of EdgeDetector1 are used: CI1FE0 and CI1FE1.
+Edge polarity is set in CHCTL2 reg: for CI1FE0 using CH0P bit, and for
+CI1FE1 using CH1P bit. (CH0P sets edge polarity for both CI0FE0 and CI1FE0 signals;
+CH1P - for CI0FE1 and CI1FE1; and so on).
 ______        ________
       |______|
       ^      ^
    TI2FP2   TI2FP1
+   CI1FE1   CI1FE0
    Trigger  Capture
    Reset    CCR1 => DMA req CCR1 => TIMx Ch1 (not Ch2!) request
 */
 namespace irRcvr {
 
-ftVoidUint32 ICallbackI;
-Timer_t TmrRx{TMR_IR_RX};
+ftVoidU32 ICallbackI;
+HwTim TmrRx{TMR_IR_RX};
 
-void Init(ftVoidUint32 CallbackI) {
+void Init(ftVoidU32 CallbackI) {
     ICallbackI = CallbackI;
-    PinSetupAlterFunc(IR_RX_DATA_PIN);
+    Gpio::SetupInput(IR_RX_DATA_PIN, Gpio::PullUp);
     TmrRx.Init();
-    TmrRx.SetTopValue(0xFFFF);        // Maximum
-    TmrRx.SetupPrescaler(1000000);    // Input Freq: 1 MHz => one tick = 1 uS
-    // Setup input capture mode for Channel2
-    // Select TI2 as active input for CCR1
-    TMR_IR_RX->CCMR1 = (0b10U << 0);
-    // Select active polarity for TI2FP1 (capture CCR1) and TI2FP2 (trigger reset):
-    // rising and falling edges, respectively (CC1P=0, CC2P=1). Look, TI2FP2 first, TI2FP1 second
-    TMR_IR_RX->CCER = TIM_CCER_CC2P;
-    // Select trigger input: TI2FP2 (TS = 110)
-    TmrRx.SetTriggerInput(tiTI2FP2);
-    // Configure slave mode controller in reset mode (SMS = 0100)
-    TmrRx.SelectSlaveMode(smReset);
-    // Enable the capture: CC1E = 1
-    TMR_IR_RX->CCER |= TIM_CCER_CC1E;
+    TmrRx.SetTopValue(0xFFFF); // Maximum
+    TmrRx.SetInputFreqChangingPrescaler(1000000);  // Input Freq: 1 MHz => one tick = 1 uS
+    // Setup input mode for Channel0: capture Input1 (not Input0) on rising edge
+    TmrRx.SetChnlMode(0, HwTim::ChnlMode::CI1FE0); // Chnl0 is input, capture on Input1's CI1FE0 signal
+    TmrRx.SetInputActiveEdge(0, RiseFall::Rising); // CI1FE0 is Active Rising (CI0FE0 is the same, but it is not used)
+    // Reset timer on trigger; trigger is falling edge on CI1FE1
+    TmrRx.SetTriggerInput(HwTim::TriggerIn::CI1FE1); // Use Input1's CI1FE1 as TriggerIn
+    TmrRx.SetInputActiveEdge(1, RiseFall::Falling);
+    // Configure slave mode controller in Restart mode
+    TmrRx.SelectSlaveMode(HwTim::SlaveMode::Restart);
+    // Enable the capture on channel 0
+    TmrRx.EnChnl(0);
     // IRQ
-    TmrRx.EnableIrqOnCompare1();
-    nvicEnableVector(TMR_IR_RX_IRQ, IRQ_PRIO_HIGH);
+    TmrRx.EnableIrqOnCompare0();
+    Nvic::EnableVector(TMR_IR_RX_IRQ, IRQ_PRIO_HIGH);
     // Start capture
     TmrRx.Enable();
 }
@@ -184,11 +171,11 @@ static inline void ProcessDurationI(uint32_t Dur) {
         IBitCnt = 16;
         StopRemainder = 0;
         IRxData = 0;
-        RxStartTime = chVTGetSystemTimeX();
+        RxStartTime = Sys::GetSysTimeX();
     }
     // Ignore received if error occured previously
     else if(IBitCnt != -1) {
-        if(chVTTimeElapsedSinceX(RxStartTime) < TIME_MS2I(IR_RX_PKT_TIMEOUT_MS)) {
+        if(Sys::TimeElapsedSince(RxStartTime) < TIME_MS2I(IR_RX_PKT_TIMEOUT_MS)) {
             uint32_t bit;
             if     (IS_LIKE(Dur, IR_ZERO_uS, IR_DEVIATION_uS)) bit = 0UL;
             else if(IS_LIKE(Dur, IR_ONE_uS,  IR_DEVIATION_uS)) bit = 1UL;
@@ -201,7 +188,7 @@ static inline void ProcessDurationI(uint32_t Dur) {
                 if(ICallbackI) ICallbackI(IRxData);
                 IBitCnt = -1; // Wait header
             }
-            else RxStartTime = chVTGetSystemTimeX(); // Restart timeout
+            else RxStartTime = Sys::GetSysTimeX(); // Restart timeout
         }
         else IBitCnt = -1; // timeout occured
     }
@@ -212,10 +199,11 @@ static inline void ProcessDurationI(uint32_t Dur) {
 // ==== IRQ ====
 extern "C"
 void TMR_IR_RX_IRQ_HNDLR() {
-    CH_IRQ_PROLOGUE();
-    chSysLockFromISR();
-    irRcvr::ProcessDurationI(irRcvr::TmrRx.GetCCR1()); // Reading CCR1 clears IRQ flag, too
-    chSysUnlockFromISR();
-    CH_IRQ_EPILOGUE();
+    Sys::IrqPrologue();
+    Sys::LockFromIRQ();
+    irRcvr::TmrRx.ClearCompare0IrqPendingBit();
+    irRcvr::ProcessDurationI(irRcvr::TmrRx.GetChnl0Value());
+    Sys::UnlockFromIRQ();
+    Sys::IrqEpilogue();
 }
 #endif

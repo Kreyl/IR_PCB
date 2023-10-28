@@ -39,6 +39,8 @@ EvtTimer_t TmrUartCheck(TIME_MS2I(UART_RX_POLL_MS), EvtId::UartCheckTime, EvtTim
 
 #endif
 
+void IrRxCallbackI(uint32_t Rcvd) { PrintfI("RX: 0x%X\r", Rcvd); }
+
 void main(void) {
     FMC->EnableCashAndPrefetch();
     RCU->EnPwrMgmtUnit();
@@ -100,6 +102,7 @@ void main(void) {
     TmrUartCheck.StartOrRestart();
 
     irLed::Init();
+    irRcvr::Init(IrRxCallbackI);
 
     // DEBUG
 //    Gpio::SetupOut(PB0, Gpio::PushPull);
