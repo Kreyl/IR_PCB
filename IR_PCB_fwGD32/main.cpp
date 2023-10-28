@@ -240,9 +240,10 @@ void OnCmd(Shell_t *PShell) {
     }
 
     else if(PCmd->NameIs("IRTX")) {
-        uint16_t w;
-        if(PCmd->GetNext(&w) == retv::Ok) {
-            irLed::TransmitWord(w, 16, 255, nullptr);
+        uint16_t w, Pwr;
+        if(PCmd->GetParams<uint16_t>(2, &w, &Pwr) == retv::Ok) {
+            irLed::TransmitWord(w, 16, Pwr, nullptr);
+            PShell->Ok();
         }
         else PShell->BadParam();
     }

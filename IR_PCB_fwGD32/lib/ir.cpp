@@ -24,21 +24,13 @@
 
 namespace irLed {
 
-#define IRLED_DMA_MODE  \
-    STM32_DMA_CR_CHSEL(DAC_DMA_CHNL) | \
-    DMA_PRIORITY_HIGH | \
-    STM32_DMA_CR_MSIZE_BYTE | \
-    STM32_DMA_CR_PSIZE_BYTE | \
-    STM32_DMA_CR_MINC        | \
-    STM32_DMA_CR_DIR_M2P | \
-    STM32_DMA_CR_TCIE
+#define IRLED_DMA_MODE  DMA_PRIO_HIGH |  DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE
 
 Timer_t SamplingTmr{TMR_DAC_SMPL};
-const DMAChannel_t *DmaTx {
-
-const stm32_dma_stream_t *PDmaTx = nullptr;
 ftVoidVoid ICallbackI = nullptr;
 static uint32_t TransactionSz;
+void DmaTxEndIrqHandler(void *p, uint32_t flags);
+const DMA_t DmaTx {DAC_DMA, DmaTxEndIrqHandler, nullptr, IRQ_PRIO_MEDIUM};
 
 #define SAMPLING_FREQ_HZ    (IR_CARRIER_HZ * 2)
 // Every SamplePair contains 4 actual samples
@@ -69,21 +61,19 @@ union DacSamplePair_t {
 
 DacSamplePair_t DacBuf[DAC_BUF_SZ];
 
-
-static inline void StartTx() {
-    dmaStreamSetMemory0(PDmaTx, DacBuf);
-    dmaStreamSetTransactionSize(PDmaTx, TransactionSz);
-    dmaStreamSetMode(PDmaTx, IRLED_DMA_MODE);
-    dmaStreamEnable(PDmaTx);
-    SamplingTmr.Enable();
+void DmaTxEndIrqHandler(void *p, uint32_t flags) {
+    Sys::LockFromIRQ();
+    SamplingTmr.Disable();
+    DmaTx.Disable();
+    if(ICallbackI) ICallbackI();
+    Sys::UnlockFromIRQ();
 }
 
-void DmaTxEndIrqHandler(void *p, uint32_t flags) {
-    chSysLockFromISR();
-    SamplingTmr.Disable();
-    dmaStreamDisable(PDmaTx);
-    if(ICallbackI) ICallbackI();
-    chSysUnlockFromISR();
+static inline void StartTx() {
+    DmaTx.SetMemoryAddr(DacBuf);
+    DmaTx.SetTransferDataCnt(TransactionSz);
+    DmaTx.Enable();
+    SamplingTmr.Enable();
 }
 
 void Init() {
@@ -99,15 +89,15 @@ void Init() {
     DAC->SetTrigger0(DAC_TypeDef::Trigger::Tim6TRGO);
     DAC->EnTrigger0();
     DAC->EnDma0();
-//    DAC->Enable0();
+    DAC->Enable0();
 
     // ==== DMA ====
-//    PDmaTx = dmaStreamAlloc(DAC_DMA, IRQ_PRIO_MEDIUM, DmaTxEndIrqHandler, nullptr);
-//    dmaStreamSetPeripheral(PDmaTx, &DAC->DHR8R1);
+    DmaTx.Init(&DAC->DAC0_R8DH, IRLED_DMA_MODE);
+
     // ==== Sampling timer ====
-//    SamplingTmr.Init();
-//    SamplingTmr.SetUpdateFrequencyChangingTopValue(SAMPLING_FREQ_HZ);
-//    SamplingTmr.SelectMasterMode(mmUpdate);
+    SamplingTmr.Init();
+    SamplingTmr.SetUpdateFrequencyChangingTopValue(SAMPLING_FREQ_HZ);
+    SamplingTmr.SelectMasterMode(Timer_t::MasterMode::Update);
 }
 
 // Power is DAC value
@@ -136,9 +126,9 @@ void TransmitWord(uint16_t wData, uint32_t BitCnt, uint8_t Power, ftVoidVoid Cal
 }
 
 void ResetI() {
-    dmaStreamDisable(PDmaTx);
+    DmaTx.Disable();
     SamplingTmr.Disable();
-    DAC->DHR8R1 = 0;
+    DAC->PutDataR0(0);
     SamplingTmr.GenerateUpdateEvt();
 }
 } // namespace

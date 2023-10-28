@@ -72,9 +72,7 @@ void BaseUart_t::Init() {
 
     // ==== TX ====
     Gpio::SetupAlterFunc(Params->PGpioTx, Params->PinTx, Gpio::PushPull, Gpio::speed50MHz);
-    DmaTx.Init();
-    DmaTx.SetPeriphAddr(&Params->Uart->DATA);
-    DmaTx.SetMode(Params->DmaModeTx);
+    DmaTx.Init(&Params->Uart->DATA, Params->DmaModeTx);
     ITxDmaIsIdle = true;
 
     // ==== RX ====
@@ -90,8 +88,10 @@ void BaseUart_t::Init() {
 }
 
 void BaseUart_t::OnClkChange() {
-    if(Params->Uart == USART0) Params->Uart->BAUD = Clk::APB2FreqHz / Params->Baudrate; // The only UART on APB2
-    else                       Params->Uart->BAUD = Clk::APB1FreqHz / Params->Baudrate; // Others are on APB1
+    if(Params->Uart == USART0)
+        Params->Uart->BAUD = Clk::APB2FreqHz / Params->Baudrate; // The only UART on APB2
+    else
+        Params->Uart->BAUD = Clk::APB1FreqHz / Params->Baudrate; // Others are on APB1
 }
 
 void BaseUart_t::StopTx() {

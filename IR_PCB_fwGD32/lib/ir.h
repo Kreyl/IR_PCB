@@ -10,7 +10,7 @@
 #include "gd_lib.h"
 #include "board.h"
 
-#define IR_TX_ENABLED   FALSE
+#define IR_TX_ENABLED   TRUE
 #define IR_RX_ENABLED   FALSE
 
 // Delays, uS

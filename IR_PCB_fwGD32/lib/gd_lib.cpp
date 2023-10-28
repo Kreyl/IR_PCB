@@ -484,7 +484,7 @@ DMA_t::DMA_t(DMAChannel_t *APChnl, ftVoidPVoidW32 PIrqFunc, void *PIrqParam, uin
     // Calculate ChnlN
     if((uint32_t)APChnl <= (uint32_t)DMA0_Channel6_BASE)
         ChnlN = ((uint32_t)APChnl - (uint32_t)DMA0_Channel0_BASE) / 0x14UL; // 0x14 is distance between channels, see datasheet
-    else ChnlN = ((uint32_t)APChnl - (uint32_t)DMA1_Channel0_BASE) / 0x14UL;
+    else ChnlN = DMA0_CHNL_CNT + ((uint32_t)APChnl - (uint32_t)DMA1_Channel0_BASE) / 0x14UL;
     // Setup IRQ
     DmaIrqHandler[ChnlN].Handler = PIrqFunc;
     DmaIrqHandler[ChnlN].Param = PIrqParam;
@@ -497,6 +497,12 @@ void DMA_t::Init() const {
         Nvic::EnableVector(DmaIrqNum[ChnlN], DmaIrqHandler[ChnlN].Prio);
     } // if irq
     PChnl->CTL = 0; // Reset value
+}
+
+void DMA_t::Init(volatile void* PeriphAddr, uint32_t AMode) const {
+    Init();
+    SetPeriphAddr(PeriphAddr);
+    SetMode(AMode);
 }
 
 void DMA_t::Init(volatile void* PeriphAddr, void* MemAddr, uint32_t AMode, uint16_t Cnt) const {
@@ -520,50 +526,28 @@ void DMA_t::DisableAndClearIRQ() const {
 // ==== IRQs ====
 #define DMA_IRQ_HANDLER(DmaN, ChnlN) \
     void DMA##DmaN##_Channel##ChnlN##_IRQHandler() { \
+        Sys::IrqPrologue(); \
         uint32_t flags = (DMA##DmaN->INTF >> (ChnlN * 4)) & 0b1111UL; \
         DMA##DmaN->INTC = 1UL << (ChnlN * 4); /* Clear all irq flags */ \
         ftVoidPVoidW32 func = DmaIrqHandler[DMA_CHNL(DmaN, ChnlN)].Handler; \
         if(func) func(DmaIrqHandler[DMA_CHNL(DmaN, ChnlN)].Param, flags); \
+        Sys::IrqEpilogue(); \
     }
 
 extern "C" {
-#if DMA0_CH0_IRQ_EN
 DMA_IRQ_HANDLER(0, 0);
-#endif
-#if DMA0_CH1_IRQ_EN
 DMA_IRQ_HANDLER(0, 1);
-#endif
-#if DMA0_CH2_IRQ_EN
 DMA_IRQ_HANDLER(0, 2);
-#endif
-#if DMA0_CH3_IRQ_EN
 DMA_IRQ_HANDLER(0, 3);
-#endif
-#if DMA0_CH4_IRQ_EN
 DMA_IRQ_HANDLER(0, 4);
-#endif
-#if DMA0_CH5_IRQ_EN
 DMA_IRQ_HANDLER(0, 5);
-#endif
-#if DMA0_CH6_IRQ_EN
 DMA_IRQ_HANDLER(0, 6);
-#endif
 
-#if DMA1_CH0_IRQ_EN
 DMA_IRQ_HANDLER(1, 0);
-#endif
-#if DMA1_CH1_IRQ_EN
 DMA_IRQ_HANDLER(1, 1);
-#endif
-#if DMA1_CH2_IRQ_EN
 DMA_IRQ_HANDLER(1, 2);
-#endif
-#if DMA1_CH3_IRQ_EN
 DMA_IRQ_HANDLER(1, 3);
-#endif
-#if DMA1_CH4_IRQ_EN
 DMA_IRQ_HANDLER(1, 4);
-#endif
 } // extern C
 #endif // DMA
 
@@ -713,6 +697,33 @@ void SetSystemHandlerPriority(uint32_t handler, uint32_t prio) {
 void ClearPending(IRQn_Type IrqN) { NVIC->ICPR[(uint32_t)IrqN >> 5] = 1 << ((uint32_t)IrqN & 0x1F); }
 
 } // namespace
+
+#if 1 // ========================== HW Timer ===================================
+void Timer_t::SetUpdateFrequencyChangingPrescaler(uint32_t FreqHz) const {
+    // Figure out input timer freq
+    uint32_t UpdFreqMax = Clk::GetTimInputFreq(ITmr) / (GetTopValue() + 1);
+    uint32_t Psc = UpdFreqMax / FreqHz;
+    if(Psc != 0) Psc--;
+    SetPrescaler(Psc);
+    SetCounter(0); // Reset counter to start from scratch
+    GenerateUpdateEvt();
+}
+
+void Timer_t::SetUpdateFrequencyChangingTopValue(uint32_t FreqHz) const {
+    uint32_t UpdFreqMax = Clk::GetTimInputFreq(ITmr) / (GetPrescaler() + 1);
+    uint32_t TopVal  = (UpdFreqMax / FreqHz);
+    if(TopVal != 0) TopVal--;
+    SetTopValue(TopVal);
+    SetCounter(0); // Reset counter to start from scratch
+    GenerateUpdateEvt();
+}
+
+void Timer_t::SetUpdateFrequencyChangingBoth(uint32_t FreqHz) const {
+    uint32_t Psc = (Clk::GetTimInputFreq(ITmr) / FreqHz) / 0x10000;
+    SetPrescaler(Psc);
+    SetUpdateFrequencyChangingTopValue(FreqHz);
+}
+#endif
 
 // PWM
 void PinOutputPWM_t::Init() const {

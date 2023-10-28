@@ -444,9 +444,12 @@ struct DMAChannel_t {
 #if 1 // ============================= Timer ===================================
 // Bits
 #define TIM_CTL0_CEN        (1UL << 0)
+#define TIM_CTL0_ARSE       (1UL << 7)
+#define TIM_SMCFG_ETP       (1UL << 15)
 #define TIM_DMAINTEN_UPIE   (1UL << 0)
 #define TIM_DMAINTEN_CH0IE  (1UL << 1)
 #define TIM_DMAINTEN_CH1IE  (1UL << 2)
+#define TIM_DMAINTEN_TRGDEN (1UL << 14)
 #define TIM_INTF_UPIF       (1UL << 0)
 #define TIM_INTF_CH0IF      (1UL << 1)
 #define TIM_INTF_CH1IF      (1UL << 2)
@@ -478,9 +481,13 @@ struct TIM_TypeDef {
     volatile uint32_t _Reserved[43];
     volatile uint32_t CFG;      /*!< 0xFC Configuration register */
 
+    void Enable()  { CTL0 |=  TIM_CTL0_CEN; }
+    void Disable() { CTL0 &= ~TIM_CTL0_CEN; }
     void SetTopValue(uint32_t Value) { CAR = Value; }
+    uint32_t GetTopValue() { return CAR; }
+    void SetPrescaler(uint32_t psc) { PSC = psc; }
+    uint32_t GetPrescaler() { return PSC; }
     void SetChnlValue(const uint32_t Chnl, uint32_t Value) { *(uint32_t*)(&CH0CV + Chnl) = Value; }
-    void Enable() { CTL0 |= TIM_CTL0_CEN; }
     void GenerateUpdateEvt() { SWEVG = (1UL << 0); }
 };
 
@@ -783,6 +790,23 @@ struct RCU_TypeDef {
     void DisUSB()  { AHBEN  &= ~(1UL << 12); }
     void DisI2C0() { APB1EN &= ~(1UL << 21); }
     void DisI2C1() { APB1EN &= ~(1UL << 22); }
+
+    void DisTimer(const TIM_TypeDef *PTimer) {
+        if     (PTimer == TIM0)  APB2EN &= ~(1UL << 11);
+        else if(PTimer == TIM1)  APB1EN &= ~(1UL <<  0);
+        else if(PTimer == TIM2)  APB1EN &= ~(1UL <<  1);
+        else if(PTimer == TIM3)  APB1EN &= ~(1UL <<  2);
+        else if(PTimer == TIM4)  APB1EN &= ~(1UL <<  3);
+        else if(PTimer == TIM5)  APB1EN &= ~(1UL <<  4);
+        else if(PTimer == TIM6)  APB1EN &= ~(1UL <<  5);
+        else if(PTimer == TIM7)  APB2EN &= ~(1UL << 13);
+        else if(PTimer == TIM8)  APB2EN &= ~(1UL << 19);
+        else if(PTimer == TIM9)  APB2EN &= ~(1UL << 20);
+        else if(PTimer == TIM10) APB2EN &= ~(1UL << 21);
+        else if(PTimer == TIM11) APB1EN &= ~(1UL <<  6);
+        else if(PTimer == TIM12) APB1EN &= ~(1UL <<  7);
+        else if(PTimer == TIM13) APB1EN &= ~(1UL <<  8);
+    }
 #endif
 
 #if 1 // ==== Reset ====
