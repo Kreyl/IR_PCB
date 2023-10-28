@@ -1355,8 +1355,24 @@ struct I2C_TypeDef {
 #if 1 // ============================== ADC ====================================
 
 struct ADC_TypeDef {
-    volatile uint32_t STAT; /*!< Status register, offset: 0x00 */
-    volatile uint32_t CTL0;   /*!< Control register 0,     offset: 0x00 */
+    volatile uint32_t STAT;      /*!< Status register,                  offset: 0x00 */
+    volatile uint32_t CTL0;      /*!< Control register 0,               offset: 0x04 */
+    volatile uint32_t CTL1;      /*!< Control register 1,               offset: 0x08 */
+    volatile uint32_t SAMPT0;    /*!< Sample time register 0,           offset: 0x0C */
+    volatile uint32_t SAMPT1;    /*!< Sample time register 1,           offset: 0x10 */
+    volatile uint32_t resvd1[5];
+    volatile uint32_t WDHT;      /*!< Watchdog high threshold register, offset: 0x24 */
+    volatile uint32_t WDLT;      /*!< Watchdog low threshold register,  offset: 0x28 */
+    volatile uint32_t RSQ0;      /*!< Routine sequence register 0,      offset: 0x2C */
+    volatile uint32_t RSQ1;      /*!< Routine sequence register 1,      offset: 0x30 */
+    volatile uint32_t RSQ2;      /*!< Routine sequence register 2,      offset: 0x34 */
+    volatile uint32_t resvd2[6];
+    volatile uint32_t RDATA;     /*!< Routine Data register,            offset: 0x4C */
+    volatile uint32_t resvd3[13];
+    volatile uint32_t OVSAMPCTL; /*!< Oversample control register,      offset: 0x80 */
+
+
+
 };
 
 #endif
