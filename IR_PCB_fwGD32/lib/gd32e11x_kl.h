@@ -532,15 +532,15 @@ struct TIM_TypeDef {
 #define SPI_QCTL_QMOD       (1UL << 0)
 
 struct SPI_TypeDef {
-    volatile uint32_t CTL0;    /*!< Control register 0,      Address offset: 0x00 */
-    volatile uint32_t CTL1;    /*!< Control register 1,      Address offset: 0x04 */
-    volatile uint32_t STAT;    /*!< Status register,         Address offset: 0x08 */
-    volatile uint32_t DATA;    /*!< Data register,           Address offset: 0x0C */
-    volatile uint32_t CRCPOLY; /*!< CRC polynomial register, Address offset: 0x10 */
-    volatile uint32_t RCRC;    /*!< RX CRC register,         Address offset: 0x14 */
-    volatile uint32_t TCRC;    /*!< TX CRC register,         Address offset: 0x18 */
-    volatile uint32_t I2SCTL;  /*!< I2S control register,    Address offset: 0x1C */
-    volatile uint32_t I2SPSC;  /*!< I2S control register,    Address offset: 0x20 */
+    volatile uint32_t CTL0;    /*!< Control register 0,      offset: 0x00 */
+    volatile uint32_t CTL1;    /*!< Control register 1,      offset: 0x04 */
+    volatile uint32_t STAT;    /*!< Status register,         offset: 0x08 */
+    volatile uint32_t DATA;    /*!< Data register,           offset: 0x0C */
+    volatile uint32_t CRCPOLY; /*!< CRC polynomial register, offset: 0x10 */
+    volatile uint32_t RCRC;    /*!< RX CRC register,         offset: 0x14 */
+    volatile uint32_t TCRC;    /*!< TX CRC register,         offset: 0x18 */
+    volatile uint32_t I2SCTL;  /*!< I2S control register,    offset: 0x1C */
+    volatile uint32_t I2SPSC;  /*!< I2S control register,    offset: 0x20 */
     volatile uint32_t resvd[23];
     volatile uint32_t QCTL;    /*!< Quad-SPI mode control register, Address offset: 0x80 */
 
@@ -628,6 +628,12 @@ enum class UsbPsc : uint32_t {
     div3   = (1UL << 31) | (0b00UL << 22),
     div3d5 = (1UL << 31) | (0b01UL << 22),
     div4   = (1UL << 31) | (0b10UL << 22),
+};
+
+enum class AdcPsc : uint32_t {
+    Apb2div2 = 0b0000, Apb2div4 = 0b0001, Apb2div6 = 0b0010, Apb2div8 = 0b0011,
+    Apb2div12 = 0b0101, Apb2div16 = 0b0111,
+    AHBdiv3 = 0b1000, AHBdiv5 = 0b1001, AHBdiv7 = 0b1010, AHBdiv9 = 0b1011
 };
 
 struct RCU_TypeDef {
@@ -804,6 +810,18 @@ struct RCU_TypeDef {
         (void)ADDAPB1RST; // Perform dummy read
     }
 #endif
+    // ADC clock must be within [0.1; 40] MHz
+    void SetAdcPsc(AdcPsc Psc) {
+        uint32_t w = (uint32_t)Psc;
+        // Put Psc[2] to bit 28, Psc[1:0] to bits [15:14] of CFG0
+        uint32_t tmp = CFG0 & ~((1UL << 28) | (1UL << 15) | (1UL << 14));
+        tmp |= (w & 0b0011UL) << 14;
+        if(w & 0b0100UL) tmp |= (1UL << 28);
+        CFG0 = tmp;
+        // Put Psc[3] to bit 29 of CFG1
+        if(w & 0b1000UL) CFG1 |= (1UL << 29);
+        else CFG1 &= ~(1UL << 29);
+    }
 
 #if 1 // ==== Get ====
     uint32_t GetCkSys() {
@@ -1261,15 +1279,15 @@ struct USB_Typedef {
 #define I2C_STAT1_I2CBSY    (1UL << 1)
 
 struct I2C_TypeDef {
-    volatile uint32_t CTL0;   /*!< I2C Control register 1,   Address offset: 0x00 */
-    volatile uint32_t CTL1;   /*!< I2C Control register 2,   Address offset: 0x04 */
-    volatile uint32_t SADDR0; /*!< Slave address register 0, Address offset: 0x08 */
-    volatile uint32_t SADDR1; /*!< Slave address register 1, Address offset: 0x0C */
-    volatile uint32_t DATA;   /*!< Transfer buffer register, Address offset: 0x10 */
-    volatile uint32_t STAT0;  /*!< Transfer status register 0, Address offset: 0x14 */
-    volatile uint32_t STAT1;  /*!< Transfer status register 1, Address offset: 0x18 */
-    volatile uint32_t CKCFG;  /*!< Clock configure register, Address offset: 0x1C */
-    volatile uint32_t RT;     /*!< Rise time register,       Address offset: 0x20 */
+    volatile uint32_t CTL0;   /*!< Control register 0,         offset: 0x00 */
+    volatile uint32_t CTL1;   /*!< Control register 1,         offset: 0x04 */
+    volatile uint32_t SADDR0; /*!< Slave address register 0,   offset: 0x08 */
+    volatile uint32_t SADDR1; /*!< Slave address register 1,   offset: 0x0C */
+    volatile uint32_t DATA;   /*!< Transfer buffer register,   offset: 0x10 */
+    volatile uint32_t STAT0;  /*!< Transfer status register 0, offset: 0x14 */
+    volatile uint32_t STAT1;  /*!< Transfer status register 1, offset: 0x18 */
+    volatile uint32_t CKCFG;  /*!< Clock configure register,   offset: 0x1C */
+    volatile uint32_t RT;     /*!< Rise time register,         offset: 0x20 */
     volatile uint32_t resvd1[24];
     volatile uint32_t SAMCFG; /*!< SAM control and status register, Address offset: 0x80 */
     volatile uint32_t resvd2[4];
@@ -1332,6 +1350,15 @@ struct I2C_TypeDef {
 
 #define I2CCLK_MIN_MHz      2UL
 #define I2CCLK_MAX_MHz      60UL // > 60 is not allowed due to the limitation of APB1 clock
+#endif
+
+#if 1 // ============================== ADC ====================================
+
+struct ADC_TypeDef {
+    volatile uint32_t STAT; /*!< Status register, offset: 0x00 */
+    volatile uint32_t CTL0;   /*!< Control register 0,     offset: 0x00 */
+};
+
 #endif
 
 #endif /* LIB_GD32E11X_KL_H_ */

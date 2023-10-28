@@ -14,6 +14,7 @@
 #include "core_cmFunc.h"
 #include "board.h"
 #include "kl_buf.h"
+#include <vector>
 
 #if 1 // ============================ General ==================================
 // ==== Build time ====
@@ -231,6 +232,57 @@ public:
     void DisableAndClearIRQ() const;
 };
 #endif // DMA
+
+#if ADC_REQUIRED // ========================= ADC ==============================
+namespace Adc {
+
+// Inner ADC channels. See datasheet
+const uint32_t ChannelTemperature = 16;
+const uint32_t ChannelVrefint = 17;
+
+struct Channel_t {
+    GPIO_TypeDef *GPIO;
+    uint32_t Pin;
+    uint32_t ChannelN;
+    Channel_t(uint32_t AChnl) : GPIO(nullptr), Pin(0), ChannelN(AChnl) {}
+    Channel_t(GPIO_TypeDef *AGPIO, uint32_t APin, uint32_t AChnl) :
+        GPIO(AGPIO), Pin(APin), ChannelN(AChnl) {}
+};
+
+
+struct Params {
+    AdcPsc AdcClkPrescaler; // ADC clock must be within [0.1; 40] MHz
+    enum SampleTime_t {
+        smpTime1d5Cycles  = 0b000,
+        smpTime7d5Cycles  = 0b001,
+        smpTime13d5Cycles = 0b010,
+        smpTime28d5Cycles = 0b011,
+        smpTime41d5Cycles = 0b100,
+        smpTime55d5Cycles = 0b101,
+        smpTime71d5Cycles = 0b110,
+        smpTime239dCycles = 0b111
+    } SampleTime;
+    enum Oversampling_t : uint32_t {
+        oversmp2   = 0b000UL,
+        oversmp4   = 0b001UL,
+        oversmp8   = 0b010UL,
+        oversmp16  = 0b011UL,
+        oversmp32  = 0b100UL,
+        oversmp64  = 0b101UL,
+        oversmp128 = 0b110UL,
+        oversmp256 = 0b111UL
+    } Oversampling;
+    ftVoidVoid DoneCallbackI;
+    std::vector<Channel_t> Channels;
+};
+
+void Init(const Params& Setup);
+void StartMeasurement();
+uint32_t GetResult(uint32_t AChannel);
+uint32_t Adc2mV(uint32_t AdcChValue, uint32_t VrefValue);
+
+};
+#endif
 
 #if 1 // ============================== SPI ====================================
 class Spi_t {

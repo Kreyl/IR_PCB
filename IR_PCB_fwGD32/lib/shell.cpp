@@ -1,4 +1,4 @@
-#include <gd_uart.h>
+#include "gd_uart.h"
 #include "shell.h"
 #include "yartos.h"
 
@@ -125,7 +125,7 @@ void PrintfHelper_t::IVsPrintf(const char *format, va_list args) {
             case 's':
             case 'S': {
                 char *s = va_arg(args, char*);
-                width -= strlen(s); // Do padding of string
+                width -= kl_strlen(s); // Do padding of string
                 while(s and *s)    { if(IPutChar(*s++)   != retv::Ok) goto End; }
                 while(width-- > 0) { if(IPutChar(filler) != retv::Ok) goto End; } // Do padding of string
             }

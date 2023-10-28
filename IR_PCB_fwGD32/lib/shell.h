@@ -62,7 +62,7 @@ public:
         char* S = GetNextString();
         if(S) {
             char *p;
-            int32_t dw32 = strtol(S, &p, 0);
+            int32_t dw32 = kl_strtol(S, &p, 0);
             if(*p == '\0') {
                 *POutput = (T)dw32;
                 return retv::Ok;
@@ -98,7 +98,7 @@ public:
         char* S = GetNextString();
         if(S) {
             char *p;
-            int16_t v = strtol(S, &p, 0);
+            int16_t v = kl_strtol(S, &p, 0);
             if(*p == '\0') { *POutput = v; return retv::Ok; }
             else return retv::NotANumber;
         }
@@ -109,7 +109,7 @@ public:
         char* S = GetNextString();
         if(S) {
             char *p;
-            int32_t v = strtol(S, &p, 0);
+            int32_t v = kl_strtol(S, &p, 0);
             if(*p == '\0') { *POutput = v; return retv::Ok; }
             else return retv::NotANumber;
         }
@@ -176,7 +176,7 @@ public:
                 case 'd': {
                     // Convert
                     char *ret;
-                    int32_t v = strtol(tok, &ret, 0); // Conversion failed
+                    int32_t v = kl_strtol(tok, &ret, 0); // Conversion failed
                     if(*ret != 0) goto End;
                     // Get sz
                     c = *fmt++;
