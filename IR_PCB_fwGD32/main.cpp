@@ -9,6 +9,7 @@
 #include "beeper.h"
 #include "Sequences.h"
 #include "ir.h"
+#include "ws2812bTim.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Debug pin
@@ -27,15 +28,14 @@ LedSmooth_t Lumos{LUMOS_PIN};
 LedSmooth_t SideLEDs[SIDE_LEDS_CNT] = { {LED_PWM1}, {LED_PWM2}, {LED_PWM3}, {LED_PWM4} };
 LedSmooth_t FrontLEDs[FRONT_LEDS_CNT] = { {LED_FRONT1}, {LED_FRONT2} };
 
+static const NpxParams NParams{NPX_PARAMS, NPX_DMA, 4, NpxParams::ClrType::RGB};
+Neopixels_t NpxLeds{&NParams};
+
 Beeper_t Beeper {BEEPER_PIN};
 
 SpiFlash_t SpiFlash(SPI0);
 
 EvtTimer_t TmrUartCheck(TIME_MS2I(UART_RX_POLL_MS), EvtId::UartCheckTime, EvtTimer_t::Type::Periodic);
-
-//PinOutputPWM_t LedR{ LED_R };
-//PinOutputPWM_t LedG{ LED_G };
-//PinOutputPWM_t LedB{ LED_B };
 
 #endif
 
@@ -78,6 +78,7 @@ void main(void) {
 
     Beeper.Init();
 //    Beeper.StartOrRestart(bsqShot);
+
     // LEDs
     for(auto &Led : SideLEDs) {
         Led.Init();
@@ -93,6 +94,8 @@ void main(void) {
 //    Lumos.StartOrRestart(lsqFadeIn);
     Gpio::SetupOut(PA10, Gpio::PushPull);
     Gpio::SetHi(PA10); // XXX
+
+    NpxLeds.Init();
 
     AFIO->RemapSPI0_PB345();
     SpiFlash.Init();

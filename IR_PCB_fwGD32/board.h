@@ -70,6 +70,9 @@
 #define LED_PWM4        { PB1, TIM2, 3, invInverted, Gpio::PushPull, 255 }
 #define SIDE_LEDS_CNT   4
 
+// Neopixel LEDs
+#define NPX_PARAMS      PA0, TIM4, 0
+
 // Beeper
 #define BEEPER_TOP      22 // 22 < 255: needed to increase frequency
 #define BEEPER_PIN      { PB14, TIM11, 0, invInverted, Gpio::PushPull, BEEPER_TOP }
@@ -147,6 +150,9 @@
 
 // DAC
 #define DAC_DMA             DMA1_Channel2
+
+// Npx LEDs
+#define NPX_DMA             DMA1_Channel1 // Tim4 Update
 
 #endif // DMA
 
