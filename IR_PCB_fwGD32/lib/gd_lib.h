@@ -101,7 +101,6 @@ public:
     void SetUpdateFreqChangingPrescaler(uint32_t FreqHz) const;
     void SetUpdateFreqChangingTopValue(uint32_t FreqHz) const;
     void SetUpdateFreqChangingBoth(uint32_t FreqHz) const;
-//    void SetTmrClkFreq(uint32_t FreqHz) const;
     void SetTopValue(uint32_t Value) const { ITmr->SetTopValue(Value); }
     uint32_t GetTopValue() const { return ITmr->GetTopValue(); }
     void EnableAutoreloadBuffering()  const { ITmr->CTL0 |=  TIM_CTL0_ARSE; }
@@ -380,8 +379,8 @@ public:
 namespace Adc {
 
 // Inner ADC channels. See datasheet
-const uint32_t ChannelTemperature = 16;
-const uint32_t ChannelVrefint = 17;
+const uint32_t ChannelTemperature = 16UL;
+const uint32_t ChannelVrefint = 17UL;
 
 struct Channel_t {
     GPIO_TypeDef *GPIO;
@@ -395,26 +394,8 @@ struct Channel_t {
 
 struct Params {
     AdcPsc AdcClkPrescaler; // ADC clock must be within [0.1; 40] MHz
-    enum SampleTime_t {
-        smpTime1d5Cycles  = 0b000,
-        smpTime7d5Cycles  = 0b001,
-        smpTime13d5Cycles = 0b010,
-        smpTime28d5Cycles = 0b011,
-        smpTime41d5Cycles = 0b100,
-        smpTime55d5Cycles = 0b101,
-        smpTime71d5Cycles = 0b110,
-        smpTime239dCycles = 0b111
-    } SampleTime;
-    enum Oversampling_t : uint32_t {
-        oversmp2   = 0b000UL,
-        oversmp4   = 0b001UL,
-        oversmp8   = 0b010UL,
-        oversmp16  = 0b011UL,
-        oversmp32  = 0b100UL,
-        oversmp64  = 0b101UL,
-        oversmp128 = 0b110UL,
-        oversmp256 = 0b111UL
-    } Oversampling;
+    AdcSampleTime SampleTime;
+    AdcOversampling Oversampling;
     ftVoidVoid DoneCallbackI;
     std::vector<Channel_t> Channels;
 };
@@ -439,8 +420,8 @@ public:
     void Setup(BitOrder BitOrdr, cpol CPOL, cpha CPHA,
             int32_t Bitrate_Hz, BitNumber BitNum = BitNumber::n8) const;
 
-    void Enable()    { PSpi->Enable(); }
-    void Disable()   { PSpi->Disable(); }
+    void Enable()        { PSpi->Enable(); }
+    void Disable()       { PSpi->Disable(); }
     void SetRxOnly()     { PSpi->CTL0 |=  SPI_CTL0_RO; }
     void SetFullDuplex() { PSpi->CTL0 &= ~SPI_CTL0_RO; }
 

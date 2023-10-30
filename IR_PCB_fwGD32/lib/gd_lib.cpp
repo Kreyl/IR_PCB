@@ -9,7 +9,7 @@
 #include "core_cm4.h"
 #include "shell.h"
 #include <string>
-//#include <malloc.h>
+#include "MsgQ.h"
 #include <sys/stat.h>
 
 // ================================ General ====================================
@@ -555,18 +555,58 @@ DMA_IRQ_HANDLER(1, 4);
 #if ADC_REQUIRED // ========================= ADC ==============================
 namespace Adc {
 
+#define ADC_DMA_MODE  DMA_PRIO_LOW | DMA_MEMSZ_16_BIT | DMA_PERSZ_16_BIT | DMA_MEM_INC | DMA_DIR_PER2MEM | DMA_TCIE
+
+static std::vector<uint16_t> IBuf;
+static void DmaIrqHandler(void *p, uint32_t flags);
+
+static const DMA_t Dma {ADC_DMA, DmaIrqHandler, nullptr, IRQ_PRIO_MEDIUM};
+
+static void DmaIrqHandler(void *p, uint32_t flags) {
+    Sys::LockFromIRQ();
+    Dma.Disable();
+    ADC0->Disable();
+    EvtQMain.SendNowOrExitI(EvtMsg_t(EvtId::AdcDone));
+    Sys::UnlockFromIRQ();
+}
 
 void Init(const Params& Setup) {
     // Clock
     RCU->SetAdcPsc(Setup.AdcClkPrescaler);
     RCU->EnADC0();
-    //
-
-
-
+    // Enable Vrefint and Temperature chnls, set SwStart as start trigger
+    ADC0->EnVrefAndTempChnls();
+    ADC0->SelectExtTrg(AdcExtTrgSrc::Swrcst);
+    ADC0->EnExtTrg();
+    ADC0->EnDMA();
+    ADC0->EnScanMode();
+    // Setup channels
+    ADC0->SetSequenceLength(Setup.Channels.size());
+    uint32_t SeqIndx = 0;    // First sequence item is 0
+    for(auto& Chnl : Setup.Channels) {
+        if(Chnl.GPIO != nullptr) Gpio::SetupAnalog(Chnl.GPIO, Chnl.Pin);
+        ADC0->SetChannelSampleTime(Chnl.ChannelN, Setup.SampleTime);
+        ADC0->SetSequenceItem(SeqIndx++, Chnl.ChannelN);
+    }
+    ADC0->Enable();
+    Sys::SleepMilliseconds(1);
+    ADC0->Calibrate();
+    // Allocate buffer
+    IBuf.resize(Setup.Channels.size());
+    // DMA
+    Dma.Init(&ADC0->RDATA, ADC_DMA_MODE);
 }
 
-//void StartMeasurement();
+void StartMeasurement() {
+    (void)ADC0->RDATA;
+    Dma.Disable();
+    Dma.SetMemoryAddr(IBuf.data());
+    Dma.SetTransferDataCnt(IBuf.size());
+    Dma.Enable();
+    ADC0->Enable();
+    ADC0->StartConversion();
+}
+
 //uint32_t GetResult(uint32_t AChannel);
 //uint32_t Adc2mV(uint32_t AdcChValue, uint32_t VrefValue);
 

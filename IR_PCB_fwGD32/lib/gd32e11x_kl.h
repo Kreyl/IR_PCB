@@ -1443,27 +1443,87 @@ struct I2C_TypeDef {
 #endif
 
 #if 1 // ============================== ADC ====================================
+#define ADC_CTL0_SM         (1UL <<  8)
+
+#define ADC_CTL1_ADCON      (1UL <<  0)
+#define ADC_CTL1_CTN        (1UL <<  1)
+#define ADC_CTL1_CLB        (1UL <<  2)
+#define ADC_CTL1_RSTCLB     (1UL <<  3)
+#define ADC_CTL1_DMA        (1UL <<  8)
+#define ADC_CTL1_ETERC      (1UL << 20)
+#define ADC_CTL1_SWRCST     (1UL << 22)
+#define ADC_CTL1_TSVREN     (1UL << 23)
+
+enum class AdcExtTrgSrc { Tim0C0=0b000UL, Tim0C1=0b001UL, Tim0C2=0b010UL, Tim1C1=0b011UL,
+    Tim2TRGO=0b100UL, Tim3C3=0b101UL, Exti11_Tim7TRGO=0b110UL, Swrcst=0b111UL};
+
+enum class AdcSampleTime {
+    t1d5Cycles  = 0b000,
+    t7d5Cycles  = 0b001,
+    t13d5Cycles = 0b010,
+    t28d5Cycles = 0b011,
+    t41d5Cycles = 0b100,
+    t55d5Cycles = 0b101,
+    t71d5Cycles = 0b110,
+    t239dCycles = 0b111
+};
+
+enum class AdcOversampling : uint32_t { Disabled=0xFFUL, os2=0b000UL, os4=0b001UL, os8=0b010UL,
+    os16=0b011UL, os32=0b100UL, os64=0b101UL, os128=0b110UL, os256=0b111UL};
 
 struct ADC_TypeDef {
-    volatile uint32_t STAT;      /*!< Status register,                  offset: 0x00 */
-    volatile uint32_t CTL0;      /*!< Control register 0,               offset: 0x04 */
-    volatile uint32_t CTL1;      /*!< Control register 1,               offset: 0x08 */
-    volatile uint32_t SAMPT0;    /*!< Sample time register 0,           offset: 0x0C */
-    volatile uint32_t SAMPT1;    /*!< Sample time register 1,           offset: 0x10 */
+    volatile uint32_t STAT;      /*!< Status register,                  0x00 */
+    volatile uint32_t CTL0;      /*!< Control register 0,               0x04 */
+    volatile uint32_t CTL1;      /*!< Control register 1,               0x08 */
+    volatile uint32_t SAMPT0;    /*!< Sample time register 0,           0x0C */
+    volatile uint32_t SAMPT1;    /*!< Sample time register 1,           0x10 */
     volatile uint32_t resvd1[5];
-    volatile uint32_t WDHT;      /*!< Watchdog high threshold register, offset: 0x24 */
-    volatile uint32_t WDLT;      /*!< Watchdog low threshold register,  offset: 0x28 */
-    volatile uint32_t RSQ0;      /*!< Routine sequence register 0,      offset: 0x2C */
-    volatile uint32_t RSQ1;      /*!< Routine sequence register 1,      offset: 0x30 */
-    volatile uint32_t RSQ2;      /*!< Routine sequence register 2,      offset: 0x34 */
+    volatile uint32_t WDHT;      /*!< Watchdog high threshold register, 0x24 */
+    volatile uint32_t WDLT;      /*!< Watchdog low threshold register,  0x28 */
+    volatile uint32_t RSQ0;      /*!< Routine sequence register 0,      0x2C */
+    volatile uint32_t RSQ1;      /*!< Routine sequence register 1,      0x30 */
+    volatile uint32_t RSQ2;      /*!< Routine sequence register 2,      0x34 */
     volatile uint32_t resvd2[6];
-    volatile uint32_t RDATA;     /*!< Routine Data register,            offset: 0x4C */
+    volatile uint32_t RDATA;     /*!< Routine Data register,            0x4C */
     volatile uint32_t resvd3[13];
-    volatile uint32_t OVSAMPCTL; /*!< Oversample control register,      offset: 0x80 */
+    volatile uint32_t OVSAMPCTL; /*!< Oversample control register,      0x80 */
 
+    void Enable()  { if((CTL1 & ADC_CTL1_ADCON) == 0) CTL1 |=  ADC_CTL1_ADCON; }
+    void Disable() { CTL1 &= ~ADC_CTL1_ADCON; }
 
+    void EnScanMode() { CTL0 |= ADC_CTL0_SM; }
+    void EnVrefAndTempChnls() { CTL1 |= ADC_CTL1_TSVREN; }
+    void EnExtTrg() { CTL1 |= ADC_CTL1_ETERC; }
+    void SelectExtTrg(AdcExtTrgSrc src) { SET_BITS(CTL1, 0b111UL, (uint32_t)src, 17); }
+    void EnDMA() { CTL1 |= ADC_CTL1_DMA; }
+
+    void Calibrate() {
+        CTL1 |= ADC_CTL1_RSTCLB; // Reset calibration
+        while(CTL1 & ADC_CTL1_RSTCLB); // Wait completion
+        CTL1 |= ADC_CTL1_CLB; // Perform calibration
+        while(CTL1 & ADC_CTL1_CLB); // Wait completion
+    }
+
+    void StartConversion() { CTL1 |= ADC_CTL1_SWRCST; } // Set 1 on this bit starts a conversion of a routine sequence if ETSRC is 111
+
+    // Channels setup
+    void SetSequenceLength(uint32_t Len) { SET_BITS(RSQ0, 0b1111UL, (Len - 1), 20); }
+
+    void SetChannelSampleTime(uint32_t AChnl, AdcSampleTime ASampleTime) {
+        if(AChnl <= 9) SET_BITS(SAMPT1, 0b111UL, (uint32_t)ASampleTime, (AChnl * 3));
+        else           SET_BITS(SAMPT0, 0b111UL, (uint32_t)ASampleTime, ((AChnl - 10) * 3));
+    }
+
+    void SetSequenceItem(uint32_t SeqIndx, uint32_t AChnl) {
+        if     (SeqIndx <= 5)  SET_BITS(RSQ2, 0b11111UL, AChnl, (SeqIndx * 5));
+        else if(SeqIndx <= 11) SET_BITS(RSQ1, 0b11111UL, AChnl, ((SeqIndx - 6UL) * 5));
+        else if(SeqIndx <= 15) SET_BITS(RSQ0, 0b11111UL, AChnl, ((SeqIndx - 12UL) * 5));
+    }
 
 };
+
+#define ADC0    ((ADC_TypeDef*)ADC0_BASE)
+#define ADC1    ((ADC_TypeDef*)ADC0_BASE)
 
 #endif
 
