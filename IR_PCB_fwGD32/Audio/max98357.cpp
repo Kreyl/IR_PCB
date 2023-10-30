@@ -8,18 +8,10 @@
 #include "max98357.h"
 #include "shell.h"
 
-
-//    void DisableSAI() {
-//        AU_SAI_A->CR1 &= ~SAI_xCR1_SAIEN;
-//        while(AU_SAI_A->CR1 & SAI_xCR1_SAIEN); // wait until disabled
-//    }
-//    void FlushSAI()   { AU_SAI_A->CR2 = SAI_xCR2_FFLUSH; }
-
-
 /*
-The MAX98357A indicates the left channel word when LRCLK is low
-Incoming serial data is always clocked-in on the rising edge of BCLK
-LRCLK ONLY supports 8kHz, 16kHz, 32kHz, 44.1kHz, 48kHz, 88.2kHz and 96kHz
+The MAX98357A indicates the left channel word when LRCLK is low.
+Incoming serial data is always clocked-in on the rising edge of BCLK.
+LRCLK ONLY supports 8kHz, 16kHz, 32kHz, 44.1kHz, 48kHz, 88.2kHz and 96kHz.
 */
 
 #if 1 // =========================== SAI defins ================================
@@ -105,7 +97,7 @@ void Stop() {
 // supports 8kHz, 16kHz, 32kHz, 44.1kHz, 48kHz, 88.2kHz and 96kHz only
 retv SetupSampleRate(uint32_t Fs) {
     Stop();
-    PrintfI("Fs: %u\r", Fs);
+//    PrintfI("Fs: %u\r", Fs);
     for(auto& stp : ClkSetup) {
         if(stp.Fs == Fs) { // setup for Fs found, apply it
             RCU->SetPrediv1(stp.Prediv1);

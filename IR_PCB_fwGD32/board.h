@@ -105,11 +105,11 @@
 
 #if 1 // ========================= Timer =======================================
 // IR LED
-#define TMR_DAC_SMPL    TIM6
+#define TMR_DAC_SMPL        TIM6
 // IR Receiver
-#define TMR_IR_RX       TIM1
-#define TMR_IR_RX_IRQ   TIMER1_IRQn
-#define TMR_IR_RX_IRQ_HNDLR   TIMER1_IRQHandler
+#define TMR_IR_RX           TIM1
+#define TMR_IR_RX_IRQ       TIMER1_IRQn
+#define TMR_IR_RX_IRQ_HNDLR TIMER1_IRQHandler
 #endif // Timer
 
 #if 1 // ==== USB ====
@@ -157,8 +157,7 @@
 #define NPX_DMA             DMA1_Channel1 // Tim4 Update
 // DAC
 #define DAC_DMA             DMA1_Channel2
-// Npx LEDs
-//#define NPX_DMA             DMA1_Channel4 // Tim4 Compare0
+
 
 
 #endif // DMA

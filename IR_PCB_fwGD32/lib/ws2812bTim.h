@@ -26,57 +26,23 @@
  *
 == EXAMPLE ==
 #define NPX_LED_CNT     (14*3)
-#define NPX_SPI         SPI2
-#define NPX_DATA_PIN    GPIOC, 3, AF1
+#define NPX_PARAMS      PA0, TIM4, 0
 #define NPX_PWR_EN      GPIOC, 0
+// Npx LEDs
+#define NPX_DMA             DMA1_Channel1 // Tim4 Update
 
-static const NeopixelParams_t NpxParams{NPX_SPI, NPX_DATA_PIN, LEDWS_DMA, NPX_DMA_MODE(0), NPX_LED_CNT, npxRGBW};
+static const NpxParams NParams{NPX_PARAMS, NPX_DMA, NPX_LED_CNT, NpxParams::ClrType::RGB};
 Neopixels_t Leds{&NpxParams};
- */
+*/
 
 #include "gd_lib.h"
 #include "color.h"
 #include "board.h"
 #include <vector>
 
+#define TICK_DUR_ns     20UL    // For 50MHz. Tune this.
+
 typedef std::vector<Color_t> ColorBuf_t;
-
-// SPI Buffer (no tuning required)
-#if WS2812B_V2
-//#define NPX_SPI_BITRATE         2500000
-//#define NPX_SPI_BITNUMBER       bitn8
-//#define NPX_BYTES_PER_BYTE      3 // 3 bits of SPI to produce 1 bit of LED data
-//#define NPX_RST_BYTE_CNT        100
-
-//#define NPX_DMA_MODE(Chnl) \
-//                        (STM32_DMA_CR_CHSEL(Chnl) \
-//                        | DMA_PRIORITY_HIGH \
-//                        | STM32_DMA_CR_MSIZE_BYTE \
-//                        | STM32_DMA_CR_PSIZE_BYTE \
-//                        | STM32_DMA_CR_MINC     /* Memory pointer increase */ \
-//                        | STM32_DMA_CR_DIR_M2P)  /* Direction is memory to peripheral */ \
-//                        | STM32_DMA_CR_TCIE
-
-#else // WS2812B_V5 and SK6812SIDE
-#define NPX_SPI_BITRATE         3000000
-#define NPX_SPI_BITNUMBER       bitn16
-#define NPX_BYTES_PER_BYTE      4 // 2 bits are 1 byte, 8 bits are 4 bytes
-#define NPX_RST_BYTE_CNT        108
-
-#define NPX_DMA_MODE(Chnl) \
-                        (STM32_DMA_CR_CHSEL(Chnl) \
-                        | DMA_PRIORITY_HIGH \
-                        | STM32_DMA_CR_MSIZE_HWORD \
-                        | STM32_DMA_CR_PSIZE_HWORD \
-                        | STM32_DMA_CR_MINC     /* Memory pointer increase */ \
-                        | STM32_DMA_CR_DIR_M2P)  /* Direction is memory to peripheral */ \
-                        | STM32_DMA_CR_TCIE
-#endif
-
-
-void NpxPrintTable();
-
-
 
 struct NpxParams {
     enum class ClrType {RGB=24UL, RGBW=32UL}; // RGB is 3 bytes = 24bits, RGBW is 4bytes = 32bits
@@ -111,7 +77,6 @@ public:
     ftVoidVoid OnTransmitEnd = nullptr;
     Neopixels_t(const NpxParams *APParams);
     void SetCurrentColors();
-
     ColorBuf_t ClrBuf;
     void Init();
     void SetAll(Color_t Clr) { std::fill(ClrBuf.begin(), ClrBuf.end(), Clr); }

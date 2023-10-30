@@ -3,8 +3,6 @@
 
 #define NPX_DMA_MODE  DMA_PRIO_VERYHIGH | DMA_MEMSZ_16_BIT | DMA_PERSZ_16_BIT | DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE
 
-#define TICK_DUR_ns     20UL    // For 50MHz
-
 #if WS2812B_V2
 #define ONE_DUR_ns      850UL
 #define ZERO_DUR_ns     400UL
@@ -24,33 +22,24 @@ Neopixels_t::Neopixels_t(const NpxParams *APParams) :
     Params(APParams), Tim(APParams->PTim),
     DmaTx(APParams->DmaChnlTx, NpxDmaDone, this) {}
 
-
 void Neopixels_t::Init() {
     Gpio::SetupAlterFunc(Params->PGpio, Params->Pin, Gpio::PushPull, Gpio::speed50MHz);
     Tim.Init();
-//    Tim.SetInputFreqChangingPrescaler(2500000);
     Tim.SetTopValue(TIM_TOP_ticks);
+//    Tim.SetInputFreqChangingPrescaler(2500000);
     // Setup output in PWM mode
     Tim.EnPrimaryOutput();
     Tim.SetChnlMode(Params->TimChnl, HwTim::ChnlMode::Output);
     Tim.SetOutputCmpMode(Params->TimChnl, HwTim::CmpMode::PWM0HiLo);
     Tim.EnableOutputShadow(Params->TimChnl);
     Tim.EnChnl(Params->TimChnl);
-//    Tim.EnableDmaOnCapture(Params->TimChnl);
     Tim.EnableDmaOnUpdate();
-
-//    Tim.SetChnlValue(Params->TimChnl, ONE_DUR_ticks);
-//    Tim.SetChnlValue(Params->TimChnl, ZERO_DUR_ticks);
-
-//    Tim.Enable();
-
     // Allocate memory
     ClrBuf.resize(Params->NpxCnt);
     IBitBufCnt = RESET_BITS_CNT + (Params->NpxCnt * (uint32_t)Params->Type);
     Printf("LedCnt: %u; BitBufCnt: %u\r", Params->NpxCnt, IBitBufCnt);
     IBitBuf = (uint16_t*)malloc(IBitBufCnt * sizeof(uint16_t));
     for(uint32_t i=0; i<IBitBufCnt; i++) IBitBuf[i] = 0; // Zero it all, to zero head and tail
-
     // ==== DMA ====
     DmaTx.Init(Tim.GetChnlRegAddr(Params->TimChnl), NPX_DMA_MODE);
     TransmitDone = true;
@@ -77,7 +66,6 @@ static inline void PutBits(uint16_t **ptr, uint8_t byte) {
     *ptr = p;
 }
 
-
 void Neopixels_t::SetCurrentColors() {
     TransmitDone = false;
     // Fill bit buffer
@@ -97,24 +85,6 @@ void Neopixels_t::SetCurrentColors() {
             PutBits(&p, Color.W);
         }
     }
-
-//    for(uint32_t i=0; i<(RESET_BITS_CNT / 2); i++) {
-//        Printf("%u ", IBitBuf[i]);
-//    }
-//    PrintfEOL();
-//    uint32_t N = 0;
-//    for(uint32_t i=(RESET_BITS_CNT / 2); i<IBitBufCnt - (RESET_BITS_CNT / 2); i++) {
-//        Printf("%u ", IBitBuf[i]);
-//        if(N++ == 7) {
-//            PrintfEOL();
-//            N = 0;
-//        }
-//    }
-//    for(uint32_t i=IBitBufCnt - (RESET_BITS_CNT / 2); i<IBitBufCnt; i++) {
-//        Printf("%u ", IBitBuf[i]);
-//    }
-//    PrintfEOL();
-
     // Start transmission
     Tim.Disable();
     DmaTx.Disable();
@@ -123,7 +93,6 @@ void Neopixels_t::SetCurrentColors() {
     DmaTx.Enable();
     Tim.Enable();
 }
-
 
 void Neopixels_t::OnDmaDone() {
     Tim.Disable();
