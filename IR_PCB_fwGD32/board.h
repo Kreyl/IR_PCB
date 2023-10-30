@@ -94,6 +94,13 @@
 #define FLASH_IO2       PB6
 #define FLASH_IO3       PB7
 
+// Audio
+#define AU_SPI          SPI1
+#define AU_SDMODE       PC13
+#define AU_LRCK         PB12
+#define AU_BCLK         PB13
+#define AU_SDIN         PB15
+
 #endif // GPIO
 
 #if 1 // ========================= Timer =======================================
@@ -141,18 +148,18 @@
 // SPI FLASH
 #define SPIFLASH_DMA_RX     DMA0_Channel1
 #define SPIFLASH_DMA_TX     DMA0_Channel2
-
+// Audio
+#define I2S_DMA_TX          DMA0_Channel4
 // Uart
-#define UART_DMA_TX         DMA0_Channel6
 #define UART_DMA_RX         DMA0_Channel5
-#define UART_DMA_TX_MODE    (DMA_PRIO_LOW    | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE)
-#define UART_DMA_RX_MODE    (DMA_PRIO_MEDIUM | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | DMA_MEM_INC | DMA_DIR_PER2MEM | DMA_CIRC)
-
-// DAC
-#define DAC_DMA             DMA1_Channel2
-
+#define UART_DMA_TX         DMA0_Channel6
 // Npx LEDs
 #define NPX_DMA             DMA1_Channel1 // Tim4 Update
+// DAC
+#define DAC_DMA             DMA1_Channel2
+// Npx LEDs
+//#define NPX_DMA             DMA1_Channel4 // Tim4 Compare0
+
 
 #endif // DMA
 
@@ -165,9 +172,7 @@
 
 #define CMD_UART        USART1
 
-#define CMD_UART_PARAMS \
-    CMD_UART, UART_TX_PIN, UART_RX_PIN, \
-    UART_DMA_TX, UART_DMA_RX, UART_DMA_TX_MODE, UART_DMA_RX_MODE
+#define CMD_UART_PARAMS CMD_UART, UART_TX_PIN, UART_RX_PIN, UART_DMA_TX, UART_DMA_RX
 
 #endif
 

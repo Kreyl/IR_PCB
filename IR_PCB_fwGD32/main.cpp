@@ -10,14 +10,9 @@
 #include "Sequences.h"
 #include "ir.h"
 #include "ws2812bTim.h"
+#include "max98357.h"
 
 #if 1 // ======================== Variables and defines ========================
-// Debug pin
-//#define DBG_PIN         PA3
-//#define DBG_HI()        PinSetHi(DBG_PIN)
-//#define DBG_LO()        PinSetLo(DBG_PIN)
-//#define DBG_TOGGLE()    PinToggle(DBG_PIN)
-
 // Forever
 EvtMsgQ_t<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
 static const UartParams_t CmdUartParams(115200, CMD_UART_PARAMS);
@@ -28,7 +23,7 @@ LedSmooth_t Lumos{LUMOS_PIN};
 LedSmooth_t SideLEDs[SIDE_LEDS_CNT] = { {LED_PWM1}, {LED_PWM2}, {LED_PWM3}, {LED_PWM4} };
 LedSmooth_t FrontLEDs[FRONT_LEDS_CNT] = { {LED_FRONT1}, {LED_FRONT2} };
 
-static const NpxParams NParams{NPX_PARAMS, NPX_DMA, 4, NpxParams::ClrType::RGB};
+static const NpxParams NParams{NPX_PARAMS, NPX_DMA, 17, NpxParams::ClrType::RGB};
 Neopixels_t NpxLeds{&NParams};
 
 Beeper_t Beeper {BEEPER_PIN};
@@ -46,6 +41,23 @@ void main(void) {
     RCU->EnPwrMgmtUnit();
 
     // ==== Setup clock ====
+    FMC->SetLatency(50);
+    if(RCU->EnableXTAL() == retv::Ok) {
+//        RCU->SetCK48MSel_CKPLL(); // USB clock src is PLL
+        // Setup system clock
+        RCU->SetPllPresel_XTAL();
+        RCU->SetPrediv0Sel_XTALorIRC48M(); // XTAL is a source
+        // 12MHz div 6 = 2MHz; 2MHz *25 = 50MHz. PLL input freq must be in [1; 25] MHz, 8MHz typical
+        RCU->SetPrediv0(6);
+        RCU->SetPllSel_Prediv0();
+        RCU->SetPllMulti(PllMulti::mul25);
+        // Switch clk
+        if(RCU->EnablePll() == retv::Ok) {
+            RCU->SetAhbPrescaler(AhbPsc::div1);
+            RCU->SwitchCkSys2PLL();
+        }
+    }
+    /*
     FMC->SetLatency(48);
     if(RCU->EnableXTAL() == retv::Ok) {
         RCU->SetCK48MSel_CKPLL(); // USB clock src is PLL
@@ -62,6 +74,7 @@ void main(void) {
             RCU->SwitchCkSys2PLL();
         }
     }
+    */
     Clk::UpdateFreqValues();
 
     RCU->EnAFIO();
@@ -79,16 +92,19 @@ void main(void) {
     Beeper.Init();
 //    Beeper.StartOrRestart(bsqShot);
 
+//    Gpio::SetupOut(AU_SDMODE, Gpio::PushPull);
+//    Gpio::SetHi(AU_SDMODE);
+
     // LEDs
     for(auto &Led : SideLEDs) {
         Led.Init();
-        Led.StartOrRestart(lsqFadeInOut);
-        Sys::SleepMilliseconds(207);
+//        Led.StartOrRestart(lsqFadeInOut);
+//        Sys::SleepMilliseconds(207);
     }
     for(auto &Led : FrontLEDs) {
         Led.Init();
-        Led.StartOrRestart(lsqFadeInOut);
-        Sys::SleepMilliseconds(207);
+//        Led.StartOrRestart(lsqFadeInOut);
+//        Sys::SleepMilliseconds(207);
     }
 //    Lumos.Init();
 //    Lumos.StartOrRestart(lsqFadeIn);
@@ -96,20 +112,20 @@ void main(void) {
     Gpio::SetHi(PA10); // XXX
 
     NpxLeds.Init();
+    NpxLeds.SetAll(clGreen);
+    NpxLeds.SetCurrentColors();
 
     AFIO->RemapSPI0_PB345();
     SpiFlash.Init();
     SpiFlash.Reset();
-//    Printf("FlashID: %X\r", SpiFlash.ReleasePowerDown());
+    Printf("FlashID: %X\r", SpiFlash.ReleasePowerDown());
+
+//    Codec::Init();
+
+//    irLed::Init();
+//    irRcvr::Init(IrRxCallbackI);
 
     TmrUartCheck.StartOrRestart();
-
-    irLed::Init();
-    irRcvr::Init(IrRxCallbackI);
-
-    // DEBUG
-//    Gpio::SetupOut(PB0, Gpio::PushPull);
-
 
     // Main evt cycle
     while(true) {
@@ -138,7 +154,22 @@ void main(void) {
     }
 }
 
-uint8_t buf[128];
+//uint16_t buf[16];
+static const int32_t sinbuf[] = {
+0, 1389, 2736, 3999, 5142, 6128, 6928, 7517, 7878, 8000,
+7878, 7517, 6928, 6128, 5142, 4000, 2736, 1389, 0, -1389,
+-2736, -4000, -5142, -6128, -6928, -7517, -7878, -8000, -7878, -7517,
+-6928, -6128, -5142, -3999, -2736, -1389};
+#define SIN_SZ    36
+
+bool Proceed = false;
+
+void I2SDmaDoneCbI() {
+    if(Proceed) {
+        Codec::TransmitBuf((void*)sinbuf, SIN_SZ);
+    }
+//    PrintfI("aga\r");
+}
 
 void OnCmd(Shell_t *PShell) {
     Cmd_t *PCmd = &PShell->Cmd;
@@ -155,96 +186,6 @@ void OnCmd(Shell_t *PShell) {
         PShell->Ok();
     }
 
-    else if(PCmd->NameIs("bin")) {
-        uint32_t Sz, Delay;
-        if(PCmd->GetNext(&Sz) == retv::Ok and Sz > 0 and PCmd->GetNext(&Delay) == retv::Ok) {
-            if(UsbCDC.ReceiveBinaryToBuf(buf, Sz, Delay) == retv::Ok) {
-                PShell->Print("%A\r", buf, Sz, ' ');
-                if(UsbCDC.TransmitBinaryFromBuf(buf, Sz, Delay) == retv::Ok) PShell->Ok();
-                else PShell->Failure();
-            }
-            else PShell->Failure();
-        }
-        else PShell->BadParam();
-    }
-
-    else if(PCmd->NameIs("trim")) {
-        Printf("Stat: 0x%X\r", (CTC->STAT & 0xFF));
-        Printf("trimval: %u\r", (CTC->CTL0 >> 8));
-        Printf("refcap: %u\r", (CTC->STAT >> 16));
-        CTC->INTC = 0x0FUL;
-    }
-
-    else if(PCmd->NameIs("Led")) {
-        uint32_t R, G, B;
-        if(PCmd->GetParams<uint32_t>(3, &R, &G, &B) == retv::Ok) {
-//            LedR.Set(R);
-//            LedG.Set(G);
-//            LedB.Set(B);
-            PShell->Ok();
-            return;
-        }
-        PShell->BadParam();
-    }
-
-    else if(PCmd->NameIs("FSta")) {
-        Printf("0x%02X 0x%02X 0x%02X\r",
-                SpiFlash.ReadStatusReg1(),
-                SpiFlash.ReadStatusReg2(),
-                SpiFlash.ReadStatusReg3());
-    }
-
-    else if(PCmd->NameIs("FMfr")) {
-        SpiFlash_t::MfrDevId_t r;
-        r = SpiFlash.ReadMfrDevId();
-        Printf("0x%02X 0x%02X\r", r.Mfr, r.DevID);
-    }
-    else if(PCmd->NameIs("FMfrQ")) {
-        SpiFlash_t::MfrDevId_t r;
-        r = SpiFlash.ReadMfrDevIdQ();
-        Printf("0x%02X 0x%02X\r", r.Mfr, r.DevID);
-    }
-
-    else if(PCmd->NameIs("FR")) {
-        uint32_t Addr, Len;
-        if(PCmd->GetParams<uint32_t>(2, &Addr, &Len) == retv::Ok) {
-            uint8_t Buf[Len];
-            if(SpiFlash.Read(Addr, Buf, Len) == retv::Ok) Printf("%A\r", Buf, Len, ' ');
-            else PShell->Failure();
-        }
-        else PShell->BadParam();
-    }
-
-    else if(PCmd->NameIs("FRQ")) {
-        uint32_t Addr, Len;
-        if(PCmd->GetParams<uint32_t>(2, &Addr, &Len) == retv::Ok) {
-            uint8_t Buf[Len];
-            if(SpiFlash.ReadQ(Addr, Buf, Len) == retv::Ok) Printf("%A\r", Buf, Len, ' ');
-            else PShell->Failure();
-        }
-        else PShell->BadParam();
-    }
-
-    else if(PCmd->NameIs("FE")) {
-        uint32_t Addr;
-        if(PCmd->GetNext(&Addr) == retv::Ok) {
-            if(SpiFlash.EraseSector4k(Addr) == retv::Ok) PShell->Ok();
-            else PShell->Failure();
-        }
-        else PShell->BadParam();
-    }
-
-    else if(PCmd->NameIs("FW")) {
-        uint32_t Addr;
-        if(PCmd->GetNext(&Addr) == retv::Ok) {
-            uint8_t Buf[16];
-            for(uint32_t i=0; i<16; i++) Buf[i] = i;
-            if(SpiFlash.WritePageQ(Addr, Buf, 16) == retv::Ok) PShell->Ok();
-            else PShell->Failure();
-        }
-        else PShell->BadParam();
-    }
-
     else if(PCmd->NameIs("IRTX")) {
         uint16_t w, Pwr;
         if(PCmd->GetParams<uint16_t>(2, &w, &Pwr) == retv::Ok) {
@@ -254,6 +195,32 @@ void OnCmd(Shell_t *PShell) {
         else PShell->BadParam();
     }
 
+    else if(PCmd->NameIs("I2STX")) {
+        Proceed = false;
+        uint32_t w;
+        if(PCmd->GetNext(&w) == retv::Ok) {
+            if(Codec::SetupSampleRate(w) == retv::Ok) {
+                Codec::I2SDmaDoneCbI = I2SDmaDoneCbI;
+                Proceed = true;
+                Codec::TransmitBuf((void*)sinbuf, SIN_SZ);
+                PShell->Ok();
+            }
+            else PShell->Failure();
+        }
+        else PShell->BadParam();
+    }
+
+    else if(PCmd->NameIs("stop")) {
+        Proceed = false;
+    }
+
+    else if(PCmd->NameIs("Npx")) {
+        Color_t clr;
+        if(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.SetAll(clr);
+//        uint32_t i=0;
+//        while(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.ClrBuf[i++] = clr;
+        NpxLeds.SetCurrentColors();
+    }
 
     else PShell->CmdUnknown();
 }

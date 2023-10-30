@@ -14,17 +14,14 @@ struct UartParams_t {
     uint16_t PinRx;
     // DMA
     DMAChannel_t *DmaChnlTx, *DmaChnlRx;
-    uint32_t DmaModeTx, DmaModeRx;
 
     UartParams_t(uint32_t ABaudrate, USART_TypeDef* AUart,
             GPIO_TypeDef *APGpioTx, uint16_t APinTx,
             GPIO_TypeDef *APGpioRx, uint16_t APinRx,
-            DMAChannel_t *ADmaChnlTx, DMAChannel_t *ADmaChnlRx,
-            uint32_t ADmaModeTx, uint32_t ADmaModeRx
+            DMAChannel_t *ADmaChnlTx, DMAChannel_t *ADmaChnlRx
     ) : Baudrate(ABaudrate), Uart(AUart),
             PGpioTx(APGpioTx), PinTx(APinTx), PGpioRx(APGpioRx), PinRx(APinRx),
-            DmaChnlTx(ADmaChnlTx), DmaChnlRx(ADmaChnlRx),
-            DmaModeTx(ADmaModeTx), DmaModeRx(ADmaModeRx) {}
+            DmaChnlTx(ADmaChnlTx), DmaChnlRx(ADmaChnlRx) {}
 };
 
 void UartDmaTxIrqHandler(void *p, uint32_t flags);

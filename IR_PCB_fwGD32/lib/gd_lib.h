@@ -87,6 +87,9 @@ public:
     enum class InputPsc {Div1=0UL, Div2=01UL, Div4=2UL, Div8=3UL};
     enum class ChnlMode {Output=0UL, ITS=3UL,
         CI0FE0=1UL, CI1FE0=2UL, CI1FE1=1UL, CI0FE1=2UL, CI2FE2=1UL, CI3FE2=2UL, CI3FE3=1UL, CI2FE3=2UL};
+    enum class CmpMode { Timing=0b000UL, SetOoutput=0b001UL, ClearOutput=0b010UL,
+        ToggleOnMatch=0b011UL, ForceLo=0b100UL, ForceHi=0b101UL, PWM0HiLo=0b110UL,
+        PWM1LoHi=0b111};
 
     HwTim(TIM_TypeDef *APTimer) : ITmr(APTimer) {}
     void Init()    const { RCU->EnTimer(ITmr);  }
@@ -109,6 +112,9 @@ public:
     uint32_t GetCounter() const { return ITmr->CNT; }
 
     // Compare
+    void SetChnlValue(uint32_t ChnlN, uint32_t AValue) const {
+        *((uint32_t*)(&ITmr->CH0CV) + ChnlN) = AValue;
+    }
     void SetChnl0Value(uint32_t AValue) const { ITmr->CH0CV = AValue; }
     void SetChnl1Value(uint32_t AValue) const { ITmr->CH1CV = AValue; }
     void SetChnl2Value(uint32_t AValue) const { ITmr->CH2CV = AValue; }
@@ -129,6 +135,7 @@ public:
     void SelectSlaveMode(SlaveMode Mode) const { ITmr->SMCFG = (ITmr->SMCFG & ~0b111UL) | (uint32_t)Mode; }
 
     // Channels setup
+    void EnPrimaryOutput() const { ITmr->CCHP = 0xC000; }
     void SetChnlMode(uint32_t ChnlN, ChnlMode Mode) const {
         if     (ChnlN == 0) SET_BITS(ITmr->CHCTL0, 0b11UL, (uint32_t)Mode, 0);
         else if(ChnlN == 1) SET_BITS(ITmr->CHCTL0, 0b11UL, (uint32_t)Mode, 8);
@@ -148,6 +155,19 @@ public:
         else if(InputN == 2) SET_BITS(ITmr->CHCTL2, 0b1010UL, bits, 8);  // CI2FE2 and CI3FE2
         else if(InputN == 3) SET_BITS(ITmr->CHCTL2, 0b1010UL, bits, 12); // CI3FE3 and CI2FE3
     }
+    void SetOutputCmpMode(uint32_t ChnlN, CmpMode Mode) const {
+        if     (ChnlN == 0) SET_BITS(ITmr->CHCTL0, 0b111UL, (uint32_t)Mode, 4);
+        else if(ChnlN == 1) SET_BITS(ITmr->CHCTL0, 0b111UL, (uint32_t)Mode, 12);
+        else if(ChnlN == 2) SET_BITS(ITmr->CHCTL1, 0b111UL, (uint32_t)Mode, 4);
+        else if(ChnlN == 3) SET_BITS(ITmr->CHCTL1, 0b111UL, (uint32_t)Mode, 12);
+    }
+    void EnableOutputShadow(uint32_t ChnlN) const {
+        if     (ChnlN == 0) ITmr->CHCTL0 |= 1UL << 3;
+        else if(ChnlN == 1) ITmr->CHCTL0 |= 1UL << 11;
+        else if(ChnlN == 2) ITmr->CHCTL1 |= 1UL << 3;
+        else if(ChnlN == 3) ITmr->CHCTL1 |= 1UL << 11;
+    }
+
     void EnChnl(uint32_t ChnlN) const {
         if     (ChnlN == 0) ITmr->CHCTL2 |= 1UL << 0;
         else if(ChnlN == 1) ITmr->CHCTL2 |= 1UL << 4;
@@ -155,30 +175,31 @@ public:
         else if(ChnlN == 3) ITmr->CHCTL2 |= 1UL << 12;
     }
 
-/*
-    // Outputs
-    void SetupOutput1(uint32_t Mode) const { ITmr->CCMR1 = (ITmr->CCMR1 & 0xFFFEFF00) | ((Mode & 8UL) << 13) | ((Mode & 7UL) << 4); }
-    void SetupOutput2(uint32_t Mode) const { ITmr->CCMR1 = (ITmr->CCMR1 & 0xFEFF00FF) | ((Mode & 8UL) << 21) | ((Mode & 7UL) << 12); }
-    void SetupOutput3(uint32_t Mode) const { ITmr->CCMR2 = (ITmr->CCMR2 & 0xFFFEFF00) | ((Mode & 8UL) << 13) | ((Mode & 7UL) << 4); }
-    void SetupOutput4(uint32_t Mode) const { ITmr->CCMR2 = (ITmr->CCMR2 & 0xFEFF00FF) | ((Mode & 8UL) << 21) | ((Mode & 7UL) << 12); }
-*/
-    // DMA, Irq, Evt
+    // DMA
+    volatile uint32_t* GetChnlRegAddr(uint32_t ChnlN) const {
+        if     (ChnlN == 0) return &ITmr->CH0CV;
+        else if(ChnlN == 1) return &ITmr->CH1CV;
+        else if(ChnlN == 2) return &ITmr->CH2CV;
+        else                return &ITmr->CH3CV;
+    }
     void EnableDmaOnTrigger() const { ITmr->DMAINTEN |= TIM_DMAINTEN_TRGDEN; }
-    void EnableDMAOnCapture(uint32_t CaptureReq) const { ITmr->DMAINTEN |= (1UL << (CaptureReq + 9UL)); }
+    void EnableDmaOnCapture(uint32_t ChnlN) const { ITmr->DMAINTEN |= TIM_DMAINTEN_DMAEN(ChnlN); }
+    void EnableDmaOnUpdate()  const { ITmr->DMAINTEN |= TIM_DMAINTEN_UPDEN; }
+    // Evt
     void GenerateUpdateEvt()  const { ITmr->GenerateUpdateEvt(); }
-    // Enable
+    // Enable IRQ
     void EnableIrqOnUpdate()  const  { ITmr->DMAINTEN |= TIM_DMAINTEN_UPIE; }
     void EnableIrqOnCompare0() const { ITmr->DMAINTEN |= TIM_DMAINTEN_CH0IE; }
     void EnableIrqOnCompare1() const { ITmr->DMAINTEN |= TIM_DMAINTEN_CH1IE; }
     void EnableIrqOnCompare2() const { ITmr->DMAINTEN |= TIM_DMAINTEN_CH2IE; }
     void EnableIrqOnCompare3() const { ITmr->DMAINTEN |= TIM_DMAINTEN_CH3IE; }
-    // Disable
+    // Disable IRQ
     void DisableIrqOnUpdate()   const { ITmr->DMAINTEN &= ~TIM_DMAINTEN_UPIE; }
     void DisableIrqOnCompare0() const { ITmr->DMAINTEN &= ~TIM_DMAINTEN_CH0IE; }
     void DisableIrqOnCompare1() const { ITmr->DMAINTEN &= ~TIM_DMAINTEN_CH1IE; }
     void DisableIrqOnCompare2() const { ITmr->DMAINTEN &= ~TIM_DMAINTEN_CH2IE; }
     void DisableIrqOnCompare3() const { ITmr->DMAINTEN &= ~TIM_DMAINTEN_CH3IE; }
-    // Clear
+    // Clear IRQ
     void ClearUpdateIrqPendingBit()   const { ITmr->INTF &= ~TIM_INTF_UPIF; }
     void ClearCompare0IrqPendingBit() const { ITmr->INTF &= ~TIM_INTF_CH0IF; }
     void ClearCompare1IrqPendingBit() const { ITmr->INTF &= ~TIM_INTF_CH1IF; }
@@ -424,12 +445,12 @@ public:
     void SetFullDuplex() { PSpi->CTL0 &= ~SPI_CTL0_RO; }
 
     // DMA
-    void EnTxDma()    { PSpi->CTL1 |=  SPI_CTL1_DMATEN; }
-    void DisTxDma()   { PSpi->CTL1 &= ~SPI_CTL1_DMATEN; }
-    void EnRxDma()    { PSpi->CTL1 |=  SPI_CTL1_DMAREN; }
-    void DisRxDma()   { PSpi->CTL1 &= ~SPI_CTL1_DMAREN; }
-    void EnRxTxDma()  { PSpi->CTL1 |=  (SPI_CTL1_DMATEN | SPI_CTL1_DMAREN); }
-    void DisRxTxDma() { PSpi->CTL1 &= ~(SPI_CTL1_DMATEN | SPI_CTL1_DMAREN); }
+    void EnTxDma()    { PSpi->EnTxDma(); }
+    void DisTxDma()   { PSpi->DisTxDma(); }
+    void EnRxDma()    { PSpi->EnRxDma(); }
+    void DisRxDma()   { PSpi->DisRxDma(); }
+    void EnRxTxDma()  { PSpi->EnRxTxDma(); }
+    void DisRxTxDma() { PSpi->DisRxTxDma(); }
 
     // IRQ
     void EnNvicIrq(const uint32_t Priority) const {

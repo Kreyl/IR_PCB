@@ -79,7 +79,7 @@ void NpxPrintTable();
 
 
 struct NpxParams {
-    enum class ClrType {RGB, RGBW};
+    enum class ClrType {RGB=24UL, RGBW=32UL}; // RGB is 3 bytes = 24bits, RGBW is 4bytes = 32bits
     GPIO_TypeDef *PGpio;
     uint16_t Pin;
     TIM_TypeDef *PTim;
@@ -100,16 +100,18 @@ struct NpxParams {
 class Neopixels_t {
 private:
     const NpxParams *Params;
-    uint32_t IBitBufSz = 0;
-    uint8_t *IBitBuf = nullptr;
+    uint32_t IBitBufCnt = 0;
+    uint16_t *IBitBuf = nullptr;
     HwTim Tim;
     DMA_t DmaTx;
+    void OnDmaDone();
+    friend void NpxDmaDone(void *p, uint32_t flags);
 public:
     bool TransmitDone = false;
     ftVoidVoid OnTransmitEnd = nullptr;
     Neopixels_t(const NpxParams *APParams);
     void SetCurrentColors();
-    void OnDmaDone();
+
     ColorBuf_t ClrBuf;
     void Init();
     void SetAll(Color_t Clr) { std::fill(ClrBuf.begin(), ClrBuf.end(), Clr); }

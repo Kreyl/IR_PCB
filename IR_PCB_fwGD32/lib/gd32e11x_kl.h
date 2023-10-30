@@ -446,12 +446,21 @@ struct DMAChannel_t {
 #define TIM_CTL0_CEN        (1UL << 0)
 #define TIM_CTL0_ARSE       (1UL << 7)
 #define TIM_SMCFG_ETP       (1UL << 15)
+
 #define TIM_DMAINTEN_UPIE   (1UL << 0)
 #define TIM_DMAINTEN_CH0IE  (1UL << 1)
 #define TIM_DMAINTEN_CH1IE  (1UL << 2)
 #define TIM_DMAINTEN_CH2IE  (1UL << 3)
 #define TIM_DMAINTEN_CH3IE  (1UL << 4)
+#define TIM_DMAINTEN_TRGIE  (1UL << 6)
+#define TIM_DMAINTEN_UPDEN  (1UL << 8)
+#define TIM_DMAINTEN_CH0DEN (1UL << 9)
+#define TIM_DMAINTEN_CH1DEN (1UL << 10)
+#define TIM_DMAINTEN_CH2DEN (1UL << 11)
+#define TIM_DMAINTEN_CH3DEN (1UL << 12)
+#define TIM_DMAINTEN_DMAEN(chnl)    (1UL << (9UL + chnl))
 #define TIM_DMAINTEN_TRGDEN (1UL << 14)
+
 #define TIM_INTF_UPIF       (1UL << 0)
 #define TIM_INTF_CH0IF      (1UL << 1)
 #define TIM_INTF_CH1IF      (1UL << 2)
@@ -536,6 +545,33 @@ struct TIM_TypeDef {
 #define SPI_STAT_RXORERR    (1UL << 6)
 #define SPI_STAT_TRANS      (1UL << 7) // Busy
 
+#define I2S_CTL_CHLEN       (1UL << 0) // Sz of channel
+#define I2S_CTL_CHLEN_16bit (0UL << 0)
+#define I2S_CTL_CHLEN_32bit (1UL << 0)
+
+#define I2S_CTL_DTLEN_msk   (0b11UL << 1) // Sz of payload data in channel
+#define I2S_CTL_DTLEN_16bit (0b00UL << 1)
+#define I2S_CTL_DTLEN_24bit (0b01UL << 1)
+#define I2S_CTL_DTLEN_32bit (0b10UL << 1)
+
+#define I2S_CTL_CKPL        (1UL << 3)
+#define I2S_CTL_CKPL_IdleLo (0UL << 3)
+#define I2S_CTL_CKPL_IdleHi (1UL << 3)
+
+#define I2S_CTL_STD_msk     (0b11UL << 4)
+#define I2S_CTL_STD_I2S     (0b00UL << 4)
+#define I2S_CTL_STD_MSB     (0b01UL << 4)
+#define I2S_CTL_STD_LSB     (0b10UL << 4)
+#define I2S_CTL_STD_PCM     (0b11UL << 4)
+
+#define I2S_CTL_SLAVE_TX    (0b00UL << 8)
+#define I2S_CTL_SLAVE_RX    (0b01UL << 8)
+#define I2S_CTL_MASTER_TX   (0b10UL << 8)
+#define I2S_CTL_MASTER_RX   (0b11UL << 8)
+
+#define I2S_CTL_I2SEN       (1UL << 10)
+#define I2S_CTL_I2SSEL      (1UL << 11)
+
 #define SPI_QCTL_IO23DR     (1UL << 2)
 #define SPI_QCTL_QRD        (1UL << 1)
 #define SPI_QCTL_QMOD       (1UL << 0)
@@ -555,10 +591,20 @@ struct SPI_TypeDef {
 
     void Enable()  { CTL0 |=  SPI_CTL0_SPIEN; }
     void Disable() { CTL0 &= ~SPI_CTL0_SPIEN; }
+    void EnableI2S()  { I2SCTL |=  I2S_CTL_I2SEN; }
+    void DisableI2S() { I2SCTL &= ~I2S_CTL_I2SEN; }
 
     // IRQ
     void EnRxBufNotEmptyIrq()  { CTL1 |=  SPI_CTL1_RBNEIE; }
     void DisRxBufNotEmptyIrq() { CTL1 &= ~SPI_CTL1_RBNEIE; }
+
+    // DMA
+    void EnTxDma() { CTL1 |=  SPI_CTL1_DMATEN; }
+    void DisTxDma()   { CTL1 &= ~SPI_CTL1_DMATEN; }
+    void EnRxDma()    { CTL1 |=  SPI_CTL1_DMAREN; }
+    void DisRxDma()   { CTL1 &= ~SPI_CTL1_DMAREN; }
+    void EnRxTxDma()  { CTL1 |=  (SPI_CTL1_DMATEN | SPI_CTL1_DMAREN); }
+    void DisRxTxDma() { CTL1 &= ~(SPI_CTL1_DMATEN | SPI_CTL1_DMAREN); }
 
     // Flags and buf
     void WaitForTransLo() { while(STAT & SPI_STAT_TRANS); }
@@ -609,10 +655,12 @@ struct DBGMCU_TypeDef {
 #define RCU_CTL_PLL1EN          (1UL << 26)
 #define RCU_CTL_PLL1STB         (1UL << 27)
 #define RCU_CTL_PLL2EN          (1UL << 28)
-#define RCU_CTL_PLL3STB         (1UL << 29)
+#define RCU_CTL_PLL2STB         (1UL << 29)
 
 #define RCU_CFG0_PLLSEL         (1UL << 16)
 #define RCU_CFG1_PREDV0SEL      (1UL << 16)
+#define RCU_CFG1_I2S1SEL        (1UL << 17)
+#define RCU_CFG1_I2S2SEL        (1UL << 18)
 #define RCU_CFG1_PLLPRESEL      (1UL << 30)
 
 #define RCU_ADDCTL_IRC48MEN     (1UL << 16)
@@ -628,6 +676,10 @@ enum class PllMulti {
     mul13=0b01011, mul14=0b01100, mul16=0b01110, mul17=0b10000, mul18=0b10001,  mul19=0b10010,
     mul20=0b10011, mul21=0b10100, mul22=0b10101, mul23=0b10110, mul24=0b10111,  mul25=0b11000,
     mul26=0b11001, mul27=0b11010, mul28=0b11011, mul29=0b11100, mul30=0b11101,  mul31=0b11110
+};
+enum class Pll2Multi {
+    mul08=0b0110, mul09=0b0111, mul10=0b1000, mul11=0b1001,  mul12=0b1010,
+    mul13=0b1011, mul14=0b1100, mul16=0b1110, mul20=0b1111
 };
 enum class UsbPsc : uint32_t {
     div1d5 = (0UL << 31) | (0b00UL << 22),
@@ -683,6 +735,15 @@ struct RCU_TypeDef {
         return retv::Timeout;
     }
 
+    retv EnablePll2() {
+        CTL |= RCU_CTL_PLL2EN; // Enable PLL
+        for(uint32_t i=0; i<CLK_STARTUP_TIMEOUT; i++)
+            if(CTL & RCU_CTL_PLL2STB) return retv::Ok;
+        return retv::Timeout;
+    }
+
+    void DisablePll2() { CTL &= ~RCU_CTL_PLL2EN; }
+
     retv EnableIRC48M() {
         ADDCTL |= RCU_ADDCTL_IRC48MEN;
         for(uint32_t i=0; i<CLK_STARTUP_TIMEOUT; i++)
@@ -695,8 +756,10 @@ struct RCU_TypeDef {
 
     void SetPrediv0Sel_XTALorIRC48M() { CFG1 &= ~(1UL << 16); }
     void SetPrediv0Sel_CKPLL1()       { CFG1 |=  (1UL << 16); }
+
     // Div = [1; 16]
     void SetPrediv0(uint32_t Div) { SET_BITS(CFG1, 0b1111UL, ((Div - 1UL) & 0b1111UL), 0); }
+    void SetPrediv1(uint32_t Div) { SET_BITS(CFG1, 0b1111UL, ((Div - 1UL) & 0b1111UL), 4); }
 
     void SetPllSel_Irc8Mdiv2() { CFG0 &= ~(1UL << 16); }
     void SetPllSel_Prediv0()   { CFG0 |=  (1UL << 16); }
@@ -707,6 +770,7 @@ struct RCU_TypeDef {
         tmp |= ((m & 0b01111UL) << 18) | ((m & 0b10000UL) << 25); // 25 to put 5-th bit to 29 position
         CFG0 = tmp;
     }
+    void SetPll2Multi(Pll2Multi Multi) { SET_BITS(CFG1, 0b1111UL, (uint32_t)Multi, 12); }
 
     // CkSys Switch
     uint32_t GetCkSwitchState() { return (CFG0 >> 2) & 0b11UL; }
@@ -731,7 +795,7 @@ struct RCU_TypeDef {
     void SetCK48MSel_CKIRC48M() { ADDCTL |=  RCU_ADDCTL_CK48MSEL; }
 #endif
 
-#if 1 // ==== Enable ====
+#if 1 // ==== Enable periperial blocks ====
     void EnDMAs() { AHBEN |= (1UL << 0) | (1UL << 1); }
     void EnUSB()  { AHBEN |= 1UL << 12; }
     void EnCRC()  { AHBEN |= 1UL << 6;  }
@@ -788,7 +852,7 @@ struct RCU_TypeDef {
     }
 #endif
 
-#if 1 // ==== Disable ====
+#if 1 // ==== Disable periperial blocks ====
     void DisUSB()  { AHBEN  &= ~(1UL << 12); }
     void DisI2C0() { APB1EN &= ~(1UL << 21); }
     void DisI2C1() { APB1EN &= ~(1UL << 22); }

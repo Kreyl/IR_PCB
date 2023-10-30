@@ -9,6 +9,9 @@
 #include "gd_lib.h"
 #include "yartos.h"
 
+#define UART_DMA_TX_MODE    (DMA_PRIO_LOW    | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE)
+#define UART_DMA_RX_MODE    (DMA_PRIO_MEDIUM | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | DMA_MEM_INC | DMA_DIR_PER2MEM | DMA_CIRC)
+
 #if 1 // ==== TX DMA IRQ ====
 // Wrapper for TX IRQ
 void UartDmaTxIrqHandler(void *p, uint32_t flags) { ((BaseUart_t*)p)->IRQDmaTxHandler(); }
@@ -72,12 +75,12 @@ void BaseUart_t::Init() {
 
     // ==== TX ====
     Gpio::SetupAlterFunc(Params->PGpioTx, Params->PinTx, Gpio::PushPull, Gpio::speed50MHz);
-    DmaTx.Init(&Params->Uart->DATA, Params->DmaModeTx);
+    DmaTx.Init(&Params->Uart->DATA, UART_DMA_TX_MODE);
     ITxDmaIsIdle = true;
 
     // ==== RX ====
     Gpio::SetupInput(Params->PGpioRx, Params->PinRx, Gpio::PullUp);
-    DmaRx.Init(&Params->Uart->DATA, IRxBuf, Params->DmaModeRx, UART_RXBUF_SZ);
+    DmaRx.Init(&Params->Uart->DATA, IRxBuf, UART_DMA_RX_MODE, UART_RXBUF_SZ);
     DmaRx.Enable();
 
     // UART Regs setup

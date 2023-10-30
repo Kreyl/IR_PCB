@@ -11,13 +11,13 @@
 #if IR_TX_ENABLED // ========================== IR TX ==========================
 namespace irLed {
 
-#define IRLED_DMA_MODE  DMA_PRIO_HIGH |  DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE
+#define IRLED_DMA_MODE  DMA_PRIO_HIGH | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE
 
 HwTim SamplingTmr{TMR_DAC_SMPL};
 ftVoidVoid ICallbackI = nullptr;
 static uint32_t TransactionSz;
-void DmaTxEndIrqHandler(void *p, uint32_t flags);
-const DMA_t DmaTx {DAC_DMA, DmaTxEndIrqHandler, nullptr, IRQ_PRIO_MEDIUM};
+static void DmaTxEndIrqHandler(void *p, uint32_t flags);
+static const DMA_t DmaTx {DAC_DMA, DmaTxEndIrqHandler, nullptr, IRQ_PRIO_MEDIUM};
 
 #define SAMPLING_FREQ_HZ    (IR_CARRIER_HZ * 2)
 // Every SamplePair contains 4 actual samples
@@ -48,7 +48,7 @@ union DacSamplePair_t {
 
 DacSamplePair_t DacBuf[DAC_BUF_SZ];
 
-void DmaTxEndIrqHandler(void *p, uint32_t flags) {
+static void DmaTxEndIrqHandler(void *p, uint32_t flags) {
     Sys::LockFromIRQ();
     SamplingTmr.Disable();
     DmaTx.Disable();
