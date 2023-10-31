@@ -378,10 +378,6 @@ public:
 #if ADC_REQUIRED // ========================= ADC ==============================
 namespace Adc {
 
-// Inner ADC channels. See datasheet
-const uint32_t ChannelTemperature = 16UL;
-const uint32_t ChannelVrefint = 17UL;
-
 struct Channel_t {
     GPIO_TypeDef *GPIO;
     uint32_t Pin;
@@ -395,7 +391,8 @@ struct Channel_t {
 struct Params {
     AdcPsc AdcClkPrescaler; // ADC clock must be within [0.1; 40] MHz
     AdcSampleTime SampleTime;
-    AdcOversampling Oversampling;
+    AdcOversamplingRatio OversamplingRatio;
+    AdcOversamplingShift OversamplingShift;
     ftVoidVoid DoneCallbackI;
     std::vector<Channel_t> Channels;
 };
