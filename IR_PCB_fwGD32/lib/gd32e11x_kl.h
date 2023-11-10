@@ -1442,7 +1442,12 @@ struct I2C_TypeDef {
 #define I2CCLK_MAX_MHz      60UL // > 60 is not allowed due to the limitation of APB1 clock
 #endif
 
-#if 1 // ============================== ADC ====================================
+#if 1 // ============================= ADC =====================================
+#define VREFINT_mV              1200UL // See datasheet, ADC description
+// Inner ADC channels. See datasheet
+#define ADC_CHNL_Temperature    16UL
+#define ADC_CHNL_Vrefint        17UL
+
 #define ADC_CTL0_SM         (1UL <<  8)
 
 #define ADC_CTL1_ADCON      (1UL <<  0)
@@ -1453,6 +1458,8 @@ struct I2C_TypeDef {
 #define ADC_CTL1_ETERC      (1UL << 20)
 #define ADC_CTL1_SWRCST     (1UL << 22)
 #define ADC_CTL1_TSVREN     (1UL << 23)
+
+#define ADC_OVSAMPCTL_OVSEN (1UL << 0)
 
 enum class AdcExtTrgSrc { Tim0C0=0b000UL, Tim0C1=0b001UL, Tim0C2=0b010UL, Tim1C1=0b011UL,
     Tim2TRGO=0b100UL, Tim3C3=0b101UL, Exti11_Tim7TRGO=0b110UL, Swrcst=0b111UL};
@@ -1468,8 +1475,11 @@ enum class AdcSampleTime {
     t239dCycles = 0b111
 };
 
-enum class AdcOversampling : uint32_t { Disabled=0xFFUL, os2=0b000UL, os4=0b001UL, os8=0b010UL,
-    os16=0b011UL, os32=0b100UL, os64=0b101UL, os128=0b110UL, os256=0b111UL};
+enum class AdcOversamplingRatio : uint32_t { Disabled=0xFFUL, x2=0b000UL, x4=0b001UL,
+    x8=0b010UL, x16=0b011UL, x32=0b100UL, x64=0b101UL, x128=0b110UL, x256=0b111UL};
+enum class AdcOversamplingShift : uint32_t { NoShift=0b0000UL, sh1bit=0b0001UL,
+    sh2bits=0b0010UL, sh3bits=0b0011UL, sh4bits=0b0100UL, sh5bits=0b0101UL,
+    sh6bits=0b0110UL, sh7bits=0b0111UL, sh8bits=0b1000UL};
 
 struct ADC_TypeDef {
     volatile uint32_t STAT;      /*!< Status register,                  0x00 */
@@ -1477,15 +1487,15 @@ struct ADC_TypeDef {
     volatile uint32_t CTL1;      /*!< Control register 1,               0x08 */
     volatile uint32_t SAMPT0;    /*!< Sample time register 0,           0x0C */
     volatile uint32_t SAMPT1;    /*!< Sample time register 1,           0x10 */
-    volatile uint32_t resvd1[5];
+    volatile uint32_t resvd1[4];
     volatile uint32_t WDHT;      /*!< Watchdog high threshold register, 0x24 */
     volatile uint32_t WDLT;      /*!< Watchdog low threshold register,  0x28 */
     volatile uint32_t RSQ0;      /*!< Routine sequence register 0,      0x2C */
     volatile uint32_t RSQ1;      /*!< Routine sequence register 1,      0x30 */
     volatile uint32_t RSQ2;      /*!< Routine sequence register 2,      0x34 */
-    volatile uint32_t resvd2[6];
+    volatile uint32_t resvd2[5];
     volatile uint32_t RDATA;     /*!< Routine Data register,            0x4C */
-    volatile uint32_t resvd3[13];
+    volatile uint32_t resvd3[12];
     volatile uint32_t OVSAMPCTL; /*!< Oversample control register,      0x80 */
 
     void Enable()  { if((CTL1 & ADC_CTL1_ADCON) == 0) CTL1 |=  ADC_CTL1_ADCON; }
@@ -1496,6 +1506,13 @@ struct ADC_TypeDef {
     void EnExtTrg() { CTL1 |= ADC_CTL1_ETERC; }
     void SelectExtTrg(AdcExtTrgSrc src) { SET_BITS(CTL1, 0b111UL, (uint32_t)src, 17); }
     void EnDMA() { CTL1 |= ADC_CTL1_DMA; }
+    void EnOversamping()  { OVSAMPCTL |=  ADC_OVSAMPCTL_OVSEN; }
+    void DisOversamping() { OVSAMPCTL &= ~ADC_OVSAMPCTL_OVSEN; }
+
+    void SetupOversampling(AdcOversamplingRatio ratio, AdcOversamplingShift shift) {
+        OVSAMPCTL &= ~((0b1111UL << 5) | (0b111UL << 2));
+        OVSAMPCTL |= ((uint32_t)shift << 5) | ((uint32_t)ratio << 2);
+    }
 
     void Calibrate() {
         CTL1 |= ADC_CTL1_RSTCLB; // Reset calibration
@@ -1523,7 +1540,7 @@ struct ADC_TypeDef {
 };
 
 #define ADC0    ((ADC_TypeDef*)ADC0_BASE)
-#define ADC1    ((ADC_TypeDef*)ADC0_BASE)
+#define ADC1    ((ADC_TypeDef*)ADC1_BASE)
 
 #endif
 

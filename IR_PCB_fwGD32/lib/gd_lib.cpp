@@ -559,27 +559,25 @@ namespace Adc {
 
 static std::vector<uint16_t> IBuf;
 static void DmaIrqHandler(void *p, uint32_t flags);
+static ftVoidVoid IDoneCallback = nullptr;
 
 static const DMA_t Dma {ADC_DMA, DmaIrqHandler, nullptr, IRQ_PRIO_MEDIUM};
 
 static void DmaIrqHandler(void *p, uint32_t flags) {
     Sys::LockFromIRQ();
     Dma.Disable();
-    ADC0->Disable();
-    EvtQMain.SendNowOrExitI(EvtMsg_t(EvtId::AdcDone));
+    if(IDoneCallback) IDoneCallback();
     Sys::UnlockFromIRQ();
 }
 
 void Init(const Params& Setup) {
+    IDoneCallback = Setup.DoneCallbackI;
     // Clock
     RCU->SetAdcPsc(Setup.AdcClkPrescaler);
     RCU->EnADC0();
-    // Enable Vrefint and Temperature chnls, set SwStart as start trigger
-    ADC0->EnVrefAndTempChnls();
-    ADC0->SelectExtTrg(AdcExtTrgSrc::Swrcst);
-    ADC0->EnExtTrg();
-    ADC0->EnDMA();
+    // Setup Scan mode
     ADC0->EnScanMode();
+    ADC0->EnDMA();
     // Setup channels
     ADC0->SetSequenceLength(Setup.Channels.size());
     uint32_t SeqIndx = 0;    // First sequence item is 0
@@ -588,6 +586,17 @@ void Init(const Params& Setup) {
         ADC0->SetChannelSampleTime(Chnl.ChannelN, Setup.SampleTime);
         ADC0->SetSequenceItem(SeqIndx++, Chnl.ChannelN);
     }
+    // Setup oversampling
+    if(Setup.OversamplingRatio == AdcOversamplingRatio::Disabled) ADC0->DisOversamping();
+    else {
+        ADC0->SetupOversampling(Setup.OversamplingRatio, Setup.OversamplingShift);
+        ADC0->EnOversamping();
+    }
+    // Set SwStart as start trigger
+    ADC0->SelectExtTrg(AdcExtTrgSrc::Swrcst);
+    ADC0->EnExtTrg();
+    // Enable Vrefint and Temperature chnls,
+    ADC0->EnVrefAndTempChnls();
     ADC0->Enable();
     Sys::SleepMilliseconds(1);
     ADC0->Calibrate();
@@ -598,17 +607,18 @@ void Init(const Params& Setup) {
 }
 
 void StartMeasurement() {
-    (void)ADC0->RDATA;
     Dma.Disable();
     Dma.SetMemoryAddr(IBuf.data());
     Dma.SetTransferDataCnt(IBuf.size());
     Dma.Enable();
-    ADC0->Enable();
     ADC0->StartConversion();
 }
 
-//uint32_t GetResult(uint32_t AChannel);
-//uint32_t Adc2mV(uint32_t AdcChValue, uint32_t VrefValue);
+uint32_t GetResult(uint32_t AChannel) { return IBuf[AChannel]; }
+
+uint32_t Adc2mV(uint32_t AdcChValue, uint32_t VrefValue) {
+    return (VREFINT_mV * AdcChValue) / VrefValue;
+}
 
 };
 #endif
