@@ -479,7 +479,7 @@
       "idf": "",
       "netlist": "",
       "specctra_dsn": "IR_PCB.dsn",
-      "step": "",
+      "step": "Factory/IR_PCB.step",
       "vrml": ""
     },
     "page_layout_descr_file": ""

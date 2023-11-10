@@ -2,7 +2,7 @@
 #include "gd_uart.h"
 #include "yartos.h"
 #include "MsgQ.h"
-#include "usb_cdc.h"
+#include "usb_msdcdc.h"
 #include "usb.h"
 #include "SpiFlash.h"
 #include "led.h"
@@ -36,52 +36,74 @@ EvtTimer_t TmrUartCheck(TIME_MS2I(UART_RX_POLL_MS), EvtId::UartCheckTime, EvtTim
 
 void IrRxCallbackI(uint32_t Rcvd) { PrintfI("RX: 0x%X\r", Rcvd); }
 
-void main(void) {
+static inline void InitClk() {
     FMC->EnableCashAndPrefetch();
     RCU->EnPwrMgmtUnit();
+//    FMC->SetLatency(50); // 50 MHz required for NPX LEDs
+    // Init Crystal
+//    if(RCU->EnableXTAL() == retv::Ok) {
+////        RCU->SetCK48MSel_CKPLL(); // USB clock src is PLL
+//        // Setup system clock
+//        RCU->SetPllPresel_XTAL();
+//        RCU->SetPrediv0Sel_XTALorIRC48M(); // XTAL is a source
+//        // 12MHz div 6 = 2MHz; 2MHz *25 = 50MHz. PLL input freq must be in [1; 25] MHz, 8MHz typical
+//        RCU->SetPrediv0(6);
+//        RCU->SetPllSel_Prediv0();
+//        RCU->SetPllMulti(PllMulti::mul25);
+//        // Switch clk
+//        if(RCU->EnablePll() == retv::Ok) {
+//            RCU->SetAhbPrescaler(AhbPsc::div1);
+//            RCU->SwitchCkSys2PLL();
+//        }
+//    }
 
-    // ==== Setup clock ====
-    FMC->SetLatency(50);
-    if(RCU->EnableXTAL() == retv::Ok) {
+    FMC->SetLatency(48);
+//    if(RCU->EnableXTAL() == retv::Ok) {
 //        RCU->SetCK48MSel_CKPLL(); // USB clock src is PLL
+//        // Setup system clock
+//        RCU->SetPllPresel_XTAL();
+//        RCU->SetPrediv0Sel_XTALorIRC48M(); // XTAL is a source
+//        // 12MHz div 1 = 12MHz; 12MHz *4 = 48MHz. PLL input freq must be in [1; 25] MHz, 8MHz typical
+//        RCU->SetPrediv0(1);
+//        RCU->SetPllSel_Prediv0();
+//        RCU->SetPllMulti(PllMulti::mul04);
+//        // Switch clk
+//        if(RCU->EnablePll() == retv::Ok) {
+//            RCU->SetAhbPrescaler(AhbPsc::div1);
+//            RCU->SwitchCkSys2PLL();
+//        }
+//    }
+
+    if(RCU->EnableIRC48M() == retv::Ok) {
+        RCU->SetCK48MSel_CKIRC48M();   // Use IRC48M as clk src instead of PLL
+        RCU->EnCTC();              // Enable trimmer
+        // Setup trimmer: SOF freq is 1 kHz, rising front, no prescaler, input is UsbSOF
+        CTC->Setup(CTC_REFPOL_RISING, CTC_REFSEL_USBSOF, CTC_REFPSC_DIV_1, 1000);
         // Setup system clock
-        RCU->SetPllPresel_XTAL();
-        RCU->SetPrediv0Sel_XTALorIRC48M(); // XTAL is a source
-        // 12MHz div 6 = 2MHz; 2MHz *25 = 50MHz. PLL input freq must be in [1; 25] MHz, 8MHz typical
+        RCU->SetPllPresel_CKIRC48M(); // IRC48M is a source
+        RCU->SetPrediv0Sel_XTALorIRC48M(); // IRC48M is a source
+        // 48MHz div 6 = 8MHz; 8MHz *6 = 48MHz. PLL input freq must be in [1; 25] MHz, 8MHz typical
         RCU->SetPrediv0(6);
         RCU->SetPllSel_Prediv0();
-        RCU->SetPllMulti(PllMulti::mul25);
+        RCU->SetPllMulti(PllMulti::mul06);
         // Switch clk
         if(RCU->EnablePll() == retv::Ok) {
             RCU->SetAhbPrescaler(AhbPsc::div1);
             RCU->SwitchCkSys2PLL();
         }
     }
-    /*
-    FMC->SetLatency(48);
-    if(RCU->EnableXTAL() == retv::Ok) {
-        RCU->SetCK48MSel_CKPLL(); // USB clock src is PLL
-        // Setup system clock
-        RCU->SetPllPresel_XTAL();
-        RCU->SetPrediv0Sel_XTALorIRC48M(); // XTAL is a source
-        // 12MHz div 1 = 12MHz; 12MHz *4 = 48MHz. PLL input freq must be in [1; 25] MHz, 8MHz typical
-        RCU->SetPrediv0(1);
-        RCU->SetPllSel_Prediv0();
-        RCU->SetPllMulti(PllMulti::mul04);
-        // Switch clk
-        if(RCU->EnablePll() == retv::Ok) {
-            RCU->SetAhbPrescaler(AhbPsc::div1);
-            RCU->SwitchCkSys2PLL();
-        }
-    }
-    */
+
+
     Clk::UpdateFreqValues();
+}
 
+void main(void) {
+    InitClk();
+    // Init peripheral
     RCU->EnAFIO();
-    // Disable JTAG, leaving SWD. Otherwise PB3 & PB4 are occupied by JTDO & JTRST
-    AFIO->DisableJtagDP();
-
+    AFIO->DisableJtagDP(); // Disable JTAG, leaving SWD. Otherwise PB3 & PB4 are occupied by JTDO & JTRST
     Uart.Init();
+
     // RTOS & Event queue
     Sys::Init();
     EvtQMain.Init();
@@ -120,6 +142,7 @@ void main(void) {
     SpiFlash.Reset();
     Printf("FlashID: %X\r", SpiFlash.ReleasePowerDown());
 
+//    UsbCDC.Connect();
 //    Codec::Init();
 
 //    irLed::Init();
@@ -146,7 +169,7 @@ void main(void) {
 
             case EvtId::UsbReady:
                 Printf("Usb ready\r");
-                CTC->Enable(); // Start autotrimming of IRC48M
+//                CTC->Enable(); // Start autotrimming of IRC48M
                 break;
 
             default: break;

@@ -1,4 +1,4 @@
-#include "descriptors_cdc.h"
+#include "descriptors_msdcdc.h"
 #include "usb.h"
 #include "shell.h"
 
@@ -22,8 +22,8 @@
 //#define USB_DESCRIPTOR_INTERFACE_ASSOCIATION 11U
 #endif
 
-
 #pragma pack(push, 1)
+
 struct DscHeader_t {
     uint8_t  bLength;
     uint8_t  bDescriptorType;
@@ -35,12 +35,12 @@ static const struct DeviceDescriptor_t {
     /* 0xJJMN where JJ is the major version number, M is the minor version number
        and N is the sub minor version number. e.g. USB 2.0 is 0x0200, USB 1.1 is 0x0110 */
     uint16_t bcdUSB          = 0x0110;
-    uint8_t  bDeviceClass    = 0x02; // CDC
-    uint8_t  bDeviceSubClass = 0x00;
-    uint8_t  bDeviceProtocol = 0x00;
+    uint8_t  bDeviceClass    = 0xEF;
+    uint8_t  bDeviceSubClass = 0x02;
+    uint8_t  bDeviceProtocol = 0x01;
     uint8_t  bMaxPacketSize  = EP0_SZ; // Maximum Packet Size for Zero Endpoint
     uint16_t idVendor        = 0x0483; // ST
-    uint16_t idProduct       = 0x5740;
+    uint16_t idProduct       = 0x374C;
     uint16_t bcdDevice       = 0x0200;
     uint8_t  iManufacturer   = 1;
     uint8_t  iProduct        = 2;
@@ -49,9 +49,9 @@ static const struct DeviceDescriptor_t {
 } DeviceDescriptor;
 #endif
 
-#if 1 // ================ Configuration Descriptor for a CDC ===================
+#if 1 // ==================== Configuration Descriptor =========================
+// ==== Common use types ====
 #define USB_CONFIG_POWER_MA(mA) ((mA) >> 1)
-#define CS_INTERFACE            0x24    // DescriptorType of HeaderFuncDesc
 // There may be several configurations in single CfgDesc
 struct Configuration_t {
     DscHeader_t Hdr = { sizeof(Configuration_t), USB_DESCRIPTOR_CONFIGURATION };
@@ -82,20 +82,59 @@ struct Endpoint_t {
     uint8_t  bInterval;
 };
 
+// Class-specific defines
+#define CS_INTERFACE            0x24    // DescriptorType of HeaderFuncDesc
+
 static const struct ConfigDescriptor_t {
     // ==== Configuration part ====
     Configuration_t Configuration = {
             .wTotalLength = sizeof(ConfigDescriptor_t),
-            .bNumInterfaces = 2,
+            .bNumInterfaces = 3,
             .bConfigurationValue = 1,
             .iConfiguration = 0,
             .bmAttributes = 0x80, // Bus powered
             .bMaxPower = USB_CONFIG_POWER_MA(100)
     };
 
-    // === CDC Control Interface ====
-    Interface_t CdcControlInterface = {
+    // ==== Mass Storage Interface ====
+    Interface_t MsdInterface = {
             .bInterfaceNumber = 0,
+            .bAlternateSetting = 0,
+            .bNumEndpoints = 2,
+            .bInterfaceClass = 0x08, // Mass Storage class
+            .bInterfaceSubClass = 0x06, // SCSI Transparent Command Set subclass of the Mass storage class
+            .bInterfaceProtocol = 0x50, // Bulk Only Transport protocol of the Mass Storage class
+            .iInterface = 0
+    };
+    // Endpoint OUT
+    Endpoint_t EpMsdOut = {
+            .bEndpointAddress = (EP_MSD_DATA_OUT | EP_DIR_OUT),
+            .bmAttributes = EP_TYPE_BULK,
+            .wMaxPacketSize = EP_MSD_BULK_SZ,
+            .bInterval = 0x00
+    };
+    // Endpoint IN
+    Endpoint_t EpMsdIn = {
+            .bEndpointAddress = (EP_MSD_DATA_IN | EP_DIR_IN),
+            .bmAttributes = EP_TYPE_BULK,
+            .wMaxPacketSize = EP_MSD_BULK_SZ,
+            .bInterval = 0x00
+    };
+
+    // ==== CDC IAD ====
+    struct CdcIADDescriptor_t {
+        DscHeader_t Hdr = { sizeof(CdcIADDescriptor_t), 0x0B }; // bDescriptorType = IAD
+        uint8_t bFirstInterface = 1;
+        uint8_t bInterfaceCount = 2;
+        uint8_t bFunctionClass = 0x02;
+        uint8_t bFunctionSubClass = 0x02;
+        uint8_t bFunctionProtocol = 0x01;
+        uint8_t iFunction = 0;
+    } CdcIADDescriptor;
+
+    // ==== CDC Control Interface ====
+    Interface_t CdcControlInterface = {
+            .bInterfaceNumber = 1,
             .bAlternateSetting = 0,
             .bNumEndpoints = 1,
             .bInterfaceClass = 0x02, // Communications Interface Class, CDC section 4.2
@@ -114,8 +153,8 @@ static const struct ConfigDescriptor_t {
     struct CallManagementFunctionalDescriptor_t {
         DscHeader_t Hdr = { sizeof(CallManagementFunctionalDescriptor_t), CS_INTERFACE };
         uint8_t  bDescriptorSubtype = 0x01; // Call Management Functional Descriptor
-        uint8_t  bmCapabilities = 0x00; // (D0+D1)
-        uint8_t  bDataInterface = 0x01;
+        uint8_t  bmCapabilities = 0x00;     // (D0+D1)
+        uint8_t  bDataInterface = 2;        // Interface 2 is for data
     } CallManagementFunctionalDescriptor;
     struct ACMFunctionalDescriptor_t {
         DscHeader_t Hdr = { sizeof(ACMFunctionalDescriptor_t), CS_INTERFACE };
@@ -125,11 +164,11 @@ static const struct ConfigDescriptor_t {
     struct UnionFunctionalDescriptor_t {
         DscHeader_t Hdr = { sizeof(UnionFunctionalDescriptor_t), CS_INTERFACE };
         uint8_t  bDescriptorSubtype = 0x06; // Union Functional Descriptor
-        uint8_t  bMasterInterface = 0x00; // Communication Class Interface
-        uint8_t  bSlaveInterface = 0x01; // Data Class Interface
+        uint8_t  bMasterInterface = 1;      // Communication Class Interface
+        uint8_t  bSlaveInterface = 2;       // Data Class Interface
     } UnionFunctionalDescriptor;
-    // Endpoint 2 Descriptor
-    Endpoint_t Ep2 = {
+    // Interrupt Endpoint Descriptor
+    Endpoint_t EpCdcInterrupt = {
             .bEndpointAddress = (EP_CDC_INTERRUPT | EP_DIR_IN),
             .bmAttributes = EP_TYPE_INTERRUPT,
             .wMaxPacketSize = EP_INTERRUPT_SZ,
@@ -138,7 +177,7 @@ static const struct ConfigDescriptor_t {
 
     // ==== CDC Data Interface ====
     Interface_t CdcDataInterface = {
-            .bInterfaceNumber = 1,
+            .bInterfaceNumber = 2,
             .bAlternateSetting = 0,
             .bNumEndpoints = 2,
             .bInterfaceClass = 0x0A, // Data Class Interface, CDC section 4.5
@@ -147,17 +186,17 @@ static const struct ConfigDescriptor_t {
             .iInterface = 0
     };
     // Endpoint 3 Descriptor
-    Endpoint_t Ep3 = {
+    Endpoint_t EpCdcDataOut = {
             .bEndpointAddress = (EP_CDC_DATA_OUT | EP_DIR_OUT),
             .bmAttributes = EP_TYPE_BULK,
-            .wMaxPacketSize = EP_BULK_SZ,
+            .wMaxPacketSize = EP_CDC_BULK_SZ,
             .bInterval = 0x00
     };
     // Endpoint 1 Descriptor
-    Endpoint_t Ep1 = {
+    Endpoint_t EpCdcDataIn = {
             .bEndpointAddress = (EP_CDC_DATA_IN | EP_DIR_IN),
             .bmAttributes = EP_TYPE_BULK,
-            .wMaxPacketSize = EP_BULK_SZ,
+            .wMaxPacketSize = EP_CDC_BULK_SZ,
             .bInterval = 0x00
     };
 } ConfigDescriptor;
@@ -185,7 +224,7 @@ static const StringDescriptor_t LanguageString = {
 };
 
 static const STRING_DESC(u"Ostranna") VendorString;
-static const STRING_DESC(u"Virtual COM") DeviceDescriptionString;
+static const STRING_DESC(u"VirtualCOM and MSD") DeviceDescriptionString;
 static const STRING_DESC(u"123") SerialNumberString;
 
 static const StringDescriptor_t *StringDescriptors[] = {

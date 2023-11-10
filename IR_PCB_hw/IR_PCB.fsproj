@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--**************************************-->
-<!--   File    : IR_PCB.fsproj            -->
-<!--   Format  : TopoR Project file       -->
-<!--   Version : 2                        -->
-<!--   Program : TopoR 8 Layer 7.0.18661  -->
-<!--   Date    : Monday, October 30, 2023 -->
-<!--   Time    : 20:20                    -->
-<!--**************************************-->
+<!--******************************************-->
+<!--   File    : IR_PCB.fsproj                -->
+<!--   Format  : TopoR Project file           -->
+<!--   Version : 2                            -->
+<!--   Program : TopoR 8 Layer 7.0.18661      -->
+<!--   Date    : Wednesday, November 01, 2023 -->
+<!--   Time    : 00:51                        -->
+<!--******************************************-->
 
 <Project>
    <Version current="2"/>
    <GUID>{FAF91C27-1F3B-4402-8DB5-09B03321F6DF}</GUID>
    <Documents>
       <Section name="PCB" isExpanded="true">
-         <File path=".\IR_PCB.fsx" isopened="0" dateChange="2023-10-30 20:20:24"/>
+         <File path=".\IR_PCB.fsx" isopened="1" dateChange="2023-10-30 20:20:24"/>
       </Section>
       <Section name="AutoRouting" isExpanded="false"/>
    </Documents>

@@ -4406,7 +4406,7 @@
     (effects (font (size 1.27 1.27) bold) (justify left bottom))
     (uuid 0dd53fdf-d694-42e5-8279-4c385560882d)
   )
-  (text "IR TX: DAC0 & TIM6\nUART: USART1\nSPI0: FLASH\nSPI1: I2S\nIR RX:  T1C1\nSysLED: T0 C2\nSideLEDs: T2 C0,1,2,3\nFrontLEDs: T3 C2,3\nWS2812: T4 C0\nBuzzer: T11 C0\n\nDMA0:\nC1 - SPI0 RX\nC2 - SPI0 TX\nC4 - I2S1 TX\nC5 - U1 RX\nC6 - U1 TX\n\nDMA1:\nC1 - T4UP\nC2 - DAC0\nC4 - T4C0"
+  (text "IR TX: DAC0 & TIM6\nUART: USART1\nSPI0: FLASH\nSPI1: I2S\nIR RX:  T1C1\nSysLED: T0 C2\nSideLEDs: T2 C0,1,2,3\nFrontLEDs: T3 C2,3\nWS2812: T4 C0\nBuzzer: T11 C0\n\nDMA0:\nC1 - SPI0 RX\nC2 - SPI0 TX\nC4 - I2S1 TX\nC5 - U1 RX\nC6 - U1 TX\n\nDMA1:\nC1 - T4UP\nC2 - DAC0"
     (at 167.64 60.96 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 1d04137c-015c-4979-8b4a-0390e8ff31e0)

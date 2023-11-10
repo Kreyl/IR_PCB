@@ -90,7 +90,7 @@ struct EpConfig_t {
     ftVoidU32 OutTransferEndCallback = nullptr;
     ftVoidVoid InTransferEndCallback = nullptr;
     inline void CallOutTransferEndCallback(uint32_t Sz) const { if(OutTransferEndCallback) OutTransferEndCallback(Sz); }
-    inline void CallInTransferEndCallback()  const { if(InTransferEndCallback)  InTransferEndCallback(); }
+    inline void CallInTransferEndCallback()  const { if(InTransferEndCallback) InTransferEndCallback(); }
     EpType Type = EpType::Ctrl;
     uint32_t OutMaxPktSz = EP0_SZ; // FS: up to 1023 bytes, HS: up to 1024 bytes. Must be 0 if not used
     uint32_t InMaxPktSz = EP0_SZ;  // FS: up to 1023 bytes, HS: up to 1024 bytes. Must be 0 if not used
