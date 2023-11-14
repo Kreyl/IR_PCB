@@ -245,5 +245,13 @@ void OnCmd(Shell_t *PShell) {
         NpxLeds.SetCurrentColors();
     }
 
+    else if(PCmd->NameIs("cnv")) {
+        uint8_t b[4];
+        if(PCmd->GetArray<uint8_t>(b, 4) == retv::Ok) {
+            uint32_t w  = Convert::U8ToU16(b[0], b[1]);
+            Printf("0x%04X\r", w);
+        }
+    }
+
     else PShell->CmdUnknown();
 }

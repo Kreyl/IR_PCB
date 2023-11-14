@@ -16,9 +16,9 @@ const SCSI_InquiryResponse_t InquiryData = {
         Sccstp:             0x00,
         bqueetc:            0x00,
         CmdQue:             0x00,
-        VendorID:           "WarSaber",
-        ProductID:          "MassStorage     ",
-        ProductRev:         "0002"
+        VendorID:           {'O','s', 't', 'r', 'a', 'n', 'n', 'a'},
+        ProductID:          {'M','a','s','s','S','t','o','r','a','g','e'},
+        ProductRev:         {'0', '0', '0', '2'}
 };
 
 // USB Mass storage Page 0 Inquiry Data

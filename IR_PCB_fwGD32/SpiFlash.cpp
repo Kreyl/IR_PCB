@@ -301,3 +301,202 @@ retv SpiFlash_t::BusyWait() {
 void SpiFlash_t::WriteStatusReg1(uint8_t b) {
 
 }
+
+#include "drivers/tick_timer.h"
+#include "drivers/ext_flash_hw.h"
+#include "utils/check_params.h"
+
+#include "drivers/ext_flash_xx25.h"
+
+// ========================================= Definition ============================================
+
+#define EXT_FLASH_XX25_TEST_SEGMENT_AMOUNT          4
+#define EXT_FLASH_XX25_TEST_PAGE_AMOUNT             8
+#define EXT_FLASH_XX25_TEST_MAGIC_NUMBER            42
+
+/// Таймаут стирания минимального сегмента для семейства микросхем N25xx, мс
+#define FLASH_N25_SEGMENT_ERASE_TIMEOUT             800
+/// Таймаут записи страницы для семейства микросхем N25xx, мс
+#define FLASH_N25_PAGE_PROGRAM_TIMEOUT              5
+
+/// Таймаут стирания минимального сегмента для семейства микросхем M25xx, мс
+#define FLASH_M25_SEGMENT_ERASE_TIMEOUT             600
+/// Таймаут записи страницы для семейства микросхем M25xx, мс
+#define FLASH_M25_PAGE_PROGRAM_TIMEOUT              1
+
+/// Таймаут стирания минимального сегмента для семейства микросхем MX25xx, мс
+#define FLASH_MX25_SEGMENT_ERASE_TIMEOUT            120
+/// Таймаут записи страницы для семейства микросхем MX25xx, мс
+#define FLASH_MX25_PAGE_PROGRAM_TIMEOUT             2
+
+/// Таймаут стирания минимального сегмента для семейства микросхем WQ25xx, мс
+#define FLASH_WQ25_SEGMENT_ERASE_TIMEOUT            420
+/// Таймаут записи страницы для семейства микросхем WQ25xx, мс
+#define FLASH_WQ25_PAGE_PROGRAM_TIMEOUT             4
+
+/// Размер сектора, байт
+#define EXT_FLASH_XX45_SECTOR_SIZE                  65536
+/// Размер подсектора (доступен не во всех микросхемах), байт
+#define FLASH_XX25_SUBSECTOR_SIZE                   4096
+
+/**
+ * @defgroup FLASH_XX25_CMD
+ * Команды, для работы с микросхемой FLASH
+ * @{
+ */
+#define FLASH_XX25_CMD__READ_ID                     0x9F
+#define FLASH_XX25_CMD__READ_DATA_BYTES             0x03
+#define FLASH_XX25_CMD__READ_STATUS_REGISTER        0x05
+#define FLASH_XX25_CMD__PAGE_PROGRAM                0x02
+#define FLASH_XX25_CMD__WRITE_ENABLE                0x06
+#define FLASH_XX25_CMD__WRITE_DISABLE               0x04
+#define FLASH_XX25_CMD__SECTOR_ERASE                0xD8
+#define FLASH_XX25_CMD__SUBSECTOR_ERASE             0x20
+/** @} */
+
+/// Полный объем Flash памяти M25P16 в Кб
+#define FLASH_M25P16_TOTAL_SIZE                     2048
+
+/// Полный объем Flash памяти N25Q128 в Кб
+#define FLASH_N25Q128_TOTAL_SIZE                    16384
+
+/// Полный объем Flash памяти N25Q032 в Кб
+#define FLASH_N25Q032_TOTAL_SIZE                    4096
+
+/// Полный объем Flash памяти MX25L128 в Кб
+#define FLASH_MX25L128_TOTAL_SIZE                   16384
+
+/// Полный объем Flash памяти WQ25F32 в Кб
+#define FLASH_WQ25F32_TOTAL_SIZE                    4096
+
+#define EXT_FLASH_XX25_STATUS_WRITE_IN_PROG_MSK     0x01
+
+#pragma pack(push, 1)
+typedef union
+{
+  struct
+  {
+    uint8_t write_in_progress   : 1;
+    uint8_t write_enable_latch  : 1;
+    uint8_t block_protect       : 3;
+    uint8_t reserved            : 2;
+    uint8_t write_protect       : 1;
+  } m25;
+
+  struct
+  {
+    uint8_t write_in_progress   : 1;
+    uint8_t write_enable_latch  : 1;
+    uint8_t block_protect       : 3;
+    /// 1 - bottom
+    /// 0 - top
+    uint8_t top_bottom          : 1;
+    uint8_t reserved            : 1;
+    uint8_t write_protect       : 1;
+  } n25;
+
+  struct
+  {
+    uint8_t write_in_progress   : 1;
+    uint8_t write_enable_latch  : 1;
+    uint8_t block_protect       : 4;
+    uint8_t quad_en             : 1;
+    uint8_t write_protect       : 1;
+  } mx25;
+
+  struct
+  {
+    uint8_t write_in_progress   : 1;
+    uint8_t write_enable_latch  : 1;
+    uint8_t block_protect       : 3;
+    uint8_t top_bottom_protect  : 1;
+    uint8_t sector_protect      : 1;
+    uint8_t status_reg_protect  : 1;
+  } wq25;
+
+  uint8_t msk;
+} ext_flash_xx25_status_t;
+#pragma pack(pop)
+
+// ========================================= Declaration ===========================================
+
+uint32_t ext_flash_xx25_get_type(void);
+
+ext_flash_xx25_t ext_flash_xx25;
+
+// ======================================== Implementation =========================================
+
+error_t ext_flash_xx25_autodefine(void)
+{
+  error_t res;
+
+  ext_flash_xx25.inited = 0;
+  ext_flash_xx25.type = EXT_FLASH_XX25_TYPE__UNKNOWN;
+  ext_flash_xx25.size_in_kb = 0;
+  ext_flash_xx25.erasable_segment_size = 0;
+  ext_flash_xx25.erase_segment_timeout = 0;
+
+  // первый вызов - холостой
+  ext_flash_xx25.type = (ext_flash_xx25_type_t)ext_flash_xx25_get_type();
+  ext_flash_xx25.type = (ext_flash_xx25_type_t)ext_flash_xx25_get_type();
+
+  switch (ext_flash_xx25.type)
+  {
+    case EXT_FLASH_XX25_TYPE__M25P16:
+      ext_flash_xx25.size_in_kb = FLASH_M25P16_TOTAL_SIZE;
+      ext_flash_xx25.erase_subsector_enable = false;
+      ext_flash_xx25.erasable_segment_size = EXT_FLASH_XX45_SECTOR_SIZE;
+      ext_flash_xx25.erase_segment_timeout = FLASH_M25_SEGMENT_ERASE_TIMEOUT;
+      ext_flash_xx25.program_page_timeout = FLASH_M25_PAGE_PROGRAM_TIMEOUT;
+      res = ERR_OK;
+    break;
+
+    case EXT_FLASH_XX25_TYPE__N25Q128:
+      ext_flash_xx25.size_in_kb = FLASH_N25Q128_TOTAL_SIZE;
+      ext_flash_xx25.erase_subsector_enable = true;
+      ext_flash_xx25.erasable_segment_size = FLASH_XX25_SUBSECTOR_SIZE;
+      ext_flash_xx25.erase_segment_timeout = FLASH_N25_SEGMENT_ERASE_TIMEOUT;
+      ext_flash_xx25.program_page_timeout = FLASH_N25_PAGE_PROGRAM_TIMEOUT;
+      res = ERR_OK;
+    break;
+
+    case EXT_FLASH_XX25_TYPE__N25Q032:
+      ext_flash_xx25.size_in_kb = FLASH_N25Q032_TOTAL_SIZE;
+      ext_flash_xx25.erase_subsector_enable = true;
+      ext_flash_xx25.erasable_segment_size = FLASH_XX25_SUBSECTOR_SIZE;
+      ext_flash_xx25.erase_segment_timeout = FLASH_N25_SEGMENT_ERASE_TIMEOUT;
+      ext_flash_xx25.program_page_timeout = FLASH_N25_PAGE_PROGRAM_TIMEOUT;
+      res = ERR_OK;
+    break;
+
+    case EXT_FLASH_XX25_TYPE__MX25L128:
+      ext_flash_xx25.size_in_kb = FLASH_MX25L128_TOTAL_SIZE;
+      ext_flash_xx25.erase_subsector_enable = true;
+      ext_flash_xx25.erasable_segment_size = FLASH_XX25_SUBSECTOR_SIZE;
+      ext_flash_xx25.erase_segment_timeout = FLASH_MX25_SEGMENT_ERASE_TIMEOUT;
+      ext_flash_xx25.program_page_timeout = FLASH_MX25_PAGE_PROGRAM_TIMEOUT;
+      res = ERR_OK;
+    break;
+
+    case EXT_FLASH_XX25_TYPE__W25Q32F:
+      ext_flash_xx25.size_in_kb = FLASH_WQ25F32_TOTAL_SIZE;
+      ext_flash_xx25.erase_subsector_enable = true;
+      ext_flash_xx25.erasable_segment_size = FLASH_XX25_SUBSECTOR_SIZE;
+      ext_flash_xx25.erase_segment_timeout = FLASH_WQ25_SEGMENT_ERASE_TIMEOUT;
+      ext_flash_xx25.program_page_timeout = FLASH_WQ25_PAGE_PROGRAM_TIMEOUT;
+      res = ERR_OK;
+    break;
+
+    default:
+      res = ERR_RESULT;
+    break;
+  }
+
+  if (res == ERR_OK)
+  {
+    ext_flash_xx25.inited = true;
+  }
+
+  return res;
+}
+

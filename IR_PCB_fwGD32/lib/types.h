@@ -60,8 +60,10 @@ struct StatusOr {
     T& operator *() { return v; }
 };
 
+using StatusOrU8  = StatusOr<uint8_t>;
 using StatusOrU16 = StatusOr<uint16_t>;
 using StatusOrU32 = StatusOr<uint32_t>;
+using StatusOrPChar = StatusOr<char*>;
 
 // ==== Functional types ====
 typedef void (*ftVoidVoid)(void);
@@ -75,5 +77,17 @@ enum Inverted_t {invNotInverted, invInverted};
 enum class BitOrder {MSB, LSB};
 enum class RiseFall {None, Rising, Falling, Both};
 
+// ==== Conversion ====
+namespace Convert {
+
+static inline uint16_t BuildU16(uint16_t bLsb, uint16_t bMsb) {
+    return (bMsb << 8) | bLsb;
+}
+
+static inline uint32_t BuildU132(uint32_t bLsb, uint32_t bL1, uint32_t bM1, uint32_t bMsb) {
+    return (bMsb << 24) | (bM1 << 16) | (bL1 << 8) | bLsb;
+}
+
+} // namespace
 
 #endif /* LIB_TYPES_H_ */

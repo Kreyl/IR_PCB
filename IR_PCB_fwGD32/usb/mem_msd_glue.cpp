@@ -1,25 +1,28 @@
 /*
  * mem_msd_glue.cpp
  *
- *  Created on: 30 ÿíâ. 2016 ã.
+ *  Created on: 30 ï¿½ï¿½ï¿½. 2016 ï¿½.
  *      Author: Kreyl
  */
 
 #include "mem_msd_glue.h"
-#include "uart.h"
-#include "diskio.h"
+//#include "uart.h"
+//#include "diskio.h"
 
-uint8_t MSDRead(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
+uint32_t MsdBlockCnt = 128UL, MsdBlockSz = 512UL;
+
+retv MSDRead(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
 //    Uart.Printf("R Addr: %u; Cnt: %u\r", BlockAddress, BlocksCnt);
 //    Mem.Read(BlockAddress * MSD_BLOCK_SZ, Ptr, BlocksCnt * MSD_BLOCK_SZ);
-    if(disk_read(0, Ptr, BlockAddress, BlocksCnt) == RES_OK) return retvOk;
-    else return retvFail;
+//    if(disk_read(0, Ptr, BlockAddress, BlocksCnt) == RES_OK) return retvOk;
+//    else return retvFail;
+    return retv::Fail;
 }
 
-uint8_t MSDWrite(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
+retv MSDWrite(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
 //    Uart.Printf("WRT Addr: %u; Cnt: %u\r", BlockAddress, BlocksCnt);
-    if(disk_write(0, Ptr, BlockAddress, BlocksCnt) == RES_OK) return retvOk;
-    else return retvFail;
+//    if(disk_write(0, Ptr, BlockAddress, BlocksCnt) == RES_OK) return retvOk;
+//    else return retvFail;
 //    while(BlocksCnt != 0) {
         // Calculate Mem Sector addr
 //        uint32_t SectorStartAddr = BlockAddress * MEM_SECTOR_SZ;
@@ -29,4 +32,5 @@ uint8_t MSDWrite(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
 //        BlockAddress += MSD_BLOCK_SZ;
 //        BlocksCnt--;
 //    }
+    return retv::Fail;
 }

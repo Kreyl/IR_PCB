@@ -248,6 +248,11 @@ __attribute__((__always_inline__))
 static inline void SetLo(GPIO_TypeDef *PGpio, uint32_t APin) { PGpio->BC = 1UL << APin;  }
 __attribute__((__always_inline__))
 static inline void Toggle(GPIO_TypeDef *PGpio, uint32_t APin) { PGpio->OCTL ^= 1UL << APin; }
+__attribute__((__always_inline__))
+static inline void Set(GPIO_TypeDef *PGpio, uint32_t APin, uint32_t Lvl) {
+    if(Lvl == 0) PGpio->BC = 1UL << APin;
+    else PGpio->BOP = 1UL << APin;
+}
 
 // ==== Setup ====
 void SetupOut(GPIO_TypeDef *PGpio, const uint32_t PinN,

@@ -10,6 +10,10 @@
 
 #include "shell.h"
 
+#ifndef MSD_READ_ONLY
+#define MSD_READ_ONLY   FALSE
+#endif
+
 #define MSD_TIMEOUT_MS   2700
 #define MSD_DATABUF_SZ   4096
 

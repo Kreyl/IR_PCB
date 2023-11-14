@@ -1,18 +1,21 @@
 /*
  * mem_msd_glue.h
  *
- *  Created on: 30 ÿíâ. 2016 ã.
+ *  Created on: 30 ï¿½ï¿½ï¿½. 2016 ï¿½.
  *      Author: Kreyl
  */
 
-#pragma once
+#ifndef MEM_MSD_GLUE_H__
+#define MEM_MSD_GLUE_H__
 
-#include "kl_sd.h"
+#include "types.h"
 
-extern SDCDriver SDCD1;
+//#define MSD_BLOCK_CNT   SDCD1.capacity
+//#define MSD_BLOCK_SZ    512
 
-#define MSD_BLOCK_CNT   SDCD1.capacity
-#define MSD_BLOCK_SZ    512
+extern uint32_t MsdBlockCnt, MsdBlockSz;
 
-uint8_t MSDRead(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt);
-uint8_t MSDWrite(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt);
+retv MSDRead(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt);
+retv MSDWrite(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt);
+
+#endif // MEM_MSD_GLUE_H__

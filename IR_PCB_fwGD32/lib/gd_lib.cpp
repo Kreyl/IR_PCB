@@ -617,7 +617,8 @@ void StartMeasurement() {
 uint32_t GetResult(uint32_t AChannel) { return IBuf[AChannel]; }
 
 uint32_t Adc2mV(uint32_t AdcChValue, uint32_t VrefValue) {
-    return (VREFINT_mV * AdcChValue) / VrefValue;
+//    return (VREFINT_mV * AdcChValue) / VrefValue;
+    return (3300UL * AdcChValue) / 4096UL;
 }
 
 };

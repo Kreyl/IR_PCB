@@ -53,7 +53,7 @@ struct MS_CommandStatusWrapper_t {
 #pragma pack(pop)
 
 void MSDStartReceiveHdrI();
-void OnMSDDataOut();
+void OnMSDDataOut(uint32_t Sz);
 void OnMSDDataIn();
 static bool ISayIsReady = true;
 static Thread_t *PMsdThd = nullptr;
@@ -387,9 +387,11 @@ void MSDStartReceiveHdrI() {
     Usb::StartReceiveI(EP_MSD_DATA_OUT, (uint8_t*)&CmdBlock, MS_CMD_SZ);
 }
 
-void OnMSDDataOut() {
+void OnMSDDataOut(uint32_t Sz) {
     if(PMsdThd and PMsdThd->state == ThdState::Sleeping) Sys::WakeI(&PMsdThd, retv::New);
 }
+
+void OnMSDDataIn() {}
 #endif
 
 void UsbMsdCdc_t::Init() {
@@ -536,7 +538,7 @@ uint8_t CmdInquiry() {
 #if DBG_PRINT_CMD
     Printf("CmdInquiry %u\r", CmdBlock.SCSICmdData[1] & 0x01);
 #endif
-    uint16_t RequestedLength = Convert::BuildUint16(CmdBlock.SCSICmdData[4], CmdBlock.SCSICmdData[3]);
+    uint16_t RequestedLength =  Convert::BuildU16(CmdBlock.SCSICmdData[4], CmdBlock.SCSICmdData[3]);
     uint16_t BytesToTransfer;
     if(CmdBlock.SCSICmdData[1] & 0x01) { // Evpd is set
         BytesToTransfer = MIN_(RequestedLength, PAGE0_INQUIRY_DATA_SZ);
@@ -567,8 +569,8 @@ uint8_t CmdReadCapacity10() {
 #if DBG_PRINT_CMD
     Printf("CmdReadCapacity10\r");
 #endif
-    ReadCapacity10Response.LastBlockAddr = __REV((uint32_t)MSD_BLOCK_CNT - 1);
-    ReadCapacity10Response.BlockSize = __REV((uint32_t)MSD_BLOCK_SZ);
+    ReadCapacity10Response.LastBlockAddr = __REV(MsdBlockCnt - 1);
+    ReadCapacity10Response.BlockSize = __REV(MsdBlockSz);
     // Transmit SenceData
     TransmitBuf((uint32_t*)&ReadCapacity10Response, sizeof(ReadCapacity10Response));
     // Succeed the command and update the bytes transferred counter
@@ -584,14 +586,14 @@ uint8_t CmdReadFormatCapacities() {
     Printf("CmdReadFormatCapacities\r");
 #endif
     ReadFormatCapacitiesResponse.Length = 0x08;
-    ReadFormatCapacitiesResponse.NumberOfBlocks = __REV(MSD_BLOCK_CNT);
+    ReadFormatCapacitiesResponse.NumberOfBlocks = __REV(MsdBlockCnt);
     // 01b Unformatted Media - Maximum formattable capacity for this cartridge
     // 10b Formatted Media - Current media capacity
     // 11b No Cartridge in Drive - Maximum formattable capacity
     ReadFormatCapacitiesResponse.DescCode = 0x02;
-    ReadFormatCapacitiesResponse.BlockSize[0] = (uint8_t)((uint32_t)MSD_BLOCK_SZ >> 16);
-    ReadFormatCapacitiesResponse.BlockSize[1] = (uint8_t)((uint32_t)MSD_BLOCK_SZ >> 8);
-    ReadFormatCapacitiesResponse.BlockSize[2] = (uint8_t)((uint32_t)MSD_BLOCK_SZ);
+    ReadFormatCapacitiesResponse.BlockSize[0] = (uint8_t)(MsdBlockSz >> 16);
+    ReadFormatCapacitiesResponse.BlockSize[1] = (uint8_t)(MsdBlockSz >> 8);
+    ReadFormatCapacitiesResponse.BlockSize[2] = (uint8_t)(MsdBlockSz);
     // Transmit Data
     TransmitBuf((uint32_t*)&ReadFormatCapacitiesResponse, sizeof(ReadFormatCapacitiesResponse));
     // Succeed the command and update the bytes transferred counter
@@ -600,11 +602,11 @@ uint8_t CmdReadFormatCapacities() {
 }
 
 uint8_t ReadWriteCommon(uint32_t *PAddr, uint16_t *PLen) {
-    *PAddr = Convert::BuildUint32(CmdBlock.SCSICmdData[5], CmdBlock.SCSICmdData[4], CmdBlock.SCSICmdData[3], CmdBlock.SCSICmdData[2]);
-    *PLen  = Convert::BuildUint16(CmdBlock.SCSICmdData[8], CmdBlock.SCSICmdData[7]);
+    *PAddr = Convert::BuildU132(CmdBlock.SCSICmdData[5], CmdBlock.SCSICmdData[4], CmdBlock.SCSICmdData[3], CmdBlock.SCSICmdData[2]);
+    *PLen  = Convert::BuildU16(CmdBlock.SCSICmdData[8], CmdBlock.SCSICmdData[7]);
 //    Printf("Addr=%u; Len=%u\r", *PAddr, *PLen);
     // Check block addr
-    if((*PAddr + *PLen) > MSD_BLOCK_CNT) {
+    if((*PAddr + *PLen) > MsdBlockCnt) {
         Printf("Out Of Range: Addr %u, Len %u\r", *PAddr, *PLen);
         SenseData.SenseKey = SCSI_SENSE_KEY_ILLEGAL_REQUEST;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
@@ -612,7 +614,7 @@ uint8_t ReadWriteCommon(uint32_t *PAddr, uint16_t *PLen) {
         return retv::Fail;
     }
     // Check cases 4, 5: (Hi != Dn); and 3, 11, 13: (Hn, Ho != Do)
-    if(CmdBlock.DataTransferLen != (*PLen) * MSD_BLOCK_SZ) {
+    if(CmdBlock.DataTransferLen != (*PLen) * MsdBlockSz) {
         Printf("Wrong length\r");
         SenseData.SenseKey = SCSI_SENSE_KEY_ILLEGAL_REQUEST;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_INVALID_COMMAND;
@@ -633,8 +635,8 @@ uint8_t CmdRead10() {
     uint32_t BlocksToRead, BytesToSend; // Intermediate values
     bool Rslt;
     while(TotalBlocks != 0) {
-        BlocksToRead = MIN_(MSD_DATABUF_SZ / MSD_BLOCK_SZ, TotalBlocks);
-        BytesToSend = BlocksToRead * MSD_BLOCK_SZ;
+        BlocksToRead = MIN_(MSD_DATABUF_SZ / MsdBlockSz, TotalBlocks);
+        BytesToSend = BlocksToRead * MsdBlockSz;
         Rslt = MSDRead(BlockAddress, Buf32, BlocksToRead);
 //        Uart.Printf("%A\r", Buf, 50, ' ');
         if(Rslt == retv::Ok) {
@@ -656,7 +658,7 @@ uint8_t CmdWrite10() {
 #if DBG_PRINT_CMD
     Printf("CmdWrite10\r");
 #endif
-#if READ_ONLY
+#if MSD_READ_ONLY
     SenseData.SenseKey = SCSI_SENSE_KEY_DATA_PROTECT;
     SenseData.AdditionalSenseCode = SCSI_ASENSE_WRITE_PROTECTED;
     SenseData.AdditionalSenseQualifier = SCSI_ASENSEQ_NO_QUALIFIER;
@@ -680,12 +682,12 @@ uint8_t CmdWrite10() {
     if(ReadWriteCommon(&BlockAddress, &TotalBlocks) != retv::Ok) return retv::Fail;
 //    Printf("Addr=%u; Len=%u\r", BlockAddress, TotalBlocks);
     uint32_t BlocksToWrite, BytesToReceive;
-    uint8_t Rslt = retv::Ok;
+    retv Rslt = retv::Ok;
 
     while(TotalBlocks != 0) {
         // Fill Buf1
-        BytesToReceive = MIN_(MSD_DATABUF_SZ, TotalBlocks * MSD_BLOCK_SZ);
-        BlocksToWrite  = BytesToReceive / MSD_BLOCK_SZ;
+        BytesToReceive = MIN_(MSD_DATABUF_SZ, TotalBlocks * MsdBlockSz);
+        BlocksToWrite  = BytesToReceive / MsdBlockSz;
         if(ReceiveToBuf(Buf32, BytesToReceive) != retv::Ok) {
             Printf("Rcv fail\r");
             return retv::Fail;
