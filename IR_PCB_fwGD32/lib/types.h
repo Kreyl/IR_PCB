@@ -75,4 +75,5 @@ enum Inverted_t {invNotInverted, invInverted};
 enum class BitOrder {MSB, LSB};
 enum class RiseFall {None, Rising, Falling, Both};
 
+
 #endif /* LIB_TYPES_H_ */

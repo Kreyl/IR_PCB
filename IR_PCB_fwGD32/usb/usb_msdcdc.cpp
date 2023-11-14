@@ -5,12 +5,13 @@
  *      Author: Kreyl
  */
 
-#include <descriptors_msdcdc.h>
-#include <usb_msdcdc.h>
+#include "descriptors_msdcdc.h"
+#include "usb_msdcdc.h"
 #include "board.h"
 #include "gd_lib.h"
 #include "mem_msd_glue.h"
 #include "usb.h"
+#include "scsi.h"
 #include "MsgQ.h"
 #include "EvtMsgIDs.h"
 
@@ -20,11 +21,43 @@ static uint8_t SByte;
 
 #define CDC_OUT_BUF_SZ  EP_CDC_BULK_SZ
 
-// MSD related
+#if 1 // ============ Mass Storage constants, types, variables =================
+// Enum for the Mass Storage class specific control requests that can be issued by the USB bus host
+enum MS_ClassRequests_t {
+    // Mass Storage class-specific request to retrieve the total number of Logical Units (drives) in the SCSI device.
+    MS_REQ_GetMaxLUN = 0xFE,
+    // Mass Storage class-specific request to reset the Mass Storage interface, ready for the next command.
+    MS_REQ_MassStorageReset = 0xFF,
+};
+
+#pragma pack(push, 1)
+// Mass Storage Class Command Block Wrapper
+struct MS_CommandBlockWrapper_t {
+    uint32_t Signature;         // Command block signature, must be MS_CBW_SIGNATURE to indicate a valid Command Block
+    uint32_t Tag;               // Unique command ID value, to associate a command block wrapper with its command status wrapper
+    uint32_t DataTransferLen;   // Length of the optional data portion of the issued command, in bytes
+    uint8_t  Flags;             // Command block flags, indicating command data direction
+    uint8_t  LUN;               // Logical Unit number this command is issued to
+    uint8_t  SCSICmdLen;        // Length of the issued SCSI command within the SCSI command data array
+    uint8_t  SCSICmdData[16];   // Issued SCSI command in the Command Block
+};
+#define MS_CMD_SZ   sizeof(MS_CommandBlockWrapper_t)
+
+// Mass Storage Class Command Status Wrapper
+struct MS_CommandStatusWrapper_t {
+    uint32_t Signature;          // Status block signature, must be \ref MS_CSW_SIGNATURE to indicate a valid Command Status
+    uint32_t Tag;                // Unique command ID value, to associate a command block wrapper with its command status wrapper
+    uint32_t DataTransferResidue;// Number of bytes of data not processed in the SCSI command
+    uint8_t  Status;             // Status code of the issued command - a value from the MS_CommandStatusCodes_t enum
+};
+#pragma pack(pop)
+
+void MSDStartReceiveHdrI();
 void OnMSDDataOut();
 void OnMSDDataIn();
 static bool ISayIsReady = true;
-static Thread_t *PMsdThd, *PCdcThd;
+static Thread_t *PMsdThd = nullptr;
+#endif
 
 // CDC Reception buffers and methods
 namespace CdcOutQ {
@@ -44,7 +77,7 @@ void OnTransferEnd(uint32_t Sz) {
     pBufW = (pBufW == Buf1)? Buf2 : Buf1;
     Usb::StartReceiveI(EP_CDC_DATA_OUT, pBufW, CDC_OUT_BUF_SZ);
     // Take necessary action
-    if(Action == TransferAction::SendEvt) EvtQMain.SendNowOrExitI(EvtMsg_t(EvtId::UsbDataRcvd));
+    if(Action == TransferAction::SendEvt) EvtQMain.SendNowOrExitI(EvtMsg_t(EvtId::UsbCdcDataRcvd));
     else Sys::WakeI(&pWaitingThd, retv::Ok);
     Sys::UnlockFromIRQ();
 }
@@ -197,6 +230,7 @@ void Usb::EventCallback(Usb::Evt event) {
             Usb::StartReceiveI(EP_CDC_DATA_OUT, CdcOutQ::pBufW, CDC_OUT_BUF_SZ);
             // ==== MSD ====
             Usb::InitEp(EP_MSD_DATA_IN,   &MsdEpCfg);
+            MSDStartReceiveHdrI();
             ISayIsReady = true;
             // ==== Sys ====
             EvtQMain.SendNowOrExitI(EvtMsg_t(EvtId::UsbReady)); // Inform main thread
@@ -303,30 +337,9 @@ retv UsbMsdCdc_t::TransmitBinaryFromBuf(uint8_t *ptr, uint32_t Len, uint32_t Tim
 }
 #endif
 
+#if 1 // ============================= MSD =====================================
+#define DBG_PRINT       // Printf
 
-
-#define EVT_USB_READY           EVENT_MASK(10)
-#define EVT_USB_RESET           EVENT_MASK(11)
-#define EVT_USB_SUSPEND         EVENT_MASK(12)
-#define EVT_USB_CONNECTED       EVENT_MASK(13)
-#define EVT_USB_DISCONNECTED    EVENT_MASK(14)
-#define EVT_USB_IN_DONE         EVENT_MASK(15)
-#define EVT_USB_OUT_DONE        EVENT_MASK(16)
-
-//void OnMSDDataIn(USBDriver *usbp, usbep_t ep) {
-//    chSysLockFromISR();
-//    chEvtSignalI(PMsdThd, EVT_USB_IN_DONE);
-//    chSysUnlockFromISR();
-//}
-//
-//void OnMSDDataOut(USBDriver *usbp, usbep_t ep) {
-//    chSysLockFromISR();
-//    chEvtSignalI(PMsdThd, EVT_USB_OUT_DONE);
-//    chSysUnlockFromISR();
-//}
-
-
-#if 1 // ========================== MSD Thread =================================
 static MS_CommandBlockWrapper_t CmdBlock;
 static MS_CommandStatusWrapper_t CmdStatus;
 static SCSI_RequestSenseResponse_t SenseData;
@@ -352,121 +365,57 @@ static uint8_t BusyWaitOUT();
 //static void TransmitBuf(uint8_t *Ptr, uint32_t Len);
 //static uint8_t ReceiveToBuf(uint8_t *Ptr, uint32_t Len);
 
-static THD_WORKING_AREA(waUsbThd, 128);
-static THD_FUNCTION(UsbThd, arg) {
-    chRegSetThreadName("Usb");
+// ==== Thread ====
+static THD_WORKSPACE(waMsdThd, 256);
+__attribute__((noreturn)) static void MsdThd() {
     while(true) {
-        uint32_t EvtMsk = chEvtWaitAny(ALL_EVENTS);
-        if(EvtMsk & EVT_USB_READY) {
-            // Receive header
-            chSysLock();
-            usbStartReceiveI(&USBDrv, EP_MSD_OUT_ID, (uint8_t*)&CmdBlock, MS_CMD_SZ);
-            chSysUnlock();
-        }
+        Sys::Lock();
+        PMsdThd = Sys::GetSelfThd();
+        retv r = Sys::Sleep(TIME_INFINITE); // Wait forever until new data is received
+        Sys::Unlock();
 
-        if(EvtMsk & EVT_USB_OUT_DONE) {
-            SCSICmdHandler();
-            // Receive header again
-            chSysLock();
-            usbStartReceiveI(&USBDrv, EP_MSD_OUT_ID, (uint8_t*)&CmdBlock, MS_CMD_SZ);
-            chSysUnlock();
-        }
-    } // while true
-}
-#endif
+        if(r == retv::New) SCSICmdHandler(); // New header received
 
-#if 1 // ========================== RX Thread ==================================
-bool UsbMsdCdc_t::IsActive() { return (SDU1.config->usbp->state == USB_ACTIVE); }
-
-static THD_WORKING_AREA(waThdCDCRX, 128);
-static THD_FUNCTION(ThdCDCRX, arg) {
-    chRegSetThreadName("CDCRX");
-    while(true) {
-        if(UsbMsdCdc.IsActive()) {
-            msg_t m = SDU1.vmt->get(&SDU1);
-            if(m > 0) {
-//                SDU1.vmt->put(&SDU1, (uint8_t)m);   // repeat what was sent
-                if(UsbMsdCdc.Cmd.PutChar((char)m) == pdrNewCmd) {
-                    chSysLock();
-                    EvtQMain.SendNowOrExitI(EvtMsg_t(evtIdShellCmd, (Shell_t*)&UsbMsdCdc));
-                    chSchGoSleepS(CH_STATE_SUSPENDED); // Wait until cmd processed
-                    chSysUnlock();  // Will be here when application signals that cmd processed
-                }
-            } // if >0
-        } // if active
-        else chThdSleepMilliseconds(540);
-    } // while true
+        Sys::Lock();
+        MSDStartReceiveHdrI();
+        Sys::Unlock();
+    }
 }
 
-uint8_t UsbMsdCdc_t::IPutChar(char c) {
-    return (SDU1.vmt->put(&SDU1, (uint8_t)c) == MSG_OK)? retvOk : retvFail;
+// Receive header
+void MSDStartReceiveHdrI() {
+    Usb::StartReceiveI(EP_MSD_DATA_OUT, (uint8_t*)&CmdBlock, MS_CMD_SZ);
 }
 
-void UsbMsdCdc_t::SignalCmdProcessed() {
-    chSysLock();
-    if(PCdcThd->state == CH_STATE_SUSPENDED) chSchReadyI(PCdcThd);
-    chSysUnlock();
+void OnMSDDataOut() {
+    if(PMsdThd and PMsdThd->state == ThdState::Sleeping) Sys::WakeI(&PMsdThd, retv::New);
 }
 #endif
 
 void UsbMsdCdc_t::Init() {
-
     // Variables
     SenseData.ResponseCode = 0x70;
     SenseData.AddSenseLen = 0x0A;
     // MSD Thread
-    PMsdThd = chThdCreateStatic(waUsbThd, sizeof(waUsbThd), NORMALPRIO, (tfunc_t)UsbThd, NULL);
-    // Objects
-    usbInit();
-    sduObjectInit(&SDU1);
-    sduStart(&SDU1, &SerUsbCfg);
-    // CDC thread
-    PCdcThd = chThdCreateStatic(waThdCDCRX, sizeof(waThdCDCRX), NORMALPRIO, ThdCDCRX, NULL);
+    Sys::CreateThd(waMsdThd, sizeof(waMsdThd), NORMALPRIO, MsdThd);
 }
 
 void UsbMsdCdc_t::Reset() {
     // Wake thread if sleeping
-    chSysLock();
-    if(PMsdThd->state == CH_STATE_SUSPENDED) chSchReadyI(PMsdThd);
-    chSysUnlock();
+    Sys::Lock();
+    if(PMsdThd and PMsdThd->state == ThdState::Sleeping) Sys::WakeI(&PMsdThd, retv::Reset);
+    Sys::Unlock();
 }
 
-void UsbMsdCdc_t::Connect() {
-#if defined STM32F1XX
-    // Disconnect everything
-    PinSetupAnalog(USB_PULLUP);
-    PinSetupAnalog(USB_DM);
-    PinSetupAnalog(USB_DP);
-#else
-    usbDisconnectBus(SerUsbCfg.usbp);
-#endif
-    chThdSleepMilliseconds(99);
-    usbStart(SerUsbCfg.usbp, &UsbCfg);
-#if defined STM32F1XX
-    PinSetupAlterFunc(USB_DM, omPushPull, pudNone, USB_AF, psHigh);
-    PinSetupAlterFunc(USB_DP, omPushPull, pudNone, USB_AF, psHigh);
-    PinSetHi(USB_PULLUP);
-    PinSetupOut(USB_PULLUP, omPushPull);
-#else
-    usbConnectBus(SerUsbCfg.usbp);
-#endif
-}
-void UsbMsdCdc_t::Disconnect() {
-    usbStop(SerUsbCfg.usbp);
-#if defined STM32F1XX
-    // Disconnect everything
-    PinSetupAnalog(USB_PULLUP);
-    PinSetupAnalog(USB_DM);
-    PinSetupAnalog(USB_DP);
-#else
-    usbDisconnectBus(SerUsbCfg.usbp);
-#endif
-}
+void UsbMsdCdc_t::Connect()    { Usb::Connect(); }
+void UsbMsdCdc_t::Disconnect() { Usb::Disconnect(); }
+bool UsbMsdCdc_t::IsActive()   { return Usb::IsActive(); }
+
 
 void TransmitBuf(uint32_t *Ptr, uint32_t Len) {
-    chSysLock();
+    Sys::Lock();
     usbStartTransmitI(&USBDrv, EP_MSD_IN_ID, (uint8_t*)Ptr, Len);
-    chSysUnlock();
+    Sys::Unlock();
     BusyWaitIN();
 }
 
@@ -491,9 +440,9 @@ uint8_t BusyWaitOUT() {
 void SCSICmdHandler() {
 //    Uart.Printf("Sgn=%X; Tag=%X; Len=%u; Flags=%X; LUN=%u; SLen=%u; SCmd=%A\r", CmdBlock.Signature, CmdBlock.Tag, CmdBlock.DataTransferLen, CmdBlock.Flags, CmdBlock.LUN, CmdBlock.SCSICmdLen, CmdBlock.SCSICmdData, CmdBlock.SCSICmdLen, ' ');
 //    Printf("SCmd=%A\r", CmdBlock.SCSICmdData, CmdBlock.SCSICmdLen, ' ');
-    uint8_t CmdRslt = retvFail;
+    retv CmdRslt = retv::Fail;
     switch(CmdBlock.SCSICmdData[0]) {
-        case SCSI_CMD_TEST_UNIT_READY:    CmdTestReady();     return; break;    // Will report itself
+        case SCSI_CMD_TEST_UNIT_READY:    CmdTestReady(); return; break; // Will report inside
         case SCSI_CMD_START_STOP_UNIT:    CmdRslt = CmdStartStopUnit(); break;
         case SCSI_CMD_INQUIRY:            CmdRslt = CmdInquiry(); break;
         case SCSI_CMD_REQUEST_SENSE:      CmdRslt = CmdRequestSense(); break;
@@ -507,7 +456,7 @@ void SCSICmdHandler() {
         case SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL:
         case SCSI_CMD_VERIFY_10:
         case SCSI_CMD_SYNCHRONIZE_CACHE_10:
-            CmdRslt = retvOk;
+            CmdRslt = retv::Ok;
             CmdBlock.DataTransferLen = 0;
             break;
         default:
@@ -519,7 +468,7 @@ void SCSICmdHandler() {
             break;
     } // switch
     // Update Sense if command was successfully processed
-    if(CmdRslt == retvOk) {
+    if(CmdRslt == retv::Ok) {
         SenseData.SenseKey = SCSI_SENSE_KEY_GOOD;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_NO_ADDITIONAL_INFORMATION;
         SenseData.AdditionalSenseQualifier = SCSI_ASENSEQ_NO_QUALIFIER;
@@ -528,10 +477,9 @@ void SCSICmdHandler() {
     // Send status
     CmdStatus.Signature = MS_CSW_SIGNATURE;
     CmdStatus.Tag = CmdBlock.Tag;
-    if(CmdRslt == retvOk) {
+    if(CmdRslt == retv::Ok) {
         CmdStatus.Status = SCSI_STATUS_OK;
-        // DataTransferLen decreased at cmd handlers
-        CmdStatus.DataTransferResidue = CmdBlock.DataTransferLen;
+        CmdStatus.DataTransferResidue = CmdBlock.DataTransferLen; // DataTransferLen decreased by cmd handler
     }
     else {
         CmdStatus.Status = SCSI_STATUS_CHECK_CONDITION;
@@ -551,14 +499,11 @@ void SCSICmdHandler() {
 }
 
 void CmdTestReady() {
-#if DBG_PRINT_CMD
-    Printf("CmdTestReady (Rdy: %u)\r", ISayIsReady);
-#endif
+    DBG_PRINT("CmdTestReady (Rdy: %u)\r", ISayIsReady);
     CmdBlock.DataTransferLen = 0;
     CmdStatus.Signature = MS_CSW_SIGNATURE;
     CmdStatus.Tag = CmdBlock.Tag;
     CmdStatus.DataTransferResidue = CmdBlock.DataTransferLen;
-
     if(ISayIsReady) {
         CmdStatus.Status = SCSI_STATUS_OK;
         SenseData.SenseKey = SCSI_SENSE_KEY_GOOD;
@@ -571,7 +516,6 @@ void CmdTestReady() {
         SenseData.AdditionalSenseCode = SCSI_ASENSE_MEDIUM_NOT_PRESENT;
         SenseData.AdditionalSenseQualifier = SCSI_ASENSEQ_NO_QUALIFIER;
     }
-
     TransmitBuf((uint32_t*)&CmdStatus, sizeof(MS_CommandStatusWrapper_t));
 }
 
@@ -585,7 +529,7 @@ uint8_t CmdStartStopUnit() {
     else if((CmdBlock.SCSICmdData[4] & 0x03) == 0x03) {  // Load
         ISayIsReady = true;
     }
-    return retvOk;
+    return retv::Ok;
 }
 
 uint8_t CmdInquiry() {
@@ -605,7 +549,7 @@ uint8_t CmdInquiry() {
     }
     // Succeed the command and update the bytes transferred counter
     CmdBlock.DataTransferLen -= BytesToTransfer;
-    return retvOk;
+    return retv::Ok;
 }
 uint8_t CmdRequestSense() {
 #if DBG_PRINT_CMD
@@ -617,7 +561,7 @@ uint8_t CmdRequestSense() {
     TransmitBuf((uint32_t*)&SenseData, BytesToTransfer);
     // Succeed the command and update the bytes transferred counter
     CmdBlock.DataTransferLen -= BytesToTransfer;
-    return retvOk;
+    return retv::Ok;
 }
 uint8_t CmdReadCapacity10() {
 #if DBG_PRINT_CMD
@@ -629,11 +573,11 @@ uint8_t CmdReadCapacity10() {
     TransmitBuf((uint32_t*)&ReadCapacity10Response, sizeof(ReadCapacity10Response));
     // Succeed the command and update the bytes transferred counter
     CmdBlock.DataTransferLen -= sizeof(ReadCapacity10Response);
-    return retvOk;
+    return retv::Ok;
 }
 uint8_t CmdSendDiagnostic() {
     Printf("CmdSendDiagnostic\r");
-    return retvCmdUnknown;
+    return retv::CmdUnknown;
 }
 uint8_t CmdReadFormatCapacities() {
 #if DBG_PRINT_CMD
@@ -652,20 +596,20 @@ uint8_t CmdReadFormatCapacities() {
     TransmitBuf((uint32_t*)&ReadFormatCapacitiesResponse, sizeof(ReadFormatCapacitiesResponse));
     // Succeed the command and update the bytes transferred counter
     CmdBlock.DataTransferLen -= sizeof(ReadFormatCapacitiesResponse);
-    return retvOk;
+    return retv::Ok;
 }
 
 uint8_t ReadWriteCommon(uint32_t *PAddr, uint16_t *PLen) {
     *PAddr = Convert::BuildUint32(CmdBlock.SCSICmdData[5], CmdBlock.SCSICmdData[4], CmdBlock.SCSICmdData[3], CmdBlock.SCSICmdData[2]);
     *PLen  = Convert::BuildUint16(CmdBlock.SCSICmdData[8], CmdBlock.SCSICmdData[7]);
-//    Uart.Printf("Addr=%u; Len=%u\r", *PAddr, *PLen);
+//    Printf("Addr=%u; Len=%u\r", *PAddr, *PLen);
     // Check block addr
     if((*PAddr + *PLen) > MSD_BLOCK_CNT) {
         Printf("Out Of Range: Addr %u, Len %u\r", *PAddr, *PLen);
         SenseData.SenseKey = SCSI_SENSE_KEY_ILLEGAL_REQUEST;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
         SenseData.AdditionalSenseQualifier = SCSI_ASENSEQ_NO_QUALIFIER;
-        return retvFail;
+        return retv::Fail;
     }
     // Check cases 4, 5: (Hi != Dn); and 3, 11, 13: (Hn, Ho != Do)
     if(CmdBlock.DataTransferLen != (*PLen) * MSD_BLOCK_SZ) {
@@ -673,9 +617,9 @@ uint8_t ReadWriteCommon(uint32_t *PAddr, uint16_t *PLen) {
         SenseData.SenseKey = SCSI_SENSE_KEY_ILLEGAL_REQUEST;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_INVALID_COMMAND;
         SenseData.AdditionalSenseQualifier = SCSI_ASENSEQ_NO_QUALIFIER;
-        return retvFail;
+        return retv::Fail;
     }
-    return retvOk;
+    return retv::Ok;
 }
 
 uint8_t CmdRead10() {
@@ -684,7 +628,7 @@ uint8_t CmdRead10() {
 #endif
     uint32_t BlockAddress=0;
     uint16_t TotalBlocks=0;
-    if(ReadWriteCommon(&BlockAddress, &TotalBlocks) != retvOk) return retvFail;
+    if(ReadWriteCommon(&BlockAddress, &TotalBlocks) != retv::Ok) return retv::Fail;
     // ==== Send data ====
     uint32_t BlocksToRead, BytesToSend; // Intermediate values
     bool Rslt;
@@ -693,7 +637,7 @@ uint8_t CmdRead10() {
         BytesToSend = BlocksToRead * MSD_BLOCK_SZ;
         Rslt = MSDRead(BlockAddress, Buf32, BlocksToRead);
 //        Uart.Printf("%A\r", Buf, 50, ' ');
-        if(Rslt == retvOk) {
+        if(Rslt == retv::Ok) {
             TransmitBuf(Buf32, BytesToSend);
             CmdBlock.DataTransferLen -= BytesToSend;
             TotalBlocks  -= BlocksToRead;
@@ -702,10 +646,10 @@ uint8_t CmdRead10() {
         else {
             Printf("Rd fail\r");
             // TODO: handle read error
-            return retvFail;
+            return retv::Fail;
         }
     } // while
-    return retvOk;
+    return retv::Ok;
 }
 
 uint8_t CmdWrite10() {
@@ -722,41 +666,41 @@ uint8_t CmdWrite10() {
     if(CmdBlock.Flags & 0x80) {
         SenseData.SenseKey = SCSI_SENSE_KEY_ILLEGAL_REQUEST;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_INVALID_COMMAND;
-        return retvFail;
+        return retv::Fail;
     }
     // TODO: Check if ready
     if(false) {
         SenseData.SenseKey = SCSI_SENSE_KEY_NOT_READY;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_MEDIUM_NOT_PRESENT;
-        return retvFail;
+        return retv::Fail;
     }
     uint32_t BlockAddress=0;
     uint16_t TotalBlocks=0;
     // Get transaction size
-    if(ReadWriteCommon(&BlockAddress, &TotalBlocks) != retvOk) return retvFail;
-//    Uart.Printf("Addr=%u; Len=%u\r", BlockAddress, TotalBlocks);
+    if(ReadWriteCommon(&BlockAddress, &TotalBlocks) != retv::Ok) return retv::Fail;
+//    Printf("Addr=%u; Len=%u\r", BlockAddress, TotalBlocks);
     uint32_t BlocksToWrite, BytesToReceive;
-    uint8_t Rslt = retvOk;
+    uint8_t Rslt = retv::Ok;
 
     while(TotalBlocks != 0) {
         // Fill Buf1
         BytesToReceive = MIN_(MSD_DATABUF_SZ, TotalBlocks * MSD_BLOCK_SZ);
         BlocksToWrite  = BytesToReceive / MSD_BLOCK_SZ;
-        if(ReceiveToBuf(Buf32, BytesToReceive) != retvOk) {
+        if(ReceiveToBuf(Buf32, BytesToReceive) != retv::Ok) {
             Printf("Rcv fail\r");
-            return retvFail;
+            return retv::Fail;
         }
         // Write Buf to memory
         Rslt = MSDWrite(BlockAddress, Buf32, BlocksToWrite);
-        if(Rslt != retvOk) {
+        if(Rslt != retv::Ok) {
             Printf("Wr fail\r");
-            return retvFail;
+            return retv::Fail;
         }
         CmdBlock.DataTransferLen -= BytesToReceive;
         TotalBlocks -= BlocksToWrite;
         BlockAddress += BlocksToWrite;
     } // while
-    return retvOk;
+    return retv::Ok;
 #endif
 }
 
@@ -769,6 +713,6 @@ uint8_t CmdModeSense6() {
     TransmitBuf((uint32_t*)&Mode_Sense6_data, BytesToTransfer);
     // Succeed the command and update the bytes transferred counter
     CmdBlock.DataTransferLen -= BytesToTransfer;
-    return retvOk;
+    return retv::Ok;
 }
 #endif

@@ -159,8 +159,8 @@ void main(void) {
                 while(Uart.TryParseRxBuff() == retv::Ok) OnCmd((Shell_t*)&Uart);
                 break;
 
-            case EvtId::UsbDataRcvd:
-                while(UsbCDC.TryParseRxBuff() == retv::Ok) OnCmd((Shell_t*)&UsbCDC);
+            case EvtId::UsbCdcDataRcvd:
+                while(UsbMsdCdc.TryParseRxBuff() == retv::Ok) OnCmd((Shell_t*)&UsbMsdCdc);
                 break;
 
             case EvtId::EverySecond:
@@ -201,11 +201,11 @@ void OnCmd(Shell_t *PShell) {
     else if(PCmd->NameIs("Version")) PShell->Print("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
 
     else if(PCmd->NameIs("conn")) {
-        UsbCDC.Connect();
+        UsbMsdCdc.Connect();
         PShell->Ok();
     }
     else if(PCmd->NameIs("dsc")) {
-        UsbCDC.Disconnect();
+        UsbMsdCdc.Disconnect();
         PShell->Ok();
     }
 

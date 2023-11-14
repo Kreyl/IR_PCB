@@ -18,7 +18,7 @@ enum class EvtId : uint8_t {
     UsbConnect,
     UsbDisconnect,
     UsbReady,
-    UsbDataRcvd,
+    UsbCdcDataRcvd,
 };
 
 #endif //EVTMSGIDS_H__
