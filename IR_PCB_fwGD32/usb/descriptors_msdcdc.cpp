@@ -19,7 +19,7 @@
 //#define USB_DESCRIPTOR_DEVICE_QUALIFIER     6U
 //#define USB_DESCRIPTOR_OTHER_SPEED_CFG      7U
 //#define USB_DESCRIPTOR_INTERFACE_POWER      8U
-//#define USB_DESCRIPTOR_INTERFACE_ASSOCIATION 11U
+#define USB_DESCRIPTOR_INTERFACE_ASSOCIATION 0x0BU
 #endif
 
 #pragma pack(push, 1)
@@ -35,9 +35,9 @@ static const struct DeviceDescriptor_t {
     /* 0xJJMN where JJ is the major version number, M is the minor version number
        and N is the sub minor version number. e.g. USB 2.0 is 0x0200, USB 1.1 is 0x0110 */
     uint16_t bcdUSB          = 0x0110;
-    uint8_t  bDeviceClass    = 0xEF;
-    uint8_t  bDeviceSubClass = 0x02;
-    uint8_t  bDeviceProtocol = 0x01;
+    uint8_t  bDeviceClass    = 0xEF; // Misc device class
+    uint8_t  bDeviceSubClass = 0x02; // Common class
+    uint8_t  bDeviceProtocol = 0x01; // Interface Association Descriptor
     uint8_t  bMaxPacketSize  = EP0_SZ; // Maximum Packet Size for Zero Endpoint
     uint16_t idVendor        = 0x0483; // ST
     uint16_t idProduct       = 0x374C;
@@ -82,6 +82,16 @@ struct Endpoint_t {
     uint8_t  bInterval;
 };
 
+struct IAD_t {
+    DscHeader_t Hdr = { sizeof(IAD_t), USB_DESCRIPTOR_INTERFACE_ASSOCIATION };
+    uint8_t bFirstInterface;
+    uint8_t bInterfaceCount;
+    uint8_t bFunctionClass;
+    uint8_t bFunctionSubClass;
+    uint8_t bFunctionProtocol;
+    uint8_t iFunction;
+};
+
 // Class-specific defines
 #define CS_INTERFACE            0x24    // DescriptorType of HeaderFuncDesc
 
@@ -89,12 +99,22 @@ static const struct ConfigDescriptor_t {
     // ==== Configuration part ====
     Configuration_t Configuration = {
             .wTotalLength = sizeof(ConfigDescriptor_t),
-            .bNumInterfaces = 3,
+            .bNumInterfaces = 3, // 1 for MSD and 2 for CDC
             .bConfigurationValue = 1,
             .iConfiguration = 0,
             .bmAttributes = 0x80, // Bus powered
             .bMaxPower = USB_CONFIG_POWER_MA(100)
     };
+
+    // ==== MSD Interface Association Descriptor ====
+//    IAD_t MsdIADDescriptor = {
+//        .bFirstInterface = 0,
+//        .bInterfaceCount = 1,
+//        .bFunctionClass = 0x08, // Mass Storage class
+//        .bFunctionSubClass = 0x06, // SCSI Transparent Command Set subclass of the Mass storage class
+//        .bFunctionProtocol = 0x50, // Bulk Only Transport protocol of the Mass Storage class
+//        .iFunction = 0
+//    };
 
     // ==== Mass Storage Interface ====
     Interface_t MsdInterface = {
@@ -121,16 +141,15 @@ static const struct ConfigDescriptor_t {
             .bInterval = 0x00
     };
 
-    // ==== CDC IAD ====
-    struct CdcIADDescriptor_t {
-        DscHeader_t Hdr = { sizeof(CdcIADDescriptor_t), 0x0B }; // bDescriptorType = IAD
-        uint8_t bFirstInterface = 1;
-        uint8_t bInterfaceCount = 2;
-        uint8_t bFunctionClass = 0x02;
-        uint8_t bFunctionSubClass = 0x02;
-        uint8_t bFunctionProtocol = 0x01;
-        uint8_t iFunction = 0;
-    } CdcIADDescriptor;
+    // ==== CDC Interface Association Descriptor ====
+    IAD_t CdcIADDescriptor = {
+        .bFirstInterface = 1,
+        .bInterfaceCount = 2,
+        .bFunctionClass = 0x02, // Communications Interface Class, CDC section 4.2
+        .bFunctionSubClass = 0x02,  // Abstract Control Model, CDC section 4.3
+        .bFunctionProtocol = 0x00,
+        .iFunction = 0
+    };
 
     // ==== CDC Control Interface ====
     Interface_t CdcControlInterface = {
@@ -142,7 +161,7 @@ static const struct ConfigDescriptor_t {
             /* AT commands, CDC section 4.4. @KL: 0x02? Protocol: V.25ter (AT commands).
              * For compatibility with standard host drivers, a generic virtual COM-port device
              * should specify the V.25ter protocol even if the device doesn't use AT commands */
-            .bInterfaceProtocol = 0x01,
+            .bInterfaceProtocol = 0x00,
             .iInterface = 0
     };
     struct HeaderFunctionalDescriptor_t { // CDC section 5.2.3
@@ -182,23 +201,23 @@ static const struct ConfigDescriptor_t {
             .bNumEndpoints = 2,
             .bInterfaceClass = 0x0A, // Data Class Interface, CDC section 4.5
             .bInterfaceSubClass = 0x00, // CDC section 4.6
-            .bInterfaceProtocol = 0x01, // CDC section 4.7
+            .bInterfaceProtocol = 0x00, // CDC section 4.7
             .iInterface = 0
     };
-    // Endpoint 3 Descriptor
     Endpoint_t EpCdcDataOut = {
             .bEndpointAddress = (EP_CDC_DATA_OUT | EP_DIR_OUT),
             .bmAttributes = EP_TYPE_BULK,
             .wMaxPacketSize = EP_CDC_BULK_SZ,
             .bInterval = 0x00
     };
-    // Endpoint 1 Descriptor
     Endpoint_t EpCdcDataIn = {
             .bEndpointAddress = (EP_CDC_DATA_IN | EP_DIR_IN),
             .bmAttributes = EP_TYPE_BULK,
             .wMaxPacketSize = EP_CDC_BULK_SZ,
             .bInterval = 0x00
     };
+
+
 } ConfigDescriptor;
 #endif
 

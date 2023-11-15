@@ -12,3 +12,12 @@ Sys::CreateThd(waSecondThd, sizeof(waSecondThd), NORMALPRIO, SecondThd);
 
 
 ==== How to wake sleeping thread from IRQ ====
+Sys::Lock();
+PMsdThd = Sys::GetSelfThd(); 
+Sys::Sleep(TIME_INFINITE); // Wait forever until data is transmitted
+Sys::Unlock();
+
+void OnMSDDataIn() {
+    if(PMsdThd and PMsdThd->state == ThdState::Sleeping) Sys::WakeI(&PMsdThd, retv::New);
+}
+

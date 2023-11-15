@@ -13,9 +13,17 @@
 //#define MSD_BLOCK_CNT   SDCD1.capacity
 //#define MSD_BLOCK_SZ    512
 
+//struct MemParams_t {
+//
+//};
+
+//using MemParams_t = StatusOr<struct {uint32_t BlockCnt, BlockSz;}>;
+
 extern uint32_t MsdBlockCnt, MsdBlockSz;
 
 retv MSDRead(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt);
 retv MSDWrite(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt);
+
+//MemParams_t MSDGetMemParams();
 
 #endif // MEM_MSD_GLUE_H__

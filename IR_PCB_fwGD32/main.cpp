@@ -200,6 +200,11 @@ void OnCmd(Shell_t *PShell) {
     if(PCmd->NameIs("Ping")) PShell->Ok();
     else if(PCmd->NameIs("Version")) PShell->Print("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
 
+    else if(PCmd->NameIs("tst")) {
+        Buf_t bu = Usb::GetDescriptor(2, 0, 0);
+        Printf("Sz: %u\r%A\r", bu.Sz, bu.Ptr, bu.Sz, ' ');
+    }
+
     else if(PCmd->NameIs("conn")) {
         UsbMsdCdc.Connect();
         PShell->Ok();
@@ -248,7 +253,7 @@ void OnCmd(Shell_t *PShell) {
     else if(PCmd->NameIs("cnv")) {
         uint8_t b[4];
         if(PCmd->GetArray<uint8_t>(b, 4) == retv::Ok) {
-            uint32_t w  = Convert::U8ToU16(b[0], b[1]);
+            uint32_t w  = Convert::BuildU16(b[0], b[1]);
             Printf("0x%04X\r", w);
         }
     }

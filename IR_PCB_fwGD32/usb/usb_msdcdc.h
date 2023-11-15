@@ -1,10 +1,3 @@
-/*
- * usb_mst.h
- *
- *  Created on: 2016/01/29 �.
- *      Author: Kreyl
- */
-
 #ifndef USB_MSD_CDC_H__
 #define USB_MSD_CDC_H__
 

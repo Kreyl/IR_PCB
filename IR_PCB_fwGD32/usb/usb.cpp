@@ -143,6 +143,14 @@ public:
 enum class EpSta { DISABLED, STALLED, ACTIVE };
 static uint32_t EpTransmittingFlag = 0, EpReceivingFlag = 0;
 
+static inline void CallOutTransferEndCallback(uint32_t ep, uint32_t Sz) {
+    if(EpCfg[ep]->OutTransferEndCallback) EpCfg[ep]->OutTransferEndCallback(Sz);
+}
+
+static inline void CallInTransferEndCallback(uint32_t ep) {
+    if(EpCfg[ep]->InTransferEndCallback) EpCfg[ep]->InTransferEndCallback();
+}
+
 static inline void StallIn (uint32_t ep) { USB->ie[ep].DIEPCTL |= DIEPCTL_STALL; }
 static inline void StallOut(uint32_t ep) { USB->oe[ep].DOEPCTL |= DOEPCTL_STALL; }
 static inline void ClearIn (uint32_t ep) { USB->ie[ep].DIEPCTL &= ~DIEPCTL_STALL; }
@@ -699,7 +707,7 @@ static void OnIrqIsoInFailed() {
             while(USB->ie[ep].DIEPCTL & DIEPCTL_EPENA);
             TxFifo.Flush(ep); // Flush FIFO
             EpTransmittingFlag &= ~(1UL << ep);
-            EpCfg[ep]->CallInTransferEndCallback(); // Prepare data for next frame
+            CallInTransferEndCallback(ep); // Prepare data for next frame
         }
     }
 }
@@ -714,7 +722,7 @@ static void OnIrqIsoOutFailed() {
             /*otgp->oe[ep].DOEPCTL |= (DOEPCTL_EPDIS | DOEPCTL_SNAK);
              while (otgp->oe[ep].DOEPCTL & DOEPCTL_EPENA); */
             EpReceivingFlag &= ~(1UL << ep);
-            EpCfg[ep]->CallOutTransferEndCallback(OutEpState[ep].Cnt); // Prepare transfer for next frame
+            CallOutTransferEndCallback(ep, OutEpState[ep].Cnt); // Prepare transfer for next frame
         }
     }
 }
@@ -766,7 +774,7 @@ static void OnIrqEpOut(uint32_t ep) {
         } // ep0
         else {
             EpReceivingFlag &= ~(1UL << ep);
-            EpCfg[ep]->CallOutTransferEndCallback(OutEpState[ep].Cnt);
+            CallOutTransferEndCallback(ep, OutEpState[ep].Cnt);
         }
     } // if XFRC
 }
@@ -791,7 +799,7 @@ static void OnIrqEpIn(uint32_t ep) {
         else { // End on IN transfer
             EpTransmittingFlag &= ~(1UL << ep);
             if(ep == 0) Ep0::InCallback();
-            else EpCfg[ep]->CallInTransferEndCallback();
+            else CallInTransferEndCallback(ep);
         }
     } // XFRC
     // TX FIFO empty or emptying => fill it

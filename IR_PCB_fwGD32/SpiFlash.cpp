@@ -302,11 +302,6 @@ void SpiFlash_t::WriteStatusReg1(uint8_t b) {
 
 }
 
-#include "drivers/tick_timer.h"
-#include "drivers/ext_flash_hw.h"
-#include "utils/check_params.h"
-
-#include "drivers/ext_flash_xx25.h"
 
 // ========================================= Definition ============================================
 
@@ -422,10 +417,8 @@ typedef union
 
 uint32_t ext_flash_xx25_get_type(void);
 
-ext_flash_xx25_t ext_flash_xx25;
-
 // ======================================== Implementation =========================================
-
+/*
 error_t ext_flash_xx25_autodefine(void)
 {
   error_t res;
@@ -499,4 +492,4 @@ error_t ext_flash_xx25_autodefine(void)
 
   return res;
 }
-
+*/
