@@ -142,6 +142,7 @@ void main(void) {
     SpiFlash.Reset();
     Printf("FlashID: %X\r", SpiFlash.ReleasePowerDown());
 
+    UsbMsdCdc.Init();
 //    UsbCDC.Connect();
 //    Codec::Init();
 

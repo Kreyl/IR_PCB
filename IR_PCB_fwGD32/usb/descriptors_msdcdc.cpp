@@ -106,16 +106,7 @@ static const struct ConfigDescriptor_t {
             .bMaxPower = USB_CONFIG_POWER_MA(100)
     };
 
-    // ==== MSD Interface Association Descriptor ====
-//    IAD_t MsdIADDescriptor = {
-//        .bFirstInterface = 0,
-//        .bInterfaceCount = 1,
-//        .bFunctionClass = 0x08, // Mass Storage class
-//        .bFunctionSubClass = 0x06, // SCSI Transparent Command Set subclass of the Mass storage class
-//        .bFunctionProtocol = 0x50, // Bulk Only Transport protocol of the Mass Storage class
-//        .iFunction = 0
-//    };
-
+    // MSD IAD is not required as MSD contains single interface only
     // ==== Mass Storage Interface ====
     Interface_t MsdInterface = {
             .bInterfaceNumber = 0,
@@ -128,14 +119,14 @@ static const struct ConfigDescriptor_t {
     };
     // Endpoint OUT
     Endpoint_t EpMsdOut = {
-            .bEndpointAddress = (EP_MSD_DATA_OUT | EP_DIR_OUT),
+            .bEndpointAddress = (EP_MSD_DATA | EP_DIR_OUT),
             .bmAttributes = EP_TYPE_BULK,
             .wMaxPacketSize = EP_MSD_BULK_SZ,
             .bInterval = 0x00
     };
     // Endpoint IN
     Endpoint_t EpMsdIn = {
-            .bEndpointAddress = (EP_MSD_DATA_IN | EP_DIR_IN),
+            .bEndpointAddress = (EP_MSD_DATA | EP_DIR_IN),
             .bmAttributes = EP_TYPE_BULK,
             .wMaxPacketSize = EP_MSD_BULK_SZ,
             .bInterval = 0x00
@@ -146,8 +137,8 @@ static const struct ConfigDescriptor_t {
         .bFirstInterface = 1,
         .bInterfaceCount = 2,
         .bFunctionClass = 0x02, // Communications Interface Class, CDC section 4.2
-        .bFunctionSubClass = 0x02,  // Abstract Control Model, CDC section 4.3
-        .bFunctionProtocol = 0x00,
+        .bFunctionSubClass = 0x02, // Abstract Control Model, CDC section 4.3
+        .bFunctionProtocol = 0x01,
         .iFunction = 0
     };
 
@@ -161,7 +152,7 @@ static const struct ConfigDescriptor_t {
             /* AT commands, CDC section 4.4. @KL: 0x02? Protocol: V.25ter (AT commands).
              * For compatibility with standard host drivers, a generic virtual COM-port device
              * should specify the V.25ter protocol even if the device doesn't use AT commands */
-            .bInterfaceProtocol = 0x00,
+            .bInterfaceProtocol = 0x01, // AT commands, CDC section 4.4
             .iInterface = 0
     };
     struct HeaderFunctionalDescriptor_t { // CDC section 5.2.3
@@ -205,19 +196,17 @@ static const struct ConfigDescriptor_t {
             .iInterface = 0
     };
     Endpoint_t EpCdcDataOut = {
-            .bEndpointAddress = (EP_CDC_DATA_OUT | EP_DIR_OUT),
+            .bEndpointAddress = (EP_CDC_DATA | EP_DIR_OUT),
             .bmAttributes = EP_TYPE_BULK,
             .wMaxPacketSize = EP_CDC_BULK_SZ,
             .bInterval = 0x00
     };
     Endpoint_t EpCdcDataIn = {
-            .bEndpointAddress = (EP_CDC_DATA_IN | EP_DIR_IN),
+            .bEndpointAddress = (EP_CDC_DATA | EP_DIR_IN),
             .bmAttributes = EP_TYPE_BULK,
             .wMaxPacketSize = EP_CDC_BULK_SZ,
             .bInterval = 0x00
     };
-
-
 } ConfigDescriptor;
 #endif
 
@@ -244,7 +233,7 @@ static const StringDescriptor_t LanguageString = {
 
 static const STRING_DESC(u"Ostranna") VendorString;
 static const STRING_DESC(u"VirtualCOM and MSD") DeviceDescriptionString;
-static const STRING_DESC(u"123") SerialNumberString;
+static const STRING_DESC(u"124") SerialNumberString;
 
 static const StringDescriptor_t *StringDescriptors[] = {
         &LanguageString,

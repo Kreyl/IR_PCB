@@ -790,6 +790,7 @@ static void OnIrqEpIn(uint32_t ep) {
         if(isp->Sz < isp->TotalSz) {
             /* If the transaction only covers part of the total transfer,
              * another transaction is immediately initiated to cover the remainder */
+            isp->pBuf += isp->Sz;
             isp->Sz = isp->TotalSz - isp->Sz;
             isp->Cnt = 0;
             Sys::LockFromIRQ();

@@ -75,7 +75,7 @@ void OnTransferEnd(uint32_t Sz) {
     BufToParse.Sz = Sz;
     // Switch buffers and start new reception
     pBufW = (pBufW == Buf1)? Buf2 : Buf1;
-    Usb::StartReceiveI(EP_CDC_DATA_OUT, pBufW, CDC_OUT_BUF_SZ);
+    Usb::StartReceiveI(EP_CDC_DATA, pBufW, CDC_OUT_BUF_SZ);
     // Take necessary action
     if(Action == TransferAction::SendEvt) EvtQMain.SendNowOrExitI(EvtMsg_t(EvtId::UsbCdcDataRcvd));
     else Sys::WakeI(&pWaitingThd, retv::Ok);
@@ -95,7 +95,7 @@ void CdcOnBulkInTransferEnd() {
     if(Usb::IsActive() and !CdcInBuf.IsEmpty()) {
         BufType_t<uint8_t> buf = CdcInBuf.GetAndLockBuf();
         Sys::LockFromIRQ();
-        Usb::StartTransmitI(EP_CDC_DATA_IN, buf.Ptr, buf.Sz);
+        Usb::StartTransmitI(EP_CDC_DATA, buf.Ptr, buf.Sz);
         Sys::UnlockFromIRQ();
     }
 }
@@ -222,14 +222,14 @@ void Usb::EventCallback(Usb::Evt event) {
         case Usb::Evt::Configured:
             Sys::LockFromIRQ();
             // ==== CDC ====
-            Usb::InitEp(EP_CDC_DATA_IN,   &CdcEpBulkCfg);
+            Usb::InitEp(EP_CDC_DATA,   &CdcEpBulkCfg);
             Usb::InitEp(EP_CDC_INTERRUPT, &CdcEpInterruptCfg);
             // Reset queues
             CdcOutQ::pBufW = (CdcOutQ::pBufW == CdcOutQ::Buf1)? CdcOutQ::Buf2 : CdcOutQ::Buf1;
             // Start reception. In this case, transaction size is limited to EP max size
-            Usb::StartReceiveI(EP_CDC_DATA_OUT, CdcOutQ::pBufW, CDC_OUT_BUF_SZ);
+            Usb::StartReceiveI(EP_CDC_DATA, CdcOutQ::pBufW, CDC_OUT_BUF_SZ);
             // ==== MSD ====
-            Usb::InitEp(EP_MSD_DATA_IN,   &MsdEpCfg);
+            Usb::InitEp(EP_MSD_DATA,   &MsdEpCfg);
             MSDStartReceiveHdrI();
             ISayIsReady = true;
             // ==== Sys ====
@@ -249,18 +249,18 @@ void Usb::EventCallback(Usb::Evt event) {
 retv UsbMsdCdc_t::IPutChar(char c) {
     if(!Usb::IsActive()) return retv::Disconnected;
     retv r = CdcInBuf.Put(c);
-    if(CdcInBuf.IsFullBufPresent() and !Usb::IsEpTransmitting(EP_CDC_DATA_IN)) { // New buffer is full
+    if(CdcInBuf.IsFullBufPresent() and !Usb::IsEpTransmitting(EP_CDC_DATA)) { // New buffer is full
         BufType_t<uint8_t> buf = CdcInBuf.GetAndLockBuf();
-        Usb::StartTransmit(EP_CDC_DATA_IN, buf.Ptr, buf.Sz);
+        Usb::StartTransmit(EP_CDC_DATA, buf.Ptr, buf.Sz);
     }
     return r;
 }
 
 void UsbMsdCdc_t::IStartTransmissionIfNotYet() {
     // Start tx if it has not already started and if buf is not empty.
-    if(Usb::IsActive() and !Usb::IsEpTransmitting(EP_CDC_DATA_IN) and !CdcInBuf.IsEmpty()) {
+    if(Usb::IsActive() and !Usb::IsEpTransmitting(EP_CDC_DATA) and !CdcInBuf.IsEmpty()) {
         BufType_t<uint8_t> buf = CdcInBuf.GetAndLockBuf();
-        Usb::StartTransmit(EP_CDC_DATA_IN, buf.Ptr, buf.Sz);
+        Usb::StartTransmit(EP_CDC_DATA, buf.Ptr, buf.Sz);
     }
 }
 
@@ -302,7 +302,7 @@ retv UsbMsdCdc_t::ReceiveBinaryToBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeou
 
 // Wait '>' and then transmit buffer
 retv UsbMsdCdc_t::TransmitBinaryFromBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_ms) {
-    if(Usb::IsEpTransmitting(EP_CDC_DATA_IN)) return retv::Busy;
+    if(Usb::IsEpTransmitting(EP_CDC_DATA)) return retv::Busy;
     retv r = retv::Timeout;
     Sys::Lock();
     CdcOutQ::Action = CdcOutQ::TransferAction::WakeThd; // Do not send evt to main q on buf reception
@@ -329,7 +329,7 @@ retv UsbMsdCdc_t::TransmitBinaryFromBuf(uint8_t *ptr, uint32_t Len, uint32_t Tim
     // Will be here after either timeout or successful '>' reception
     CdcOutQ::Action = CdcOutQ::TransferAction::SendEvt; // Return to normal life
     if(r == retv::Ok) { // Transmit data
-        if(Usb::IsActive()) Usb::StartTransmitI(EP_CDC_DATA_IN, ptr, Len);
+        if(Usb::IsActive()) Usb::StartTransmitI(EP_CDC_DATA, ptr, Len);
         else r = retv::Disconnected;
     }
     Sys::Unlock();
@@ -338,7 +338,7 @@ retv UsbMsdCdc_t::TransmitBinaryFromBuf(uint8_t *ptr, uint32_t Len, uint32_t Tim
 #endif
 
 #if 1 // ============================= MSD =====================================
-#define DBG_PRINT_CMD   TRUE
+//#define DBG_PRINT_CMD   TRUE
 
 static MS_CommandBlockWrapper_t CmdBlock;
 static MS_CommandStatusWrapper_t CmdStatus;
@@ -360,8 +360,6 @@ static retv CmdRead10();
 static retv CmdWrite10();
 static retv CmdModeSense6();
 static retv ReadWriteCommon(uint32_t *PAddr, uint16_t *PLen);
-//static void TransmitBuf(uint8_t *Ptr, uint32_t Len);
-//static uint8_t ReceiveToBuf(uint8_t *Ptr, uint32_t Len);
 
 // ==== Thread ====
 static THD_WORKSPACE(waMsdThd, 256);
@@ -369,7 +367,7 @@ __attribute__((noreturn)) static void MsdThd() {
     while(true) {
         Sys::Lock();
         PMsdThd = Sys::GetSelfThd();
-        retv r = Sys::Sleep(TIME_INFINITE); // Wait forever until new data is received
+        retv r = Sys::SleepS(TIME_INFINITE); // Wait forever until new data is received
         Sys::Unlock();
         if(r == retv::New) SCSICmdHandler(); // New header received
         Sys::Lock();
@@ -380,29 +378,33 @@ __attribute__((noreturn)) static void MsdThd() {
 
 // Receive header
 void MSDStartReceiveHdrI() {
-    Usb::StartReceiveI(EP_MSD_DATA_OUT, (uint8_t*)&CmdBlock, MS_CMD_SZ);
+    Usb::StartReceiveI(EP_MSD_DATA, (uint8_t*)&CmdBlock, MS_CMD_SZ);
 }
 
 void OnMSDDataOut(uint32_t Sz) {
+    Sys::LockFromIRQ();
     if(PMsdThd and PMsdThd->state == ThdState::Sleeping) Sys::WakeI(&PMsdThd, retv::New);
+    Sys::UnlockFromIRQ();
 }
 
 void OnMSDDataIn() {
+    Sys::LockFromIRQ();
     if(PMsdThd and PMsdThd->state == ThdState::Sleeping) Sys::WakeI(&PMsdThd, retv::New);
+    Sys::UnlockFromIRQ();
 }
 
 void TransmitBuf(uint32_t *Ptr, uint32_t Len) {
     Sys::Lock();
     PMsdThd = Sys::GetSelfThd();
-    Usb::StartTransmitI(EP_CDC_DATA_IN, (uint8_t*)Ptr, Len);
-    Sys::Sleep(TIME_INFINITE); // Wait forever until data is transmitted
+    Usb::StartTransmitI(EP_MSD_DATA, (uint8_t*)Ptr, Len);
+    Sys::SleepS(TIME_INFINITE); // Wait forever until data is transmitted
     Sys::Unlock();
 }
 
 retv ReceiveToBuf(uint32_t *Ptr, uint32_t Len) {
     Sys::Lock();
-    Usb::StartReceiveI(EP_CDC_DATA_OUT, (uint8_t*)Ptr, Len);
-    retv r = Sys::Sleep(TIME_INFINITE); // Wait forever until data is received
+    Usb::StartReceiveI(EP_MSD_DATA, (uint8_t*)Ptr, Len);
+    retv r = Sys::SleepS(TIME_INFINITE); // Wait forever until data is received
     Sys::Unlock();
     return r;
 }
