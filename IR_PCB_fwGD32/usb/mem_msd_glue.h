@@ -10,20 +10,13 @@
 
 #include "types.h"
 
-//#define MSD_BLOCK_CNT   SDCD1.capacity
-//#define MSD_BLOCK_SZ    512
+namespace MsdMem {
 
-//struct MemParams_t {
-//
-//};
+extern uint32_t BlockCnt, BlockSz;
 
-//using MemParams_t = StatusOr<struct {uint32_t BlockCnt, BlockSz;}>;
+retv Read(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt);
+retv Write(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt);
 
-extern uint32_t MsdBlockCnt, MsdBlockSz;
-
-retv MSDRead(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt);
-retv MSDWrite(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt);
-
-//MemParams_t MSDGetMemParams();
+} // namespace
 
 #endif // MEM_MSD_GLUE_H__

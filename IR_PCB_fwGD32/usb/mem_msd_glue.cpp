@@ -7,23 +7,47 @@
 
 #include "mem_msd_glue.h"
 #include "shell.h"
+#include "SpiFlash.h"
+
 //#include "diskio.h"
 
-uint32_t MsdBlockCnt = 32UL, MsdBlockSz = 512UL;
-static uint8_t buf[32 * 512];
+extern SpiFlash_t SpiFlash;
 
-retv MSDRead(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
+namespace MsdMem {
+
+uint32_t BlockCnt, BlockSz;
+
+retv Read(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
     Printf("R Addr: %u; Cnt: %u\r", BlockAddress, BlocksCnt);
+    return SpiFlash.ReadQ(BlockAddress * BlockSz, Ptr, BlocksCnt * BlockSz);
+
 //    Mem.Read(BlockAddress * MSD_BLOCK_SZ, Ptr, BlocksCnt * MSD_BLOCK_SZ);
 //    if(disk_read(0, Ptr, BlockAddress, BlocksCnt) == RES_OK) return retvOk;
 //    else return retvFail;
-    memcpy(Ptr, &buf[BlockAddress*MsdBlockSz], BlocksCnt*MsdBlockSz);
-    return retv::Ok;
+//    memcpy(Ptr, &buf[BlockAddress*MsdBlockSz], BlocksCnt*MsdBlockSz);
+//    return retv::Ok;
 }
 
-retv MSDWrite(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
+retv Write(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
     Printf("WRT Addr: %u; Cnt: %u\r", BlockAddress, BlocksCnt);
-    memcpy(&buf[BlockAddress*MsdBlockSz], Ptr, BlocksCnt*MsdBlockSz);
+    uint32_t PageCnt = BlocksCnt / SPIFLASH_PAGE_SZ;
+    // Erase sectors
+    uint32_t Addr = BlockAddress * BlockSz;
+    while(BlocksCnt) {
+        if(SpiFlash.EraseSector4k(Addr) != retv::Ok) return retv::Fail;
+        Addr += BlockSz;
+        BlocksCnt--;
+    }
+    // Write data page by page
+    Addr = BlockAddress * BlockSz;
+    while(PageCnt) {
+        if(SpiFlash.WritePage(Addr, Ptr, SPIFLASH_PAGE_SZ) != retv::Ok) return retv::Fail;
+        Addr += SPIFLASH_PAGE_SZ;
+        PageCnt--;
+    }
+    return retv::Ok;
+//    return SpiFlash.wr
+//    memcpy(&buf[BlockAddress*MsdBlockSz], Ptr, BlocksCnt*MsdBlockSz);
 //    if(disk_write(0, Ptr, BlockAddress, BlocksCnt) == RES_OK) return retvOk;
 //    else return retvFail;
 //    while(BlocksCnt != 0) {
@@ -35,13 +59,7 @@ retv MSDWrite(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
 //        BlockAddress += MSD_BLOCK_SZ;
 //        BlocksCnt--;
 //    }
-    return retv::Ok;
+//    return retv::Ok;
 }
 
-//MemParams_t MSDGetMemParams() {
-//    MemParams_t r;
-//    r.Rslt = retv::Ok;
-//    r->BlockSz = 512;
-//    r->BlockCnt = 32768;
-//    return r;
-//}
+} // namespace

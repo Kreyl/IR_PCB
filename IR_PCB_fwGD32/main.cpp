@@ -11,6 +11,7 @@
 #include "ir.h"
 #include "ws2812bTim.h"
 #include "max98357.h"
+#include "mem_msd_glue.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
@@ -137,10 +138,15 @@ void main(void) {
     NpxLeds.SetAll(clGreen);
     NpxLeds.SetCurrentColors();
 
+    // Spi Fplash and Msd glue
     AFIO->RemapSPI0_PB345();
     SpiFlash.Init();
     SpiFlash.Reset();
-    Printf("FlashID: %X\r", SpiFlash.ReleasePowerDown());
+    SpiFlash_t::MemParams_t mp = SpiFlash.GetParams();
+    MsdMem::BlockCnt = mp.SectorCnt;
+    MsdMem::BlockSz = mp.SectorSz;
+    Printf("Flash: %u sectors of %u bytes\r", mp.SectorCnt, mp.SectorSz);
+    SpiFlash.ReleasePowerDown();
 
     UsbMsdCdc.Init();
 //    UsbCDC.Connect();

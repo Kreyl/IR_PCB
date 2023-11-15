@@ -565,8 +565,8 @@ retv CmdReadCapacity10() {
 #if DBG_PRINT_CMD
     Printf("CmdReadCapacity10\r");
 #endif
-    ReadCapacity10Response.LastBlockAddr = __REV(MsdBlockCnt - 1);
-    ReadCapacity10Response.BlockSize = __REV(MsdBlockSz);
+    ReadCapacity10Response.LastBlockAddr = __REV(MsdMem::BlockCnt - 1);
+    ReadCapacity10Response.BlockSize = __REV(MsdMem::BlockSz);
     // Transmit SenceData
     TransmitBuf((uint32_t*)&ReadCapacity10Response, sizeof(ReadCapacity10Response));
     // Succeed the command and update the bytes transferred counter
@@ -584,14 +584,14 @@ retv CmdReadFormatCapacities() {
     Printf("CmdReadFormatCapacities\r");
 #endif
     ReadFormatCapacitiesResponse.Length = 0x08;
-    ReadFormatCapacitiesResponse.NumberOfBlocks = __REV(MsdBlockCnt);
+    ReadFormatCapacitiesResponse.NumberOfBlocks = __REV(MsdMem::BlockCnt);
     // 01b Unformatted Media - Maximum formattable capacity for this cartridge
     // 10b Formatted Media - Current media capacity
     // 11b No Cartridge in Drive - Maximum formattable capacity
     ReadFormatCapacitiesResponse.DescCode = 0x02;
-    ReadFormatCapacitiesResponse.BlockSize[0] = (uint8_t)(MsdBlockSz >> 16);
-    ReadFormatCapacitiesResponse.BlockSize[1] = (uint8_t)(MsdBlockSz >> 8);
-    ReadFormatCapacitiesResponse.BlockSize[2] = (uint8_t)(MsdBlockSz);
+    ReadFormatCapacitiesResponse.BlockSize[0] = (uint8_t)(MsdMem::BlockSz >> 16);
+    ReadFormatCapacitiesResponse.BlockSize[1] = (uint8_t)(MsdMem::BlockSz >> 8);
+    ReadFormatCapacitiesResponse.BlockSize[2] = (uint8_t)(MsdMem::BlockSz);
     // Transmit Data
     TransmitBuf((uint32_t*)&ReadFormatCapacitiesResponse, sizeof(ReadFormatCapacitiesResponse));
     // Succeed the command and update the bytes transferred counter
@@ -604,7 +604,7 @@ retv ReadWriteCommon(uint32_t *PAddr, uint16_t *PLen) {
     *PLen  = Convert::BuildU16(CmdBlock.SCSICmdData[8], CmdBlock.SCSICmdData[7]);
 //    Printf("Addr=%u; Len=%u\r", *PAddr, *PLen);
     // Check block addr
-    if((*PAddr + *PLen) > MsdBlockCnt) {
+    if((*PAddr + *PLen) > MsdMem::BlockCnt) {
         Printf("Out Of Range: Addr %u, Len %u\r", *PAddr, *PLen);
         SenseData.SenseKey = SCSI_SENSE_KEY_ILLEGAL_REQUEST;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
@@ -612,7 +612,7 @@ retv ReadWriteCommon(uint32_t *PAddr, uint16_t *PLen) {
         return retv::Fail;
     }
     // Check cases 4, 5: (Hi != Dn); and 3, 11, 13: (Hn, Ho != Do)
-    if(CmdBlock.DataTransferLen != (*PLen) * MsdBlockSz) {
+    if(CmdBlock.DataTransferLen != (*PLen) * MsdMem::BlockSz) {
         Printf("Wrong length\r");
         SenseData.SenseKey = SCSI_SENSE_KEY_ILLEGAL_REQUEST;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_INVALID_COMMAND;
@@ -633,9 +633,9 @@ retv CmdRead10() {
     uint32_t BlocksToRead, BytesToSend; // Intermediate values
     retv Rslt;
     while(TotalBlocks != 0) {
-        BlocksToRead = MIN_(MSD_DATABUF_SZ / MsdBlockSz, TotalBlocks);
-        BytesToSend = BlocksToRead * MsdBlockSz;
-        Rslt = MSDRead(BlockAddress, (uint8_t*)Buf32, BlocksToRead);
+        BlocksToRead = MIN_(MSD_DATABUF_SZ / MsdMem::BlockSz, TotalBlocks);
+        BytesToSend = BlocksToRead * MsdMem::BlockSz;
+        Rslt = MsdMem::Read(BlockAddress, (uint8_t*)Buf32, BlocksToRead);
 //        Printf("%A\r", Buf, 50, ' ');
         if(Rslt == retv::Ok) {
             TransmitBuf(Buf32, BytesToSend);
@@ -684,14 +684,14 @@ retv CmdWrite10() {
 
     while(TotalBlocks != 0) {
         // Fill Buf1
-        BytesToReceive = MIN_(MSD_DATABUF_SZ, TotalBlocks * MsdBlockSz);
-        BlocksToWrite  = BytesToReceive / MsdBlockSz;
+        BytesToReceive = MIN_(MSD_DATABUF_SZ, TotalBlocks * MsdMem::BlockSz);
+        BlocksToWrite  = BytesToReceive / MsdMem::BlockSz;
         if(ReceiveToBuf(Buf32, BytesToReceive) != retv::Ok) {
             Printf("Rcv fail\r");
             return retv::Fail;
         }
         // Write Buf to memory
-        Rslt = MSDWrite(BlockAddress, (uint8_t*)Buf32, BlocksToWrite);
+        Rslt = MsdMem::Write(BlockAddress, (uint8_t*)Buf32, BlocksToWrite);
         if(Rslt != retv::Ok) {
             Printf("Wr fail\r");
             return retv::Fail;

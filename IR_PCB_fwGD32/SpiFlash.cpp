@@ -7,6 +7,7 @@
 
 #include "SpiFlash.h"
 #include "yartos.h"
+#include "shell.h"
 
 // DMA
 #define DMA_RX_MODE DMA_PRIO_HIGH | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | \
@@ -41,8 +42,7 @@ void SpiFlash_t::Init() {
     Gpio::SetupAlterFunc(FLASH_IO2,  Gpio::PushPull, Gpio::speed50MHz);
     Gpio::SetupAlterFunc(FLASH_IO3,  Gpio::PushPull, Gpio::speed50MHz);
     // ==== SPI ====    MSB first, master, ClkLowIdle, FirstEdge, BitNum = 8
-//    spi.Setup(BitOrder::MSB, Spi_t::cpol::IdleLow, Spi_t::cpha::FirstEdge, SPIFLASH_CLK_FREQ_Hz);
-    spi.Setup(BitOrder::MSB, Spi_t::cpol::IdleLow, Spi_t::cpha::FirstEdge, 1000000);
+    spi.Setup(BitOrder::MSB, Spi_t::cpol::IdleLow, Spi_t::cpha::FirstEdge, SPIFLASH_CLK_FREQ_Hz);
     spi.Enable();
     // ==== DMA ====
     DmaRx.Init();
@@ -52,8 +52,34 @@ void SpiFlash_t::Init() {
     DmaTx.SetPeriphAddr(&spi.PSpi->DATA);
 }
 
-// ========================= Read / Write / Erase ==============================
+SpiFlash_t::MemParams_t SpiFlash_t::GetParams() {
+    MemParams_t r;
+    // Read JEDEC ID
+    uint32_t JID;
+    Nss.SetLo();
+    spi.WriteRead(0x9F); // Cmd code Read JEDEC ID
+    JID = spi.WriteRead(0x00); // MfgId
+    JID = (JID << 8) | spi.WriteRead(0x00); // MemType
+    JID = (JID << 8) | spi.WriteRead(0x00); // Capacity
+    Nss.SetHi();
+    Printf("JID: 0x%X\r", JID);
+    switch(JID) {
+        case 0xEF4016: // W25Q32
+            r.SectorCnt = 1024UL;
+            r.SectorSz = 4096UL;
+            break;
+        case 0xEF4018: // W25Q64 - NOT TESTED
+            r.SectorCnt = 2048UL;
+            r.SectorSz = 4096UL;
+            break;
+        default: break;
+    } // switch
+    return r;
+}
+
+#if 1 // ======================= Read / Write / Erase ==========================
 retv SpiFlash_t::Read(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
+    Printf("A %u; L: %u\r", Addr, ALen);
     Nss.SetLo();
     WriteCmdAndAddr(0x0B, Addr); // Cmd FastRead
     spi.WriteRead(0x00); // 8 dummy clocks
@@ -190,7 +216,7 @@ retv SpiFlash_t::EraseBlock64k(uint32_t Addr) {
     Nss.SetHi();
     return BusyWait(); // Wait completion
 }
-
+#endif
 
 // ========================= Control Instructions ==============================
 uint8_t SpiFlash_t::ReleasePowerDown() {
@@ -204,6 +230,8 @@ uint8_t SpiFlash_t::ReleasePowerDown() {
     return r;
 }
 
+
+/* UNUSED, left for dbg purposes
 SpiFlash_t::MfrDevId_t SpiFlash_t::ReadMfrDevId() {
     MfrDevId_t r;
     Nss.SetLo();
@@ -241,6 +269,7 @@ SpiFlash_t::MfrDevId_t SpiFlash_t::ReadMfrDevIdQ() {
     spi.DisQuad();
     return r;
 }
+*/
 
 #if 1 // ========================== Service ====================================
 void SpiFlash_t::Reset() {
@@ -297,199 +326,3 @@ retv SpiFlash_t::BusyWait() {
     return r;
 }
 #endif
-
-void SpiFlash_t::WriteStatusReg1(uint8_t b) {
-
-}
-
-
-// ========================================= Definition ============================================
-
-#define EXT_FLASH_XX25_TEST_SEGMENT_AMOUNT          4
-#define EXT_FLASH_XX25_TEST_PAGE_AMOUNT             8
-#define EXT_FLASH_XX25_TEST_MAGIC_NUMBER            42
-
-/// Таймаут стирания минимального сегмента для семейства микросхем N25xx, мс
-#define FLASH_N25_SEGMENT_ERASE_TIMEOUT             800
-/// Таймаут записи страницы для семейства микросхем N25xx, мс
-#define FLASH_N25_PAGE_PROGRAM_TIMEOUT              5
-
-/// Таймаут стирания минимального сегмента для семейства микросхем M25xx, мс
-#define FLASH_M25_SEGMENT_ERASE_TIMEOUT             600
-/// Таймаут записи страницы для семейства микросхем M25xx, мс
-#define FLASH_M25_PAGE_PROGRAM_TIMEOUT              1
-
-/// Таймаут стирания минимального сегмента для семейства микросхем MX25xx, мс
-#define FLASH_MX25_SEGMENT_ERASE_TIMEOUT            120
-/// Таймаут записи страницы для семейства микросхем MX25xx, мс
-#define FLASH_MX25_PAGE_PROGRAM_TIMEOUT             2
-
-/// Таймаут стирания минимального сегмента для семейства микросхем WQ25xx, мс
-#define FLASH_WQ25_SEGMENT_ERASE_TIMEOUT            420
-/// Таймаут записи страницы для семейства микросхем WQ25xx, мс
-#define FLASH_WQ25_PAGE_PROGRAM_TIMEOUT             4
-
-/// Размер сектора, байт
-#define EXT_FLASH_XX45_SECTOR_SIZE                  65536
-/// Размер подсектора (доступен не во всех микросхемах), байт
-#define FLASH_XX25_SUBSECTOR_SIZE                   4096
-
-/**
- * @defgroup FLASH_XX25_CMD
- * Команды, для работы с микросхемой FLASH
- * @{
- */
-#define FLASH_XX25_CMD__READ_ID                     0x9F
-#define FLASH_XX25_CMD__READ_DATA_BYTES             0x03
-#define FLASH_XX25_CMD__READ_STATUS_REGISTER        0x05
-#define FLASH_XX25_CMD__PAGE_PROGRAM                0x02
-#define FLASH_XX25_CMD__WRITE_ENABLE                0x06
-#define FLASH_XX25_CMD__WRITE_DISABLE               0x04
-#define FLASH_XX25_CMD__SECTOR_ERASE                0xD8
-#define FLASH_XX25_CMD__SUBSECTOR_ERASE             0x20
-/** @} */
-
-/// Полный объем Flash памяти M25P16 в Кб
-#define FLASH_M25P16_TOTAL_SIZE                     2048
-
-/// Полный объем Flash памяти N25Q128 в Кб
-#define FLASH_N25Q128_TOTAL_SIZE                    16384
-
-/// Полный объем Flash памяти N25Q032 в Кб
-#define FLASH_N25Q032_TOTAL_SIZE                    4096
-
-/// Полный объем Flash памяти MX25L128 в Кб
-#define FLASH_MX25L128_TOTAL_SIZE                   16384
-
-/// Полный объем Flash памяти WQ25F32 в Кб
-#define FLASH_WQ25F32_TOTAL_SIZE                    4096
-
-#define EXT_FLASH_XX25_STATUS_WRITE_IN_PROG_MSK     0x01
-
-#pragma pack(push, 1)
-typedef union
-{
-  struct
-  {
-    uint8_t write_in_progress   : 1;
-    uint8_t write_enable_latch  : 1;
-    uint8_t block_protect       : 3;
-    uint8_t reserved            : 2;
-    uint8_t write_protect       : 1;
-  } m25;
-
-  struct
-  {
-    uint8_t write_in_progress   : 1;
-    uint8_t write_enable_latch  : 1;
-    uint8_t block_protect       : 3;
-    /// 1 - bottom
-    /// 0 - top
-    uint8_t top_bottom          : 1;
-    uint8_t reserved            : 1;
-    uint8_t write_protect       : 1;
-  } n25;
-
-  struct
-  {
-    uint8_t write_in_progress   : 1;
-    uint8_t write_enable_latch  : 1;
-    uint8_t block_protect       : 4;
-    uint8_t quad_en             : 1;
-    uint8_t write_protect       : 1;
-  } mx25;
-
-  struct
-  {
-    uint8_t write_in_progress   : 1;
-    uint8_t write_enable_latch  : 1;
-    uint8_t block_protect       : 3;
-    uint8_t top_bottom_protect  : 1;
-    uint8_t sector_protect      : 1;
-    uint8_t status_reg_protect  : 1;
-  } wq25;
-
-  uint8_t msk;
-} ext_flash_xx25_status_t;
-#pragma pack(pop)
-
-// ========================================= Declaration ===========================================
-
-uint32_t ext_flash_xx25_get_type(void);
-
-// ======================================== Implementation =========================================
-/*
-error_t ext_flash_xx25_autodefine(void)
-{
-  error_t res;
-
-  ext_flash_xx25.inited = 0;
-  ext_flash_xx25.type = EXT_FLASH_XX25_TYPE__UNKNOWN;
-  ext_flash_xx25.size_in_kb = 0;
-  ext_flash_xx25.erasable_segment_size = 0;
-  ext_flash_xx25.erase_segment_timeout = 0;
-
-  // первый вызов - холостой
-  ext_flash_xx25.type = (ext_flash_xx25_type_t)ext_flash_xx25_get_type();
-  ext_flash_xx25.type = (ext_flash_xx25_type_t)ext_flash_xx25_get_type();
-
-  switch (ext_flash_xx25.type)
-  {
-    case EXT_FLASH_XX25_TYPE__M25P16:
-      ext_flash_xx25.size_in_kb = FLASH_M25P16_TOTAL_SIZE;
-      ext_flash_xx25.erase_subsector_enable = false;
-      ext_flash_xx25.erasable_segment_size = EXT_FLASH_XX45_SECTOR_SIZE;
-      ext_flash_xx25.erase_segment_timeout = FLASH_M25_SEGMENT_ERASE_TIMEOUT;
-      ext_flash_xx25.program_page_timeout = FLASH_M25_PAGE_PROGRAM_TIMEOUT;
-      res = ERR_OK;
-    break;
-
-    case EXT_FLASH_XX25_TYPE__N25Q128:
-      ext_flash_xx25.size_in_kb = FLASH_N25Q128_TOTAL_SIZE;
-      ext_flash_xx25.erase_subsector_enable = true;
-      ext_flash_xx25.erasable_segment_size = FLASH_XX25_SUBSECTOR_SIZE;
-      ext_flash_xx25.erase_segment_timeout = FLASH_N25_SEGMENT_ERASE_TIMEOUT;
-      ext_flash_xx25.program_page_timeout = FLASH_N25_PAGE_PROGRAM_TIMEOUT;
-      res = ERR_OK;
-    break;
-
-    case EXT_FLASH_XX25_TYPE__N25Q032:
-      ext_flash_xx25.size_in_kb = FLASH_N25Q032_TOTAL_SIZE;
-      ext_flash_xx25.erase_subsector_enable = true;
-      ext_flash_xx25.erasable_segment_size = FLASH_XX25_SUBSECTOR_SIZE;
-      ext_flash_xx25.erase_segment_timeout = FLASH_N25_SEGMENT_ERASE_TIMEOUT;
-      ext_flash_xx25.program_page_timeout = FLASH_N25_PAGE_PROGRAM_TIMEOUT;
-      res = ERR_OK;
-    break;
-
-    case EXT_FLASH_XX25_TYPE__MX25L128:
-      ext_flash_xx25.size_in_kb = FLASH_MX25L128_TOTAL_SIZE;
-      ext_flash_xx25.erase_subsector_enable = true;
-      ext_flash_xx25.erasable_segment_size = FLASH_XX25_SUBSECTOR_SIZE;
-      ext_flash_xx25.erase_segment_timeout = FLASH_MX25_SEGMENT_ERASE_TIMEOUT;
-      ext_flash_xx25.program_page_timeout = FLASH_MX25_PAGE_PROGRAM_TIMEOUT;
-      res = ERR_OK;
-    break;
-
-    case EXT_FLASH_XX25_TYPE__W25Q32F:
-      ext_flash_xx25.size_in_kb = FLASH_WQ25F32_TOTAL_SIZE;
-      ext_flash_xx25.erase_subsector_enable = true;
-      ext_flash_xx25.erasable_segment_size = FLASH_XX25_SUBSECTOR_SIZE;
-      ext_flash_xx25.erase_segment_timeout = FLASH_WQ25_SEGMENT_ERASE_TIMEOUT;
-      ext_flash_xx25.program_page_timeout = FLASH_WQ25_PAGE_PROGRAM_TIMEOUT;
-      res = ERR_OK;
-    break;
-
-    default:
-      res = ERR_RESULT;
-    break;
-  }
-
-  if (res == ERR_OK)
-  {
-    ext_flash_xx25.inited = true;
-  }
-
-  return res;
-}
-*/
