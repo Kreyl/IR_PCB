@@ -164,7 +164,7 @@ void VtDoTickI() {
         now = Sys::GetSysTimeX();
         nowdelta = TimeDiff(vtlist.lasttime, now);
         /* The list scan is limited by the timers header having
-          "ch.vtlist.vt_delta == (systime_t)-1" which is greater than all deltas */
+          "vtlist.vt_delta == (systime_t)-1" which is greater than all deltas */
         if(nowdelta < vtp->delta) break;
         // Process all timers between "vtp->lasttime" and now
         do {
@@ -174,15 +174,15 @@ void VtDoTickI() {
 
             vtp->next->prev = (VirtualTimer_t*)&vtlist;
             vtlist.next = vtp->next;
-            vtfunc_t fn = vtp->pCallback;
+            vtfunc_t pCallback = vtp->pCallback;
             vtp->pCallback = nullptr;
 
-            // When the list is empty, the Sys Timer must be stopped
-            if(vtlist.next == (VirtualTimer_t*)&vtlist) SysTimer::Init();
+            // When the list is empty, the Sys Timer alarm must be stopped
+            if(vtlist.next == (VirtualTimer_t*)&vtlist) SysTimer::StopAlarm();
 
             // The callback is invoked outside the kernel critical zone
             Sys::UnlockFromIRQ();
-            fn(vtp->ptr);
+            pCallback(vtp->ptr);
             Sys::LockFromIRQ();
 
             vtp = vtlist.next; // Get next element in the list
@@ -192,8 +192,7 @@ void VtDoTickI() {
     // If the list is empty, there is nothing else to do
     if(vtlist.next == (VirtualTimer_t*)&vtlist) return;
 
-    /* The "unprocessed nowdelta" time slice is added to "last time"
-     and subtracted to next timer's delta.*/
+    // The "unprocessed nowdelta" time slice is added to "last time" and subtracted to next timer's delta
     vtlist.lasttime += nowdelta;
     vtlist.next->delta -= nowdelta;
 
@@ -923,7 +922,7 @@ inline void Init() {
 }
 
 inline void StartAlarm(systime_t time) {
-    SYS_TIM->CH0CV = (uint32_t) time;
+    SYS_TIM->CH0CV = (uint32_t)time;
     SYS_TIM->INTF = 0;
     SYS_TIM->DMAINTEN = TIM_DMAINTEN_CH0IE;
 }

@@ -12,7 +12,7 @@
 #define SYS_TIM_RESOLUTION      16
 
 // Frequency of the system timer that drives the system ticks. This setting also defines the system tick time unit.
-#define SYS_TIM_FREQUENCY       10000
+#define SYS_TIM_FREQUENCY       1000
 
 // Time delta constant for the tick-less mode
 // This value represents the minimum number of ticks that is safe to specify in a timeout directive.

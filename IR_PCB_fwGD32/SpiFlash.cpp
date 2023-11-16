@@ -20,11 +20,9 @@
     DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE
 
 void SpiFlashDmaCb(void *p, uint32_t W32) {
-    Sys::IrqPrologue();
     Sys::LockFromIRQ();
     Sys::WakeI(&((SpiFlash_t*)p)->PThd, retv::Ok);
     Sys::UnlockFromIRQ();
-    Sys::IrqEpilogue();
 }
 
 SpiFlash_t::SpiFlash_t(SPI_TypeDef *pspi) : spi(pspi),
@@ -43,6 +41,7 @@ void SpiFlash_t::Init() {
     Gpio::SetupAlterFunc(FLASH_IO3,  Gpio::PushPull, Gpio::speed50MHz);
     // ==== SPI ====    MSB first, master, ClkLowIdle, FirstEdge, BitNum = 8
     spi.Setup(BitOrder::MSB, Spi_t::cpol::IdleLow, Spi_t::cpha::FirstEdge, SPIFLASH_CLK_FREQ_Hz);
+//    spi.Setup(BitOrder::MSB, Spi_t::cpol::IdleLow, Spi_t::cpha::FirstEdge, 1000000);
     spi.Enable();
     // ==== DMA ====
     DmaRx.Init();
@@ -62,7 +61,7 @@ SpiFlash_t::MemParams_t SpiFlash_t::GetParams() {
     JID = (JID << 8) | spi.WriteRead(0x00); // MemType
     JID = (JID << 8) | spi.WriteRead(0x00); // Capacity
     Nss.SetHi();
-    Printf("JID: 0x%X\r", JID);
+//    Printf("JID: 0x%X\r", JID);
     switch(JID) {
         case 0xEF4016: // W25Q32
             r.SectorCnt = 1024UL;
@@ -79,7 +78,7 @@ SpiFlash_t::MemParams_t SpiFlash_t::GetParams() {
 
 #if 1 // ======================= Read / Write / Erase ==========================
 retv SpiFlash_t::Read(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
-    Printf("A %u; L: %u\r", Addr, ALen);
+    Sys::SleepMilliseconds(99);
     Nss.SetLo();
     WriteCmdAndAddr(0x0B, Addr); // Cmd FastRead
     spi.WriteRead(0x00); // 8 dummy clocks
@@ -309,14 +308,15 @@ void SpiFlash_t::WriteEnable() {
 }
 
 retv SpiFlash_t::BusyWait() {
+    Sys::SleepMilliseconds(1);
     systime_t Start = Sys::GetSysTimeX();
     retv r = retv::Timeout;
     Nss.SetLo();
     spi.WriteRead(0x05); // Read StatusReg1
-    while(Sys::TimeElapsedSince(Start) < TIME_MS2I(270)) {
+    while(Sys::TimeElapsedSince(Start) < TIME_MS2I(SPIFLASH_TIMEOUT_ms)) {
         Sys::SleepMilliseconds(1);
         uint8_t b = spi.WriteRead(0);
-//        Printf(">%X\r", r);
+//        Printf("%X\r", r);
         if((b & 0x01) == 0) { // BUSY bit == 0
             r = retv::Ok;
             break;

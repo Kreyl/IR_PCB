@@ -369,7 +369,7 @@ __attribute__((noreturn)) static void MsdThd() {
         PMsdThd = Sys::GetSelfThd();
         retv r = Sys::SleepS(TIME_INFINITE); // Wait forever until new data is received
         Sys::Unlock();
-        if(r == retv::New) SCSICmdHandler(); // New header received
+        if(r == retv::Ok) SCSICmdHandler(); // New header received
         Sys::Lock();
         MSDStartReceiveHdrI();
         Sys::Unlock();
@@ -383,13 +383,13 @@ void MSDStartReceiveHdrI() {
 
 void OnMSDDataOut(uint32_t Sz) {
     Sys::LockFromIRQ();
-    if(PMsdThd and PMsdThd->state == ThdState::Sleeping) Sys::WakeI(&PMsdThd, retv::New);
+    if(PMsdThd and PMsdThd->state == ThdState::Sleeping) Sys::WakeI(&PMsdThd, retv::Ok);
     Sys::UnlockFromIRQ();
 }
 
 void OnMSDDataIn() {
     Sys::LockFromIRQ();
-    if(PMsdThd and PMsdThd->state == ThdState::Sleeping) Sys::WakeI(&PMsdThd, retv::New);
+    if(PMsdThd and PMsdThd->state == ThdState::Sleeping) Sys::WakeI(&PMsdThd, retv::Ok);
     Sys::UnlockFromIRQ();
 }
 
@@ -403,6 +403,7 @@ void TransmitBuf(uint32_t *Ptr, uint32_t Len) {
 
 retv ReceiveToBuf(uint32_t *Ptr, uint32_t Len) {
     Sys::Lock();
+    PMsdThd = Sys::GetSelfThd();
     Usb::StartReceiveI(EP_MSD_DATA, (uint8_t*)Ptr, Len);
     retv r = Sys::SleepS(TIME_INFINITE); // Wait forever until data is received
     Sys::Unlock();
@@ -602,7 +603,7 @@ retv CmdReadFormatCapacities() {
 retv ReadWriteCommon(uint32_t *PAddr, uint16_t *PLen) {
     *PAddr = Convert::BuildU132(CmdBlock.SCSICmdData[5], CmdBlock.SCSICmdData[4], CmdBlock.SCSICmdData[3], CmdBlock.SCSICmdData[2]);
     *PLen  = Convert::BuildU16(CmdBlock.SCSICmdData[8], CmdBlock.SCSICmdData[7]);
-//    Printf("Addr=%u; Len=%u\r", *PAddr, *PLen);
+//    Printf("RWC Addr=%u; Len=%u\r", *PAddr, *PLen);
     // Check block addr
     if((*PAddr + *PLen) > MsdMem::BlockCnt) {
         Printf("Out Of Range: Addr %u, Len %u\r", *PAddr, *PLen);
@@ -683,7 +684,7 @@ retv CmdWrite10() {
     retv Rslt = retv::Ok;
 
     while(TotalBlocks != 0) {
-        // Fill Buf1
+        // Fill Buf
         BytesToReceive = MIN_(MSD_DATABUF_SZ, TotalBlocks * MsdMem::BlockSz);
         BlocksToWrite  = BytesToReceive / MsdMem::BlockSz;
         if(ReceiveToBuf(Buf32, BytesToReceive) != retv::Ok) {
@@ -692,10 +693,7 @@ retv CmdWrite10() {
         }
         // Write Buf to memory
         Rslt = MsdMem::Write(BlockAddress, (uint8_t*)Buf32, BlocksToWrite);
-        if(Rslt != retv::Ok) {
-            Printf("Wr fail\r");
-            return retv::Fail;
-        }
+        if(Rslt != retv::Ok) return retv::Fail;
         CmdBlock.DataTransferLen -= BytesToReceive;
         TotalBlocks -= BlocksToWrite;
         BlockAddress += BlocksToWrite;

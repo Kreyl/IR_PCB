@@ -17,9 +17,9 @@
 
 // Type of time interval: 16 or 32 bits
 #if SYS_TIM_RESOLUTION == 32
-typedef uint32_t systime_t;
+typedef systime_t = uint32_t;
 #elif SYS_TIM_RESOLUTION == 16
-typedef uint16_t systime_t;
+using systime_t = uint16_t;
 #else
 #error "Bad SysTimer Resolution"
 #endif
@@ -201,19 +201,6 @@ struct Thread_t {
         Semaphore_t *pSem; // valid when the thread is in OnSemaphore state.
     } u;
 };
-
-/* === Static Thread creation example ===
-Thread function:
-static THD_WORKSPACE(waSecondThd, 256);
-__attribute__((noreturn)) static void SecondThd() {
-    while(true) {
-        Sys::SleepMilliseconds(999);
-    }
-}
-
-Initialization:
-Sys::CreateThd(waSecondThd, sizeof(waSecondThd), NORMALPRIO, SecondThd);
-*/
 
 #define THD_IRQ_REQUIRED_STACK  64 // Per-thread stack overhead for interrupts servicing.
 #define THD_REQUIRED_STACK_SZ   (sizeof(McuIntCtx_t) + sizeof(McuExtCtx_t) + (size_t)THD_IRQ_REQUIRED_STACK)
