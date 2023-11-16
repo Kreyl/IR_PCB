@@ -18,7 +18,7 @@ namespace MsdMem {
 uint32_t BlockCnt, BlockSz;
 
 retv Read(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
-    Printf("R Addr: %u; Cnt: %u\r", BlockAddress, BlocksCnt);
+//    Printf("R %u %u\r", BlockAddress, BlocksCnt);
     return SpiFlash.ReadQ(BlockAddress * BlockSz, Ptr, BlocksCnt * BlockSz);
 
 //    Mem.Read(BlockAddress * MSD_BLOCK_SZ, Ptr, BlocksCnt * MSD_BLOCK_SZ);
@@ -29,8 +29,8 @@ retv Read(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
 }
 
 retv Write(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
-    Printf("WRT Addr: %u; Cnt: %u\r", BlockAddress, BlocksCnt);
-    uint32_t PageCnt = BlocksCnt / SPIFLASH_PAGE_SZ;
+//    Printf("W %u %u\r", BlockAddress, BlocksCnt);
+    uint32_t PageCnt = (BlocksCnt * BlockSz) / SPIFLASH_PAGE_SZ;
     // Erase sectors
     uint32_t Addr = BlockAddress * BlockSz;
     while(BlocksCnt) {
@@ -41,8 +41,10 @@ retv Write(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
     // Write data page by page
     Addr = BlockAddress * BlockSz;
     while(PageCnt) {
-        if(SpiFlash.WritePage(Addr, Ptr, SPIFLASH_PAGE_SZ) != retv::Ok) return retv::Fail;
+//        if(SpiFlash.WritePage(Addr, Ptr, SPIFLASH_PAGE_SZ) != retv::Ok) {
+        if(SpiFlash.WritePageQ(Addr, Ptr, SPIFLASH_PAGE_SZ) != retv::Ok) return retv::Fail;
         Addr += SPIFLASH_PAGE_SZ;
+        Ptr += SPIFLASH_PAGE_SZ;
         PageCnt--;
     }
     return retv::Ok;

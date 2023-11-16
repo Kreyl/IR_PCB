@@ -19,6 +19,8 @@
 #define SPIFLASH_BLOCK32_SZ     32768UL  // 128 pages
 #define SPIFLASH_BLOCK64_SZ     65536UL  // 256 pages
 
+#define SPIFLASH_TIMEOUT_ms     999UL
+
 class SpiFlash_t {
 private:
     Spi_t spi;

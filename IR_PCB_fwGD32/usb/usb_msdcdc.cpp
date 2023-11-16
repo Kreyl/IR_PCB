@@ -359,7 +359,6 @@ static retv CmdReadFormatCapacities();
 static retv CmdRead10();
 static retv CmdWrite10();
 static retv CmdModeSense6();
-static retv ReadWriteCommon(uint32_t *PAddr, uint16_t *PLen);
 
 // ==== Thread ====
 static THD_WORKSPACE(waMsdThd, 256);
@@ -600,49 +599,47 @@ retv CmdReadFormatCapacities() {
     return retv::Ok;
 }
 
-retv ReadWriteCommon(uint32_t *PAddr, uint16_t *PLen) {
-    *PAddr = Convert::BuildU132(CmdBlock.SCSICmdData[5], CmdBlock.SCSICmdData[4], CmdBlock.SCSICmdData[3], CmdBlock.SCSICmdData[2]);
-    *PLen  = Convert::BuildU16(CmdBlock.SCSICmdData[8], CmdBlock.SCSICmdData[7]);
-//    Printf("RWC Addr=%u; Len=%u\r", *PAddr, *PLen);
+struct AddrLen_t { uint32_t Addr, Len; };
+
+StatusOr<AddrLen_t> PrepareAddrAndLen() {
+    StatusOr<AddrLen_t> r;
+    r->Addr = Convert::BuildU132(CmdBlock.SCSICmdData[5], CmdBlock.SCSICmdData[4], CmdBlock.SCSICmdData[3], CmdBlock.SCSICmdData[2]);
+    r->Len  = Convert::BuildU16(CmdBlock.SCSICmdData[8], CmdBlock.SCSICmdData[7]);
     // Check block addr
-    if((*PAddr + *PLen) > MsdMem::BlockCnt) {
-        Printf("Out Of Range: Addr %u, Len %u\r", *PAddr, *PLen);
+    if((r->Addr + r->Len) > MsdMem::BlockCnt) {
+        Printf("Out Of Range: Addr %u, Len %u\r", r->Addr, r->Len);
         SenseData.SenseKey = SCSI_SENSE_KEY_ILLEGAL_REQUEST;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
         SenseData.AdditionalSenseQualifier = SCSI_ASENSEQ_NO_QUALIFIER;
-        return retv::Fail;
+        r.Rslt = retv::Fail;
     }
     // Check cases 4, 5: (Hi != Dn); and 3, 11, 13: (Hn, Ho != Do)
-    if(CmdBlock.DataTransferLen != (*PLen) * MsdMem::BlockSz) {
+    if(CmdBlock.DataTransferLen != r->Len * MsdMem::BlockSz) {
         Printf("Wrong length\r");
         SenseData.SenseKey = SCSI_SENSE_KEY_ILLEGAL_REQUEST;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_INVALID_COMMAND;
         SenseData.AdditionalSenseQualifier = SCSI_ASENSEQ_NO_QUALIFIER;
-        return retv::Fail;
+        r.Rslt = retv::Fail;
     }
-    return retv::Ok;
+    return r; // Ok by default
 }
 
 retv CmdRead10() {
 #if DBG_PRINT_CMD
     Printf("CmdRead10\r");
 #endif
-    uint32_t BlockAddress=0;
-    uint16_t TotalBlocks=0;
-    if(ReadWriteCommon(&BlockAddress, &TotalBlocks) != retv::Ok) return retv::Fail;
-    // ==== Send data ====
+    StatusOr<AddrLen_t> al = PrepareAddrAndLen();
+    if(!al.Ok()) return retv::Fail;
+    // Send data
     uint32_t BlocksToRead, BytesToSend; // Intermediate values
-    retv Rslt;
-    while(TotalBlocks != 0) {
-        BlocksToRead = MIN_(MSD_DATABUF_SZ / MsdMem::BlockSz, TotalBlocks);
+    while(al->Len != 0) {
+        BlocksToRead = MIN_(MSD_DATABUF_SZ / MsdMem::BlockSz, al->Len);
         BytesToSend = BlocksToRead * MsdMem::BlockSz;
-        Rslt = MsdMem::Read(BlockAddress, (uint8_t*)Buf32, BlocksToRead);
-//        Printf("%A\r", Buf, 50, ' ');
-        if(Rslt == retv::Ok) {
+        if(MsdMem::Read(al->Addr, (uint8_t*)Buf32, BlocksToRead) == retv::Ok) {
             TransmitBuf(Buf32, BytesToSend);
             CmdBlock.DataTransferLen -= BytesToSend;
-            TotalBlocks  -= BlocksToRead;
-            BlockAddress += BlocksToRead;
+            al->Len  -= BlocksToRead;
+            al->Addr += BlocksToRead;
         }
         else {
             Printf("Rd fail\r");
@@ -675,28 +672,27 @@ retv CmdWrite10() {
         SenseData.AdditionalSenseCode = SCSI_ASENSE_MEDIUM_NOT_PRESENT;
         return retv::Fail;
     }
-    uint32_t BlockAddress=0;
-    uint16_t TotalBlocks=0;
     // Get transaction size
-    if(ReadWriteCommon(&BlockAddress, &TotalBlocks) != retv::Ok) return retv::Fail;
+    StatusOr<AddrLen_t> al = PrepareAddrAndLen();
+    if(!al.Ok()) return retv::Fail;
 //    Printf("Addr=%u; Len=%u\r", BlockAddress, TotalBlocks);
     uint32_t BlocksToWrite, BytesToReceive;
     retv Rslt = retv::Ok;
 
-    while(TotalBlocks != 0) {
+    while(al->Len != 0) {
         // Fill Buf
-        BytesToReceive = MIN_(MSD_DATABUF_SZ, TotalBlocks * MsdMem::BlockSz);
+        BytesToReceive = MIN_(MSD_DATABUF_SZ, al->Len * MsdMem::BlockSz);
         BlocksToWrite  = BytesToReceive / MsdMem::BlockSz;
         if(ReceiveToBuf(Buf32, BytesToReceive) != retv::Ok) {
             Printf("Rcv fail\r");
             return retv::Fail;
         }
         // Write Buf to memory
-        Rslt = MsdMem::Write(BlockAddress, (uint8_t*)Buf32, BlocksToWrite);
+        Rslt = MsdMem::Write(al->Addr, (uint8_t*)Buf32, BlocksToWrite);
         if(Rslt != retv::Ok) return retv::Fail;
         CmdBlock.DataTransferLen -= BytesToReceive;
-        TotalBlocks -= BlocksToWrite;
-        BlockAddress += BlocksToWrite;
+        al->Len -= BlocksToWrite;
+        al->Addr += BlocksToWrite;
     } // while
     return retv::Ok;
 #endif
