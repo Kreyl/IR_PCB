@@ -44,7 +44,10 @@
 // ==== Internal FLASH ====
 // Setup this
 #define FILENAME_PATTERN        "Fw*.bin"
-#define BOOTLOADER_RSRVD_SPACE  0x5000UL    // 20480 bytes for bootloader
+#define BOOTLOADER_RSRVD_SPACE  0x6000UL    // 24k for bootloader
+#define FLASH_PAGE_SZ           1024UL
+#define FLASH_TOTAL_SZ          (128UL * 1024UL)
+#define MAX_APP_SZ              (FLASH_TOTAL_SZ - BOOTLOADER_RSRVD_SPACE)
 // Do not touch
 #define APP_START_ADDR          (FLASH_BASE + BOOTLOADER_RSRVD_SPACE)
 

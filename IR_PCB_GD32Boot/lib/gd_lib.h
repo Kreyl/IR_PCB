@@ -301,6 +301,18 @@ struct PwmSetup_t {
                     TopValue(ATopValue) {}
 };
 
+#if 1 // ============================== Watchdog ===============================
+namespace Watchdog {
+// Up to 32000 ms
+void InitAndStart(uint32_t ms);
+
+static inline void Reload() { FWDGT->CTL = 0xAAAA; }
+
+void DisableInDebug();
+
+}; // Namespace
+#endif
+
 #if 1 // =========================== I2C =======================================
 class Shell_t;
 class Thread_t;
@@ -504,11 +516,15 @@ void UnlockFirmware();
 } // Namespace
 
 namespace Clk { // ======================== Clocking ===========================
-/* PLL: input [1; 25] MHz, typ 8MHz; output [16; 120] MHz
- */
-
+/* PLL: input [1; 25] MHz, typ 8MHz; output [16; 120] MHz */
 // Frequency values
 extern uint32_t AHBFreqHz, APB1FreqHz, APB2FreqHz;
+
+// Enables
+static inline void EnIRC40K() {
+    RCU->RSTSCK |= RCU_RSTSCK_IRC40KEN;
+    while(!(RCU->RSTSCK & RCU_RSTSCK_IRC40KSTB));
+}
 
 void SetPllMulti(uint32_t Multi);
 

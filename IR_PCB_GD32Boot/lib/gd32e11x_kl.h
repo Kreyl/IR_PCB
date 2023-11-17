@@ -521,6 +521,19 @@ struct TIM_TypeDef {
 #define TIM_CNT    14 // [TIM0; TIM13]
 #endif // timer
 
+#if 1 // ======================= Free Watchdog =================================
+
+
+struct FWDGT_TypeDef {
+    volatile uint32_t CTL;  // 0x00 Control register
+    volatile uint32_t PSC;  // 0x04 Prescaler register
+    volatile uint32_t RLD;  // 0x08 Reload register
+    volatile uint32_t STAT; // 0x0C Status register
+};
+
+#define FWDGT       ((FWDGT_TypeDef*)FWDGT_BASE)
+#endif
+
 #if 1 // ============================= SPI =====================================
 #define SPI_CTL0_CKPH       (1UL << 0)
 #define SPI_CTL0_CKPL       (1UL << 1)
@@ -599,7 +612,7 @@ struct SPI_TypeDef {
     void DisRxBufNotEmptyIrq() { CTL1 &= ~SPI_CTL1_RBNEIE; }
 
     // DMA
-    void EnTxDma() { CTL1 |=  SPI_CTL1_DMATEN; }
+    void EnTxDma()    { CTL1 |=  SPI_CTL1_DMATEN; }
     void DisTxDma()   { CTL1 &= ~SPI_CTL1_DMATEN; }
     void EnRxDma()    { CTL1 |=  SPI_CTL1_DMAREN; }
     void DisRxDma()   { CTL1 &= ~SPI_CTL1_DMAREN; }
@@ -646,6 +659,10 @@ struct DBGMCU_TypeDef {
 #endif
 
 #if 1 // ===================== Reset and Clock Control =========================
+// Clocks
+#define RCU_IRC40K_FREQ_Hz      40000UL
+
+// Bits
 #define RCU_CTL_HXTALEN         (1UL << 16)
 #define RCU_CTL_HXTALSTB        (1UL << 17)
 #define RCU_CTL_HXTALBPS        (1UL << 18)
@@ -662,6 +679,9 @@ struct DBGMCU_TypeDef {
 #define RCU_CFG1_I2S1SEL        (1UL << 17)
 #define RCU_CFG1_I2S2SEL        (1UL << 18)
 #define RCU_CFG1_PLLPRESEL      (1UL << 30)
+
+#define RCU_RSTSCK_IRC40KEN     (1UL << 0) // IRC40K enable
+#define RCU_RSTSCK_IRC40KSTB    (1UL << 1) // IRC40K stabilization flag
 
 #define RCU_ADDCTL_IRC48MEN     (1UL << 16)
 #define RCU_ADDCTL_IRC48MSTB    (1UL << 17)

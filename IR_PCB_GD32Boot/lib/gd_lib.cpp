@@ -157,6 +157,32 @@ void SetupAlterFunc(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode_t Ou
 
 } // namespace Gpio
 
+#if 1 // ============================== Watchdog ===============================
+namespace Watchdog {
+
+static inline void EnableAccess() { FWDGT->CTL = 0x5555; }
+static inline void Start() { FWDGT->CTL = 0xCCCC; }
+
+void SetTimeout(uint32_t ms) {
+    EnableAccess();
+    FWDGT->PSC = 0b111UL; // 1/256
+    uint32_t Count = (ms * (RCU_IRC40K_FREQ_Hz / 1000UL)) / 256UL;
+    if(Count > 0xFFFUL) Count = 0xFFF; // 12-bit counter
+    FWDGT->RLD = Count;
+    Reload();   // Reload and lock access
+}
+
+void InitAndStart(uint32_t ms) {
+    Clk::EnIRC40K(); // Enable clock
+    SetTimeout(ms);
+    Start();
+}
+
+void DisableInDebug() { DBGMCU->CTL |= 1UL << 8; }
+
+}; // namespace
+#endif
+
 #if I2C0_ENABLED || I2C1_ENABLED // ===================== I2C ==================
 #if I2C0_ENABLED
 i2c_t i2c0 {I2C0, I2C0_SCL, I2C0_SDA};

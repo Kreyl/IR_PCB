@@ -6,9 +6,19 @@
 #include "usb.h"
 #include "SpiFlash.h"
 #include "led.h"
-#include "Sequences.h"
 #include "mem_msd_glue.h"
 #include "kl_fs_utils.h"
+
+/* Here is bootloader's logic.
+ * If GPIO4 is Low, run USB MSD until reboot.
+ * Else if there is firmware file on ext flash:
+ *     1) write it to app flash
+ *     2) delete the file
+ *     3) jump to app
+ * else (there is no firmware file):
+ *     1) if app memory is not empty - jump to app
+ *     2) else (app mem is empty) run USB MSD until reboot.
+ */
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
@@ -22,28 +32,58 @@ SpiFlash_t SpiFlash(SPI0);
 FATFS FlashFS;
 FIL sFile;
 
-//uint32_t Buf[(PAGE_SZ / sizeof(uint32_t))];
+uint32_t Buf[(FLASH_PAGE_SZ / sizeof(uint32_t))];
 
+const LedSmoothChunk_t lsqWriting[] = {
+        {Chunk::Setup, 0, 255}, {Chunk::Wait, 54},
+        {Chunk::Setup, 0, 0},   {Chunk::Wait, 54},
+        {Chunk::Repeat, 2},
+        {Chunk::Wait, 450},
+        {Chunk::Goto, 0}
+};
+
+const LedSmoothChunk_t lsqError[] = {
+        {Chunk::Setup, 0, 255}, {Chunk::Wait, 99},
+        {Chunk::Setup, 0, 0},   {Chunk::Wait, 99},
+        {Chunk::Goto, 0}
+};
 
 EvtTimer_t TmrUartCheck(TIME_MS2I(UART_RX_POLL_MS), EvtId::UartCheckTime, EvtTimer_t::Type::Periodic);
 #endif
 
-void JumpToApp();
+void RunUSB();
 
-void ErasePage(uint32_t PageAddr);
-void WriteToMemory(uint32_t *PAddr, uint32_t *PBuf, uint32_t ALen);
-
-static inline bool AppIsEmpty() {
-    uint32_t FirstWord = *(uint32_t*)APP_START_ADDR;
-    return (FirstWord == 0xFFFFFFFF);
+void JumpToApp() {
+    Watchdog::Reload();
+    Sys::Lock();
+    __disable_irq();
+    void (*app)(void);
+    uint32_t *p = (uint32_t*)APP_START_ADDR; // get a pointer to app
+    SCB->VTOR = APP_START_ADDR; // offset the vector table
+    __set_MSP(*p++);            // set main stack pointer to app Reset_Handler
+    app = (void (*)(void))(*p);
+    app();
+    while(true); // Will not be here
 }
 
-void OnError() {
+static inline bool AppIsEmpty() { return *(uint32_t*)APP_START_ADDR == 0xFFFFFFFF; }
+
+void CheckAppAndJumpIfNotEmpty(const char *Reason) {
+    Printf("%S\r\n", Reason);
+    Watchdog::Reload();
+    Sys::Sleep(7);
     if(AppIsEmpty()) {
-//        Led.StartOrRestart(lsqError); // Display error
-        while(true);
+        Printf("App area is empty\r\n");
+        RunUSB();
     }
     else JumpToApp();
+}
+
+void PrintErrorAndReboot(const char *Reason) {
+    Lumos.StartOrRestart(lsqError);
+    Printf("%S\r", Reason);
+    Sys::Sleep(7);
+    while(true); // Will reboot due to watchdog
 }
 
 static inline void InitClk() {
@@ -71,7 +111,8 @@ static inline void InitClk() {
     Clk::UpdateFreqValues();
 }
 
-void main(void) {
+void main() {
+    Watchdog::InitAndStart(1800);
     InitClk();
     // Init peripheral
     RCU->EnAFIO();
@@ -85,9 +126,8 @@ void main(void) {
     Clk::PrintFreqs();
 
     Lumos.Init();
-//    Lumos.StartOrRestart(lsqFadeIn);
 
-    // Spi Fplash and Msd glue
+    // Spi Flash and Msd glue
     AFIO->RemapSPI0_PB345();
     SpiFlash.Init();
     SpiFlash.Reset();
@@ -96,88 +136,77 @@ void main(void) {
     MsdMem::BlockSz = mp.SectorSz;
     Printf("Flash: %u sectors of %u bytes\r", mp.SectorCnt, mp.SectorSz);
 
-    // Init filesystem
-    if(f_mount(&FlashFS, "", 0) != FR_OK) {
-        Printf("FS error\r");
-        Sys::SleepMilliseconds(99);
-        JumpToApp();
-    }
+    // Check if GPIO4 id Low
+    Gpio::SetupInput(Gpio4, Gpio::PullUp);
+    Sys::SleepMilliseconds(7);
+    if(Gpio::IsLo(Gpio4)) RunUSB();
 
-#if 1 // =========================== Preparations ==============================
-    // Try open file, jump to main app if not found
-    if(f_findfirst(&Dir, &FileInfo, "", FILENAME_PATTERN) != FR_OK) {
-        Printf("File search fail\r");
-        Sys::SleepMilliseconds(99);
-        OnError();
-    }
-    if(FileInfo.fname[0] == 0) {
-        Printf("%S not found\r", FILENAME_PATTERN);
-        Sys::SleepMilliseconds(99);
-        OnError();
-    }
+    // Gpio4 is hi, check if there is file to load
+    // Init filesystem
+    if(f_mount(&FlashFS, "", 0) != FR_OK) CheckAppAndJumpIfNotEmpty("FS error");
+    // Try find file
+    if(f_findfirst(&Dir, &FileInfo, "", FILENAME_PATTERN) != FR_OK)  // Failure, maybe not formatted
+        CheckAppAndJumpIfNotEmpty("File search fail");
+    // Is there fw file?
+    if(FileInfo.fname[0] == 0) // Not found
+        CheckAppAndJumpIfNotEmpty("Not found");
     Printf("Found: %S\r", FileInfo.fname);
-    if(TryOpenFileRead(FileInfo.fname, &CommonFile) != retv::Ok) OnError();
-    int32_t TotalLen = f_size(&CommonFile);
-    Flash::UnlockFlash();
-#endif
+    if(TryOpenFileRead(FileInfo.fname, &CommonFile) != retv::Ok)
+        CheckAppAndJumpIfNotEmpty("File Open Error");
+    // File found
+    uint32_t TotalLen = f_size(&CommonFile);
+    if(TotalLen < 128UL) CheckAppAndJumpIfNotEmpty("Empty File");
+    else if(TotalLen > MAX_APP_SZ) CheckAppAndJumpIfNotEmpty("Too Large File");
+    // Len is ok, write file
+
 #if 1 // ======= Reading and flashing =======
     Lumos.StartOrRestart(lsqWriting);
-    // ==== Read file block by block, do not write first page ====
-    uint32_t BytesCnt, CurrentAddr = APP_START_ADDR;
+    Flash::UnlockFlash();
+    // Read file block by block
+    uint32_t BytesToWrite, CurrentAddr = APP_START_ADDR;
     while(TotalLen != 0) {
-        // Check flash address
-        if(CurrentAddr >= (FLASH_BASE + TOTAL_FLASH_SZ)) {
-            Printf("Error: too large file\r");
-            break;
-        }
-
-        // How many bytes to read?
-        BytesCnt = MIN_(TotalLen, PAGE_SZ);
-        TotalLen -= BytesCnt;
+        Watchdog::Reload();
+        BytesToWrite = MIN_(TotalLen, FLASH_PAGE_SZ); // How many bytes to read?
         // Read block
-        if(f_read(&CommonFile, Buf, BytesCnt, &BytesCnt) != FR_OK) {
-            Printf("Read error\r");
-            OnError();
+        if(f_read(&CommonFile, Buf, BytesToWrite, &BytesToWrite) != FR_OK) {
+            Flash::LockFlash();
+            PrintErrorAndReboot("Read error");
         }
-
-        ErasePage(CurrentAddr);
-        WriteToMemory(&CurrentAddr, Buf, BytesCnt);
+        // Write page
+        if(Flash::ProgramBuf(Buf, BytesToWrite, CurrentAddr) != retv::Ok) {
+            Flash::LockFlash();
+            PrintErrorAndReboot("Write error");
+        }
+        // Writing succeded
+        Printf(".");
+        CurrentAddr += BytesToWrite;
+        TotalLen -= BytesToWrite;
     } // while
 #endif
-    Printf("\rWriting done\r\n");
+    // Writing done
     f_close(&CommonFile);
     // Remove firmware file
     f_unlink(FileInfo.fname);
     Flash::LockFlash();
-    JumpToApp();
+    CheckAppAndJumpIfNotEmpty("\r\nWriting done");
+}
 
-    // Forever
-    while(true);
-
-
-
+void RunUSB() {
+    Watchdog::Reload();
     UsbMsdCdc.Init();
-//    UsbMsdCdc.Connect();
-
+    UsbMsdCdc.Connect();
     TmrUartCheck.StartOrRestart();
-
-    // Main evt cycle
     while(true) {
         EvtMsg_t Msg = EvtQMain.Fetch(TIME_INFINITE);
         switch(Msg.ID) {
             case EvtId::UartCheckTime:
+                Watchdog::Reload();
                 Gpio::Toggle(PA10);
                 while(Uart.TryParseRxBuff() == retv::Ok) OnCmd((Shell_t*)&Uart);
                 break;
-
             case EvtId::UsbCdcDataRcvd:
                 while(UsbMsdCdc.TryParseRxBuff() == retv::Ok) OnCmd((Shell_t*)&UsbMsdCdc);
                 break;
-
-            case EvtId::EverySecond:
-                Printf("aga %u\r", Msg.Value);
-                break;
-
             case EvtId::UsbReady:
                 Printf("Usb ready\r");
                 CTC->Enable(); // Start autotrimming of IRC48M
@@ -192,18 +221,6 @@ void OnCmd(Shell_t *PShell) {
     Cmd_t *PCmd = &PShell->Cmd;
     if(PCmd->NameIs("Ping")) PShell->Ok();
     else if(PCmd->NameIs("Version")) PShell->Print("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
-
-    else if(PCmd->NameIs("tst")) {
-    }
-
-    else if(PCmd->NameIs("conn")) {
-        UsbMsdCdc.Connect();
-        PShell->Ok();
-    }
-    else if(PCmd->NameIs("dsc")) {
-        UsbMsdCdc.Disconnect();
-        PShell->Ok();
-    }
 
     else PShell->CmdUnknown();
 }
