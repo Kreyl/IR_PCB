@@ -146,7 +146,7 @@ void main(void) {
     MsdMem::BlockCnt = mp.SectorCnt;
     MsdMem::BlockSz = mp.SectorSz;
     Printf("Flash: %u sectors of %u bytes\r", mp.SectorCnt, mp.SectorSz);
-    SpiFlash.ReleasePowerDown();
+//    SpiFlash.ReleasePowerDown();
 
     UsbMsdCdc.Init();
 //    UsbCDC.Connect();
