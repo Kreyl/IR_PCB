@@ -19,7 +19,10 @@ uint32_t BlockCnt, BlockSz;
 
 retv Read(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {
 //    Printf("R %u %u\r", BlockAddress, BlocksCnt);
-    return SpiFlash.ReadQ(BlockAddress * BlockSz, Ptr, BlocksCnt * BlockSz);
+    retv r = SpiFlash.Read(BlockAddress * BlockSz, Ptr, BlocksCnt * BlockSz);
+//    retv r = SpiFlash.ReadQ(BlockAddress * BlockSz, Ptr, BlocksCnt * BlockSz);
+//    if(r == retv::Ok) Printf("%A\r", Ptr, BlocksCnt * BlockSz);
+    return r;
 }
 
 retv Write(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt) {

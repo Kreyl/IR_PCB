@@ -99,6 +99,7 @@ static inline void InitClk() {
 }
 
 void main(void) {
+    Watchdog::InitAndStart(2700);
     InitClk();
     // Init peripheral
     RCU->EnAFIO();
@@ -162,6 +163,7 @@ void main(void) {
         EvtMsg_t Msg = EvtQMain.Fetch(TIME_INFINITE);
         switch(Msg.ID) {
             case EvtId::UartCheckTime:
+                Watchdog::Reload();
                 Gpio::Toggle(PA10);
                 while(Uart.TryParseRxBuff() == retv::Ok) OnCmd((Shell_t*)&Uart);
                 break;

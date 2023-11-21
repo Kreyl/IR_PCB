@@ -78,7 +78,6 @@ SpiFlash_t::MemParams_t SpiFlash_t::GetParams() {
 
 #if 1 // ======================= Read / Write / Erase ==========================
 retv SpiFlash_t::Read(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
-    Sys::SleepMilliseconds(99);
     Nss.SetLo();
     WriteCmdAndAddr(0x0B, Addr); // Cmd FastRead
     spi.WriteRead(0x00); // 8 dummy clocks

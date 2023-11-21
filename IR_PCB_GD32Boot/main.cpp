@@ -34,14 +34,6 @@ FIL sFile;
 
 uint32_t Buf[(FLASH_PAGE_SZ / sizeof(uint32_t))];
 
-const LedSmoothChunk_t lsqWriting[] = {
-        {Chunk::Setup, 0, 255}, {Chunk::Wait, 54},
-        {Chunk::Setup, 0, 0},   {Chunk::Wait, 54},
-        {Chunk::Repeat, 2},
-        {Chunk::Wait, 450},
-        {Chunk::Goto, 0}
-};
-
 const LedSmoothChunk_t lsqError[] = {
         {Chunk::Setup, 0, 255}, {Chunk::Wait, 99},
         {Chunk::Setup, 0, 0},   {Chunk::Wait, 99},
@@ -57,11 +49,10 @@ void JumpToApp() {
     Watchdog::Reload();
     Sys::Lock();
     __disable_irq();
-    void (*app)(void);
     uint32_t *p = (uint32_t*)APP_START_ADDR; // get a pointer to app
     SCB->VTOR = APP_START_ADDR; // offset the vector table
     __set_MSP(*p++);            // set main stack pointer to app Reset_Handler
-    app = (void (*)(void))(*p);
+    ftVoidVoid app = (ftVoidVoid)(*p);
     app();
     while(true); // Will not be here
 }
@@ -73,7 +64,7 @@ void CheckAppAndJumpIfNotEmpty(const char *Reason) {
     Watchdog::Reload();
     Sys::Sleep(7);
     if(AppIsEmpty()) {
-        Printf("App area is empty\r\n");
+        Printf("App is empty\r\n");
         RunUSB();
     }
     else JumpToApp();
@@ -112,7 +103,7 @@ static inline void InitClk() {
 }
 
 void main() {
-    Watchdog::InitAndStart(1800);
+    Watchdog::InitAndStart(2700);
     InitClk();
     // Init peripheral
     RCU->EnAFIO();
@@ -126,12 +117,16 @@ void main() {
     Clk::PrintFreqs();
 
     Lumos.Init();
+    Lumos.Set(255);
+    Sys::SleepMilliseconds(99); // Let everything wake
 
     // Spi Flash and Msd glue
     AFIO->RemapSPI0_PB345();
     SpiFlash.Init();
     SpiFlash.Reset();
     SpiFlash_t::MemParams_t mp = SpiFlash.GetParams();
+    // Process Flash error situation
+    if((mp.SectorCnt == 0 or mp.SectorSz == 0) and AppIsEmpty()) PrintErrorAndReboot("App empty, Flash error\r\n");
     MsdMem::BlockCnt = mp.SectorCnt;
     MsdMem::BlockSz = mp.SectorSz;
     Printf("Flash: %u sectors of %u bytes\r", mp.SectorCnt, mp.SectorSz);
@@ -147,9 +142,10 @@ void main() {
     // Try find file
     if(f_findfirst(&Dir, &FileInfo, "", FILENAME_PATTERN) != FR_OK)  // Failure, maybe not formatted
         CheckAppAndJumpIfNotEmpty("File search fail");
+
     // Is there fw file?
     if(FileInfo.fname[0] == 0) // Not found
-        CheckAppAndJumpIfNotEmpty("Not found");
+        CheckAppAndJumpIfNotEmpty("fw*.bin not found");
     Printf("Found: %S\r", FileInfo.fname);
     if(TryOpenFileRead(FileInfo.fname, &CommonFile) != retv::Ok)
         CheckAppAndJumpIfNotEmpty("File Open Error");
@@ -160,7 +156,6 @@ void main() {
     // Len is ok, write file
 
 #if 1 // ======= Reading and flashing =======
-    Lumos.StartOrRestart(lsqWriting);
     Flash::UnlockFlash();
     // Read file block by block
     uint32_t BytesToWrite, CurrentAddr = APP_START_ADDR;
@@ -184,14 +179,16 @@ void main() {
     } // while
 #endif
     // Writing done
+    Flash::LockFlash();
     f_close(&CommonFile);
     // Remove firmware file
-    f_unlink(FileInfo.fname);
-    Flash::LockFlash();
-    CheckAppAndJumpIfNotEmpty("\r\nWriting done");
+    Printf("\r\nDeleting %S: %S\r\n", FileInfo.fname, f_unlink(FileInfo.fname) == FR_OK? "Ok" : "Fail");
+    Sys::SleepMilliseconds(27); // Let flash complete doings
+    CheckAppAndJumpIfNotEmpty("Flashing done");
 }
 
 void RunUSB() {
+    Printf("Starting USB\r\n");
     Watchdog::Reload();
     UsbMsdCdc.Init();
     UsbMsdCdc.Connect();

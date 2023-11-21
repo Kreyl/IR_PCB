@@ -43,7 +43,7 @@
 
 // ==== Internal FLASH ====
 // Setup this
-#define FILENAME_PATTERN        "Fw*.bin"
+#define FILENAME_PATTERN        "fw*.bin"
 #define BOOTLOADER_RSRVD_SPACE  0x6000UL    // 24k for bootloader
 #define FLASH_PAGE_SZ           1024UL
 #define FLASH_TOTAL_SZ          (128UL * 1024UL)
@@ -110,7 +110,7 @@
 
 #if 1 // ========================== USART ======================================
 //#define PRINTF_FLOAT_EN TRUE
-#define UART_TXBUF_SZ   1024
+#define UART_TXBUF_SZ   4096
 #define UART_RXBUF_SZ   128
 #define CMD_BUF_SZ      128
 #define UART_RX_POLL_MS 99

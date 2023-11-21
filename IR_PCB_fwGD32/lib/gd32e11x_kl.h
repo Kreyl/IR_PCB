@@ -8,7 +8,7 @@
 #ifndef LIB_GD32E11X_KL_H_
 #define LIB_GD32E11X_KL_H_
 
-#include <types.h>
+#include "types.h"
 #include "board.h"
 
 #define GET_BITS(reg, mask, offset)         ((reg & (mask << offset)) >> offset)
@@ -521,6 +521,19 @@ struct TIM_TypeDef {
 #define TIM_CNT    14 // [TIM0; TIM13]
 #endif // timer
 
+#if 1 // ======================= Free Watchdog =================================
+
+
+struct FWDGT_TypeDef {
+    volatile uint32_t CTL;  // 0x00 Control register
+    volatile uint32_t PSC;  // 0x04 Prescaler register
+    volatile uint32_t RLD;  // 0x08 Reload register
+    volatile uint32_t STAT; // 0x0C Status register
+};
+
+#define FWDGT       ((FWDGT_TypeDef*)FWDGT_BASE)
+#endif
+
 #if 1 // ============================= SPI =====================================
 #define SPI_CTL0_CKPH       (1UL << 0)
 #define SPI_CTL0_CKPL       (1UL << 1)
@@ -599,7 +612,7 @@ struct SPI_TypeDef {
     void DisRxBufNotEmptyIrq() { CTL1 &= ~SPI_CTL1_RBNEIE; }
 
     // DMA
-    void EnTxDma() { CTL1 |=  SPI_CTL1_DMATEN; }
+    void EnTxDma()    { CTL1 |=  SPI_CTL1_DMATEN; }
     void DisTxDma()   { CTL1 &= ~SPI_CTL1_DMATEN; }
     void EnRxDma()    { CTL1 |=  SPI_CTL1_DMAREN; }
     void DisRxDma()   { CTL1 &= ~SPI_CTL1_DMAREN; }
@@ -646,6 +659,10 @@ struct DBGMCU_TypeDef {
 #endif
 
 #if 1 // ===================== Reset and Clock Control =========================
+// Clocks
+#define RCU_IRC40K_FREQ_Hz      40000UL
+
+// Bits
 #define RCU_CTL_HXTALEN         (1UL << 16)
 #define RCU_CTL_HXTALSTB        (1UL << 17)
 #define RCU_CTL_HXTALBPS        (1UL << 18)
@@ -662,6 +679,9 @@ struct DBGMCU_TypeDef {
 #define RCU_CFG1_I2S1SEL        (1UL << 17)
 #define RCU_CFG1_I2S2SEL        (1UL << 18)
 #define RCU_CFG1_PLLPRESEL      (1UL << 30)
+
+#define RCU_RSTSCK_IRC40KEN     (1UL << 0) // IRC40K enable
+#define RCU_RSTSCK_IRC40KSTB    (1UL << 1) // IRC40K stabilization flag
 
 #define RCU_ADDCTL_IRC48MEN     (1UL << 16)
 #define RCU_ADDCTL_IRC48MSTB    (1UL << 17)
@@ -1004,6 +1024,29 @@ struct CTC_Typedef {
 #endif
 
 #if 1 // ============================= Flash ===================================
+#define FMC_WS_PGW          (1UL << 15) // Program width to flash memory: 0 is 32bit (default), 1 is 64bit
+#define FMC_WS_DCRST        (1UL << 12) // DBUS cache reset. This bit can be write only when DCEN is set to 0
+#define FMC_WS_ICRST        (1UL << 11) // IBUS cache reset. This bit can be write only when ICEN is set to 0
+#define FMC_WS_DCEN         (1UL << 10) // DBUS cache enable
+#define FMC_WS_ICEN         (1UL <<  9) // IBUS cache enable
+#define FMC_WS_PFEN         (1UL <<  4) // Pre-fetch enable
+#define FMC_WS_WSCNT_MSK    (7UL <<  0) // Wait state mask
+
+#define FMC_STAT_ENDF       (1UL << 5) // End of operation flag
+#define FMC_STAT_WPERR      (1UL << 4) // Erase/Program protection error flag
+#define FMC_STAT_PGAERR     (1UL << 3) // Program alignment error flag
+#define FMC_STAT_PGERR      (1UL << 2) // Program error flag
+#define FMC_STAT_BUSY       (1UL << 0) // The flash is busy
+
+#define FMC_CTL_OBWEN       (1UL << 9) // Option byte erase/program enable bit
+#define FMC_CTL_LK          (1UL << 7) // FMC_CTL lock bit
+#define FMC_CTL_START       (1UL << 6) // Send erase command to FMC bit
+#define FMC_CTL_OBER        (1UL << 5) // Option bytes erase command bit
+#define FMC_CTL_OBPG        (1UL << 4) // Option bytes program command bit
+#define FMC_CTL_MER         (1UL << 2) // Main flash mass erase for bank0 command bit
+#define FMC_CTL_PER         (1UL << 1) // Main flash page erase for bank0 command bit
+#define FMC_CTL_PG          (1UL << 0) // Main flash program for bank0 command bit
+
 struct FMC_TypeDef {
     volatile uint32_t WS;     /*!< 0x00  Wait state register */
     volatile uint32_t KEY;    /*!< 0x04  Unlock key register */
@@ -1020,7 +1063,7 @@ struct FMC_TypeDef {
     void EnableCashAndPrefetch() { WS |= (1UL<<10)|(1UL<<9)|(1UL<<4); }
 
     void SetLatency(uint32_t Clk_MHz) {
-        uint32_t tmp = WS & ~0b111UL; // Clean last 3 bits
+        uint32_t tmp = WS & ~FMC_WS_WSCNT_MSK; // Clean last 3 bits
         if     (Clk_MHz <=  30) tmp |= 0UL; // Add 0 wait state
         else if(Clk_MHz <=  60) tmp |= 1UL; // Add 1 wait state
         else if(Clk_MHz <=  90) tmp |= 2UL; // Add 2 wait state
@@ -1030,6 +1073,24 @@ struct FMC_TypeDef {
 };
 
 #define FMC     ((FMC_TypeDef*)FMC_BASE)
+#endif
+
+#if 1 // ======================= Option Bytes ==================================
+
+struct OPTB_Typedef {
+    union {
+        volatile uint32_t SPC_USER32;
+        struct {
+            volatile uint8_t SPC;   // Security Protection value
+            volatile uint8_t SPC_N; // SPC complement value
+            volatile uint8_t USER;  // nRST_STDBY, nRST_DPSLP, nWDG_HW
+            volatile uint8_t USER_N;
+        };
+    };
+
+};
+
+#define OPTBYTES    ((OPTB_Typedef*)OB_BASE)
 #endif
 
 #if 1 // ============================= USB =====================================

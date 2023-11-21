@@ -17,7 +17,7 @@ extern void PrintfC(const char *format, ...);
 
 /*-----------------------------------------------------------------------*/
 /* Initialize a Drive                                                    */
-
+extern "C"
 DSTATUS disk_initialize (
     BYTE drv                /* Physical drive nmuber (0..) */
 )
@@ -27,7 +27,7 @@ DSTATUS disk_initialize (
 
 /*-----------------------------------------------------------------------*/
 /* Return Disk Status                                                    */
-
+extern "C"
 DSTATUS disk_status (
     BYTE drv        /* Physical drive nmuber (0..) */
 )
@@ -45,15 +45,15 @@ DRESULT disk_read (
     BYTE count        /* Number of sectors to read (1..255) */
 )
 {
-    MsdMem::Read(sector, buff, count);
-    return RES_OK;
+    if(MsdMem::Read(sector, buff, count) == retv::Ok) return RES_OK;
+    else return RES_ERROR;
 }
 
 /*-----------------------------------------------------------------------*/
 /* Write Sector(s)                                                       */
-//static uint32_t IBuf[(FLASH_PAGE_SIZE / sizeof(uint32_t))];
 
 #if _READONLY == 0
+extern "C"
 DRESULT disk_write (
     BYTE drv,            /* Physical drive nmuber (0..) */
     const BYTE *buff,    /* Data to be written */
@@ -61,21 +61,14 @@ DRESULT disk_write (
     BYTE count           /* Number of sectors to write (1..255) */
 )
 {
-    // Write data sector by sector
-    while(count > 0) {
-//        memcpy(IBuf, buff, MSD_BLOCK_SZ); // Put data to definitely aligned buffer
-//        if(MSDWrite(sector, IBuf, 1) != 0) return RES_ERROR;
-//        sector++;
-//        buff += MSD_BLOCK_SZ;
-//        count--;
-    }
-    return RES_OK;
+    if(MsdMem::Write(sector, (uint8_t*)buff, count) == retv::Ok) return RES_OK;
+    else return RES_ERROR;
 }
 #endif /* _READONLY */
 
 /*-----------------------------------------------------------------------*/
 /* Miscellaneous Functions                                               */
-
+extern "C"
 DRESULT disk_ioctl (
     BYTE drv,        /* Physical drive nmuber (0..) */
     BYTE ctrl,        /* Control code */
@@ -100,6 +93,7 @@ DRESULT disk_ioctl (
   return RES_PARERR;
 }
 
+extern "C"
 DWORD get_fattime(void) {
     return ((uint32_t)0 | (1 << 16)) | (1 << 21); /* wrong but valid time */
 }

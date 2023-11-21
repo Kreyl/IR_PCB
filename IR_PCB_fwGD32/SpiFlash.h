@@ -14,6 +14,7 @@
 /* ReadData allows 50Mhz only, so it is not implemented. Read method uses
  * Fast Read instead. For voltages below 3v0, set 104MHz. */
 //#define SPIFLASH_CLK_FREQ_Hz    133000000UL // For voltages 3v0...3v6
+//#define SPIFLASH_CLK_FREQ_Hz    1000000UL // Do it unhurriedly
 #define SPIFLASH_CLK_FREQ_Hz    104000000UL // For voltages 2v7...3v0
 #define SPIFLASH_PAGE_SZ        256UL    // Defined in datasheet
 #define SPIFLASH_BLOCK32_SZ     32768UL  // 128 pages

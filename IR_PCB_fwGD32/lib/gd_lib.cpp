@@ -157,7 +157,33 @@ void SetupAlterFunc(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode_t Ou
 
 } // namespace Gpio
 
-#if 1 // =========================== I2C =======================================
+#if 1 // ============================== Watchdog ===============================
+namespace Watchdog {
+
+static inline void EnableAccess() { FWDGT->CTL = 0x5555; }
+static inline void Start() { FWDGT->CTL = 0xCCCC; }
+
+void SetTimeout(uint32_t ms) {
+    EnableAccess();
+    FWDGT->PSC = 0b111UL; // 1/256
+    uint32_t Count = (ms * (RCU_IRC40K_FREQ_Hz / 1000UL)) / 256UL;
+    if(Count > 0xFFFUL) Count = 0xFFF; // 12-bit counter
+    FWDGT->RLD = Count;
+    Reload();   // Reload and lock access
+}
+
+void InitAndStart(uint32_t ms) {
+    Clk::EnIRC40K(); // Enable clock
+    SetTimeout(ms);
+    Start();
+}
+
+void DisableInDebug() { DBGMCU->CTL |= 1UL << 8; }
+
+}; // namespace
+#endif
+
+#if I2C0_ENABLED || I2C1_ENABLED // ===================== I2C ==================
 #if I2C0_ENABLED
 i2c_t i2c0 {I2C0, I2C0_SCL, I2C0_SDA};
 #endif
@@ -662,6 +688,149 @@ void Spi_t::DisQuad() {
     PSpi->WaitForTBEHiAndTransLo();
     PSpi->QCTL = 0;
 }
+#endif
+
+#if 1 // ================= FLASH & EEPROM ====================
+#define FLASH_EraseTimeout      45
+#define FLASH_ProgramTimeout    45
+namespace Flash {
+
+void ClearPendingFlags() {
+    FMC->STAT = FMC_STAT_ENDF | FMC_STAT_WPERR | FMC_STAT_PGAERR | FMC_STAT_PGERR;
+}
+
+static retv GetStatus() {
+    if     (FMC->STAT & FMC_STAT_BUSY) return retv::Busy;
+    else if(FMC->STAT & (FMC_STAT_WPERR | FMC_STAT_PGAERR | FMC_STAT_PGERR)) return retv::Fail;
+    else return retv::Ok;
+}
+
+retv WaitForLastOperation(uint32_t Timeout_ms) {
+    retv status = retv::Ok;
+    systime_t Start = Sys::GetSysTimeX();
+    // Wait for a Flash operation to complete or a TIMEOUT to occur
+    do {
+        status = GetStatus();
+    } while((status == retv::Busy) and Sys::TimeElapsedSince(Start) < TIME_MS2I(Timeout_ms));
+    if(Timeout_ms == 0) status = retv::Timeout;
+    return status;
+}
+
+void UnlockFlash() {
+    FMC->KEY = 0x45670123;
+    FMC->KEY = 0xCDEF89AB;
+}
+void LockFlash() {
+    WaitForLastOperation(FLASH_ProgramTimeout);
+    FMC->CTL |= FMC_CTL_LK;
+}
+
+// Use Page absolute address (0x08XX XXXX)
+retv ErasePage(uint32_t PageAddress) {
+    retv status = WaitForLastOperation(FLASH_EraseTimeout);
+    if(status == retv::Ok) {
+        FMC->CTL |= FMC_CTL_PER;
+        FMC->ADDR = PageAddress; // Page absolute address (0x08XX XXXX)
+        FMC->CTL |= FMC_CTL_START;
+        // Wait for last operation to be completed
+        status = WaitForLastOperation(FLASH_EraseTimeout);
+        // Disable the PER Bit
+        FMC->CTL &= ~FMC_CTL_PER;
+    }
+    return status;
+}
+
+retv ProgramWord(uint32_t Address, uint32_t Data) {
+    retv status = WaitForLastOperation(FLASH_ProgramTimeout);
+    if(status == retv::Ok) {
+        FMC->CTL |= FMC_CTL_PG;
+        *(volatile uint32_t*)Address = Data;
+        status = WaitForLastOperation(FLASH_ProgramTimeout);
+        FMC->CTL &= ~FMC_CTL_PG;
+    }
+    return status;
+}
+
+// No more than one page at a time
+retv ProgramBuf(uint32_t *ptr, uint32_t ByteSz, uint32_t Addr) {
+    FMC->WS &= ~FMC_WS_PGW; // Clear PGW to enable 32-bit write access to Flash
+    retv status = retv::Ok;
+    uint32_t DataWordCount = (ByteSz + 3UL) / 4UL;
+    Sys::Lock();
+    UnlockFlash();
+    // Erase flash
+    ClearPendingFlags();
+    status = ErasePage(Addr);
+//    PrintfI("  Flash erase %u: %u\r", status);
+    if(status != retv::Ok) {
+        PrintfI("Flash erase error\r");
+        goto end;
+    }
+    // Program flash
+    for(uint32_t i=0; i<DataWordCount; i++) {
+        status = ProgramWord(Addr, *ptr);
+        if(status != retv::Ok) {
+            PrintfI("Flash write error\r");
+            goto end;
+        }
+        Addr += 4;
+        ptr++;
+    }
+    end:
+    LockFlash();
+    Sys::Unlock();
+    return status;
+}
+
+
+// ==== Option bytes ====
+void UnlockOptionBytes() {
+    UnlockFlash();
+    FMC->OBKEY = 0x45670123;
+    FMC->OBKEY = 0xCDEF89AB;
+}
+void LockOptionBytes() {
+    FMC->CTL &= ~FMC_CTL_OBWEN;
+    LockFlash();
+}
+
+retv WriteOptionByteSPC(uint32_t Value) {
+    FMC->WS &= ~FMC_WS_PGW; // Clear PGW to enable 32-bit write access to Flash
+    // Prepare DWORD to write: put Value to SPC and ~Value to SPC_N
+    Value = Value & 0xFFUL; // Leave LSByte only
+    uint32_t dw32 = (OPTBYTES->SPC_USER32 & 0xFFFF0000) | Value | ((Value ^ 0xFFUL) << 8);
+    ClearPendingFlags();
+    UnlockOptionBytes();
+    retv Rslt = WaitForLastOperation(FLASH_ProgramTimeout);
+    if(Rslt == retv::Ok) {
+        // Erase option bytes
+        FMC->CTL |= FMC_CTL_OBER;
+        FMC->CTL |= FMC_CTL_START;
+        Rslt = WaitForLastOperation(FLASH_ProgramTimeout);
+        FMC->CTL &= ~FMC_CTL_OBER;
+        if(Rslt == retv::Ok) {
+            FMC->CTL |= FMC_CTL_OBPG; // Enable the Option Bytes Programming operation
+            OPTBYTES->SPC_USER32 = dw32;
+            Rslt = WaitForLastOperation(FLASH_ProgramTimeout);
+            FMC->CTL &= ~FMC_CTL_OBPG; // Disable the Option Bytes Programming operation
+        }
+    }
+    LockOptionBytes();
+    LockFlash();
+    return Rslt;
+}
+
+// ==== Firmare lock ====
+bool FirmwareIsLocked() { return !(OPTBYTES->SPC == 0xA5 and OPTBYTES->SPC_N == 0x5A); }
+
+void LockFirmware() {
+    Sys::Lock();
+    WriteOptionByteSPC(0x1D); // Any value except 0xA5
+    // Set the OBL_Launch bit to reset system and launch the option byte loading
+    Sys::Unlock();
+}
+
+}; // Namespace FLASH
 #endif
 
 namespace Clk { // ======================== Clocking ===========================
