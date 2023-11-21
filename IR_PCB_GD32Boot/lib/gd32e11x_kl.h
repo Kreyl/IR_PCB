@@ -663,6 +663,8 @@ struct DBGMCU_TypeDef {
 #define RCU_IRC40K_FREQ_Hz      40000UL
 
 // Bits
+#define RCU_CTL_IRC8MEN         (1UL <<  0)
+#define RCU_CTL_IRC8MSTB        (1UL <<  1)
 #define RCU_CTL_HXTALEN         (1UL << 16)
 #define RCU_CTL_HXTALSTB        (1UL << 17)
 #define RCU_CTL_HXTALBPS        (1UL << 18)
@@ -741,6 +743,13 @@ struct RCU_TypeDef {
     volatile uint32_t ADDAPB1EN;  // E4
 
 #if 1 // ==== XTAL, PLL etc. ====
+    retv EnableIRC8M() {
+        CTL |= RCU_CTL_IRC8MEN;
+        for(uint32_t i=0; i<CLK_STARTUP_TIMEOUT; i++)
+            if(CTL & RCU_CTL_IRC8MSTB) return retv::Ok;
+        return retv::Timeout;
+    }
+
     retv EnableXTAL() {
         CTL |= RCU_CTL_HXTALEN; // Enable XTAL
         for(uint32_t i=0; i<CLK_STARTUP_TIMEOUT; i++)
@@ -762,14 +771,20 @@ struct RCU_TypeDef {
         return retv::Timeout;
     }
 
-    void DisablePll2() { CTL &= ~RCU_CTL_PLL2EN; }
-
     retv EnableIRC48M() {
         ADDCTL |= RCU_ADDCTL_IRC48MEN;
         for(uint32_t i=0; i<CLK_STARTUP_TIMEOUT; i++)
             if(ADDCTL & RCU_ADDCTL_IRC48MSTB) return retv::Ok;
         return retv::Timeout;
     }
+
+    void DisableAllClksExIrc8M() {
+        CTL &= 0x0000FFFFUL; // PLL2, PLL1, PLL, CKM, XTAL
+        ADDCTL &= ~RCU_ADDCTL_IRC48MEN;
+    }
+
+    void DisablePll2() { CTL &= ~RCU_CTL_PLL2EN; }
+
 
     void SetPllPresel_XTAL()     { CFG1 &= ~(1UL << 30); }
     void SetPllPresel_CKIRC48M() { CFG1 |=  (1UL << 30); }
@@ -794,6 +809,12 @@ struct RCU_TypeDef {
 
     // CkSys Switch
     uint32_t GetCkSwitchState() { return (CFG0 >> 2) & 0b11UL; }
+    retv Switch2IRC8M() {
+        SET_BITS(CFG0, 0b11UL, 0b00UL, 0); // Select IRC8M
+        for(uint32_t i=0; i<CLK_STARTUP_TIMEOUT; i++)
+            if(BITS_EQUAL(CFG0, 0b11UL, 0b00UL, 2)) return retv::Ok;
+        return retv::Timeout;
+    }
     retv SwitchCkSys2PLL() {
         SET_BITS(CFG0, 0b11UL, 0b10UL, 0); // Select PLL
         for(uint32_t i=0; i<CLK_STARTUP_TIMEOUT; i++)
@@ -873,6 +894,13 @@ struct RCU_TypeDef {
 #endif
 
 #if 1 // ==== Disable periperial blocks ====
+    void DisAllPeriph() {
+        AHBEN = 0;
+        APB1EN = 0;
+        APB2EN = 0;
+        ADDAPB1EN = 0;
+    }
+
     void DisUSB()  { AHBEN  &= ~(1UL << 12); }
     void DisI2C0() { APB1EN &= ~(1UL << 21); }
     void DisI2C1() { APB1EN &= ~(1UL << 22); }
@@ -896,6 +924,21 @@ struct RCU_TypeDef {
 #endif
 
 #if 1 // ==== Reset ====
+    void ResetAll() {
+        AHBRST = 0xFFFFFFFF;
+        AHBRST = 0x00000000;
+        (void)AHBRST; // Perform dummy read
+        APB1RST = 0xFFFFFFFF;
+        APB1RST = 0x00000000;
+        (void)APB1RST;
+        APB2RST = 0xFFFFFFFF;
+        APB2RST = 0x00000000;
+        (void)APB2RST;
+        ADDAPB1RST = 0xFFFFFFFF;
+        ADDAPB1RST = 0x00000000;
+        (void)ADDAPB1RST;
+    }
+
     void ResI2C0() {
         APB1RST |=  (1UL << 21);
         APB1RST &= ~(1UL << 21);
@@ -906,7 +949,6 @@ struct RCU_TypeDef {
         APB1RST &= ~(1UL << 22);
         (void)APB1RST;
     }
-
 
     void ResUSB() {
         AHBRST |=  (1UL << 12);

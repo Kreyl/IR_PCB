@@ -47,12 +47,19 @@ void RunUSB();
 
 void JumpToApp() {
     Watchdog::Reload();
-    Sys::Lock();
     __disable_irq();
-    uint32_t *p = (uint32_t*)APP_START_ADDR; // get a pointer to app
-    SCB->VTOR = APP_START_ADDR; // offset the vector table
-    __set_MSP(*p++);            // set main stack pointer to app Reset_Handler
-    ftVoidVoid app = (ftVoidVoid)(*p);
+    // Switch to IRC8MEN
+    RCU->EnableIRC8M();
+    RCU->Switch2IRC8M();
+    RCU->DisableAllClksExIrc8M();
+    // Reset everything
+    RCU->ResetAll();
+    RCU->DisAllPeriph();
+    // offset the vector table
+    SCB->VTOR = APP_START_ADDR;
+    __set_MSP(*(volatile uint32_t*)APP_START_ADDR); // set main stack pointer to app Reset_Handler
+    uint32_t JumpAddress = *(volatile uint32_t*)(APP_START_ADDR + 4);
+    ftVoidVoid app = (ftVoidVoid)JumpAddress;
     app();
     while(true); // Will not be here
 }
@@ -124,6 +131,7 @@ void main() {
     AFIO->RemapSPI0_PB345();
     SpiFlash.Init();
     SpiFlash.Reset();
+    SpiFlash.ReleasePowerDown();
     SpiFlash_t::MemParams_t mp = SpiFlash.GetParams();
     // Process Flash error situation
     if((mp.SectorCnt == 0 or mp.SectorSz == 0) and AppIsEmpty()) PrintErrorAndReboot("App empty, Flash error\r\n");
