@@ -48,8 +48,13 @@ static const int32_t sinbuf[] = {
 #define TESTING_NPX_BRT     72
 bool IsTesting = false;
 uint32_t TstIndx = 0;
-
 #endif
+
+void Reboot() {
+    // Use watchdog to reset
+    __disable_irq();
+    while(true);
+}
 
 void TestIrRxCallbackI(uint32_t Rcvd) { PrintfI("RX: 0x%X\r", Rcvd); }
 
@@ -117,6 +122,11 @@ void main(void) {
     Printf("\r%S %S\r\n", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk::PrintFreqs();
 
+    while(true) {
+        Sys::SleepMilliseconds(270);
+        Watchdog::Reload();
+    }
+
     // ==== LEDs ====
     Lumos.Init();
     Lumos.StartOrRestart(lsqFadeIn);
@@ -138,6 +148,7 @@ void main(void) {
     MsdMem::BlockCnt = mp.SectorCnt;
     MsdMem::BlockSz = mp.SectorSz;
     Printf("Flash: %u sectors of %u bytes\r", mp.SectorCnt, mp.SectorSz);
+    if(mp.SectorCnt == 0 or mp.SectorSz == 0) Reboot();
     // Init filesystem
     if(f_mount(&FlashFS, "", 0) != FR_OK) Printf("FS error\r\n");
 
@@ -230,11 +241,7 @@ void OnCmd(Shell_t *PShell) {
         TmrSecond.StartOrRestart();
     }
 
-    else if(PCmd->NameIs("Reboot")) {
-        // Use watchdog to reset
-        __disable_irq();
-        while(true);
-    }
+    else if(PCmd->NameIs("Reboot")) Reboot();
 
     // ==== App ====
     else if(PCmd->NameIs("GetSta")) {

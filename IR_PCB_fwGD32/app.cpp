@@ -251,8 +251,8 @@ void ProcessRxPkt(IRPkt_t RxPkt) {
     // Shot incoming
     else if(RxPkt.Zero == 0) {
         if(HitCnt <= 0) return; // Nothing to do when no hits left
-        if(RxPkt.PlayerID == Settings.PlayerID) return; // Ignore pkt from self
-        if(RxPkt.TeamID == Settings.TeamID) return; // Ignore friendly fire
+        // Ignore friendly fire (and pkt from self, too)
+        if(RxPkt.TeamID == Settings.TeamID) return; //
         // Ignore if not enough time passed since last hit
         if(Sys::TimeElapsedSince(PrevHitTime) < TIME_S2I(Settings.MinDelayBetwHits)) return;
         // Hit occured, decrement if not infinity
