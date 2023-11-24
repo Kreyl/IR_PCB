@@ -1,0 +1,13 @@
+1) Quartz
+2) Flash
+3) Lumos
+
+4) Audio
+5) Neopix
+6) IR TX/RX
+7) Side LEDs
+8) Front LEDs
+9) GPIO
+10) Buzzer
+
+11) USB + power
