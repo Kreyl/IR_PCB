@@ -122,11 +122,6 @@ void main(void) {
     Printf("\r%S %S\r\n", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk::PrintFreqs();
 
-    while(true) {
-        Sys::SleepMilliseconds(270);
-        Watchdog::Reload();
-    }
-
     // ==== LEDs ====
     Lumos.Init();
     Lumos.StartOrRestart(lsqFadeIn);

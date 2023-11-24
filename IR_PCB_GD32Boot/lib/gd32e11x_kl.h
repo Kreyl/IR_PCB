@@ -895,7 +895,7 @@ struct RCU_TypeDef {
 
 #if 1 // ==== Disable periperial blocks ====
     void DisAllPeriph() {
-        AHBEN = 0;
+        AHBEN = 0x14UL; // Default value
         APB1EN = 0;
         APB2EN = 0;
         ADDAPB1EN = 0;
