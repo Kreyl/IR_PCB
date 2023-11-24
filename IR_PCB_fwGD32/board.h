@@ -45,11 +45,18 @@
 // EXTI
 #define INDIVIDUAL_EXTI_IRQ_REQUIRED    FALSE
 
-// User GPIOs
+// User GPIOs. Hardware-dependent.
 #define Gpio1           PB2
 #define Gpio2           PB10
 #define Gpio3           PB11
 #define Gpio4           PA8
+
+// Usage by app
+#define Output_PulseOnHit   Gpio4
+#define Output_HitsEnded    Gpio3
+#define Input_BurstFire     Gpio1, Gpio::PullDown
+#define Input_SingleFire    Gpio2, Gpio::PullDown
+#define INPUT_DEADTIME_ms   36
 
 // UART
 #define UART_TX_PIN     PA2

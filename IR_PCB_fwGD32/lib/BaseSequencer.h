@@ -55,12 +55,11 @@ class BaseSequencer_t : private IrqHandler_t {
 protected:
     enum SequencerLoopTask_t {sltProceed, sltBreak};
     VirtualTimer_t ITmr;
-    const TChunk *IPStartChunk, *IPCurrentChunk;
+    const TChunk *IPStartChunk, *IPCurrentChunk, *INextChunk = nullptr;
     int32_t RepeatCounter = -1;
     EvtMsg_t IEvtMsg;
     virtual void ISwitchOff() = 0;
     virtual SequencerLoopTask_t ISetup() = 0;
-//    friend void VTmrUniversalCb(void* p);
     void SetupDelay(uint32_t ms) { ITmr.SetI(TIME_MS2I(ms), VTmrUniversalCb, this); }
 
     // Process sequence
@@ -82,20 +81,6 @@ protected:
                     }
                     break;
 
-                case Chunk::Goto:
-                    IPCurrentChunk = IPStartChunk + IPCurrentChunk->ChunkToJumpTo;
-                    if(IEvtMsg.ID != EvtId::None) EvtQMain.SendNowOrExitI(IEvtMsg);
-                    SetupDelay(1);
-                    return;
-                    break;
-
-                case Chunk::End:
-                    if(IEvtMsg.ID != EvtId::None) EvtQMain.SendNowOrExitI(IEvtMsg);
-                    IPStartChunk = nullptr;
-                    IPCurrentChunk = nullptr;
-                    return;
-                    break;
-
                 case Chunk::Repeat:
                     if(RepeatCounter == -1) RepeatCounter = IPCurrentChunk->RepeatCnt;
                     if(RepeatCounter == 0) {    // All was repeated, goto next
@@ -107,18 +92,45 @@ protected:
                         RepeatCounter--;
                     }
                     break;
+
+                case Chunk::Goto:
+                    IPCurrentChunk = IPStartChunk + IPCurrentChunk->ChunkToJumpTo;
+                    if(IEvtMsg.ID != EvtId::None) EvtQMain.SendNowOrExitI(IEvtMsg);
+                    SetupDelay(1);
+                    return;
+                    break;
+
+                case Chunk::End:
+                    if(IEvtMsg.ID != EvtId::None) EvtQMain.SendNowOrExitI(IEvtMsg);
+                    if(INextChunk == nullptr) { // There is nothing next
+                        IPStartChunk = nullptr;
+                        IPCurrentChunk = nullptr;
+                        return;
+                    }
+                    else { // There is something next
+                        RepeatCounter = -1;
+                        IPStartChunk = INextChunk;
+                        IPCurrentChunk = INextChunk;
+                        INextChunk = nullptr;
+                    }
+                    break;
             } // switch
         } // while
     } // IProcessSequenceI
 public:
     void SetupSeqEndEvt(EvtMsg_t AEvtMsg) { IEvtMsg = AEvtMsg; }
 
-    void StartOrRestart(const TChunk *PChunk) {
-        Sys::Lock();
+    void StartOrRestartI(const TChunk *PChunk) {
         RepeatCounter = -1;
         IPStartChunk = PChunk;   // Save first chunk
         IPCurrentChunk = PChunk;
+        INextChunk = nullptr;
         IIrqHandlerI();
+    }
+
+    void StartOrRestart(const TChunk *PChunk) {
+        Sys::Lock();
+        StartOrRestartI(PChunk);
         Sys::Unlock();
     }
 
@@ -127,17 +139,30 @@ public:
         else StartOrRestart(PChunk);
     }
 
-    void Stop() {
+    void StopI() {
         if(IPStartChunk != nullptr) {
-            Sys::Lock();
             if(ITmr.IsArmedX()) ITmr.ResetI();
             IPStartChunk = nullptr;
             IPCurrentChunk = nullptr;
-            Sys::Unlock();
+            INextChunk = nullptr;
         }
         ISwitchOff();
     }
+
+    void Stop() {
+        Sys::Lock();
+        StopI();
+        Sys::Unlock();
+    }
+
     const TChunk* GetCurrentSequence() { return IPStartChunk; }
+
+    // Next sequence will be started after current ends
+    void SetNextSequenceI(const TChunk *PChunk) {
+        if(IsIdle() and PChunk != nullptr) StartOrRestartI(PChunk);
+        else INextChunk = PChunk;
+    }
+
     bool IsIdle() { return (IPStartChunk == nullptr and IPCurrentChunk == nullptr); }
 };
 #endif

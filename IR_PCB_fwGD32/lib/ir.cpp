@@ -160,6 +160,8 @@ void Init(ftVoidU32 CallbackI) {
     TmrRx.Enable();
 }
 
+void SetCallback(ftVoidU32 CallbackI) { ICallbackI = CallbackI; }
+
 // Parsing
 static int32_t IBitCnt = -1, StopRemainder = 0; // Header not received
 static uint32_t IRxData;

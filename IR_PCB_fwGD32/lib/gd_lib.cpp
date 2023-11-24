@@ -91,7 +91,6 @@ void _exit() {
 } // extern C
 #endif // Syscalls
 
-
 namespace Random { // ======================== Random ==========================
 static uint32_t next = 1;
 
@@ -119,7 +118,6 @@ int32_t Generate(int32_t LowInclusive, int32_t HighInclusive) {
 void Seed(uint32_t Seed) { next = Seed; }
 
 } // namespace
-
 
 namespace Gpio { // ========================== GPIO ============================
 
@@ -156,6 +154,106 @@ void SetupAlterFunc(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode_t Ou
 }
 
 } // namespace Gpio
+
+#if 1 // =========================== External IRQ ==============================
+// IRQ handlers
+extern "C" {
+extern void PrintfCNow(const char *format, ...);
+
+#if INDIVIDUAL_EXTI_IRQ_REQUIRED
+IrqHandler_t* ExtiIrqHandler[16];
+#else
+ftVoidVoid ExtiIrqHandler[5], ExtiIrqHandler_9_5, ExtiIrqHandler_15_10;
+#endif // INDIVIDUAL_EXTI_IRQ_REQUIRED
+
+void EXTI0_IRQHandler() {
+    Sys::IrqPrologue();
+    Sys::LockFromIRQ();
+    ftVoidVoid handler = ExtiIrqHandler[0];
+    if(handler != nullptr) handler();
+    else PrintfC("Unhandled %S\r", __FUNCTION__);
+    EXTI->PD = 0x01UL; // Clean IRQ flags
+    Sys::UnlockFromIRQ();
+    Sys::IrqEpilogue();
+}
+
+void EXTI1_IRQHandler() {
+    Sys::IrqPrologue();
+    Sys::LockFromIRQ();
+    ftVoidVoid handler = ExtiIrqHandler[1];
+    if(handler != nullptr) handler();
+    else PrintfC("Unhandled %S\r", __FUNCTION__);
+    EXTI->PD = 0x02UL; // Clean IRQ flags
+    Sys::UnlockFromIRQ();
+    Sys::IrqEpilogue();
+}
+
+void EXTI2_IRQHandler() {
+    Sys::IrqPrologue();
+    Sys::LockFromIRQ();
+    ftVoidVoid handler = ExtiIrqHandler[2];
+    if(handler != nullptr) handler();
+    else PrintfC("Unhandled %S\r", __FUNCTION__);
+    EXTI->PD = 0x04UL; // Clean IRQ flags
+    Sys::UnlockFromIRQ();
+    Sys::IrqEpilogue();
+}
+
+void EXTI3_IRQHandler() {
+    Sys::IrqPrologue();
+    Sys::LockFromIRQ();
+    ftVoidVoid handler = ExtiIrqHandler[3];
+    if(handler != nullptr) handler();
+    else PrintfC("Unhandled %S\r", __FUNCTION__);
+    EXTI->PD = 0x08UL; // Clean IRQ flags
+    Sys::UnlockFromIRQ();
+    Sys::IrqEpilogue();
+}
+
+void EXTI4_IRQHandler() {
+    Sys::IrqPrologue();
+    Sys::LockFromIRQ();
+    ftVoidVoid handler = ExtiIrqHandler[4];
+    if(handler != nullptr) handler();
+    else PrintfC("Unhandled %S\r", __FUNCTION__);
+    EXTI->PD = 0x10UL; // Clean IRQ flags
+    Sys::UnlockFromIRQ();
+    Sys::IrqEpilogue();
+}
+
+void EXTI5_9_IRQHandler() {
+    Sys::IrqPrologue();
+    Sys::LockFromIRQ();
+#if INDIVIDUAL_EXTI_IRQ_REQUIRED
+    for(int i=5; i<=9; i++) {
+        if(ExtiIrqHandler[i] != nullptr) ExtiIrqHandler[i]->IIrqHandler();
+    }
+#else
+    if(ExtiIrqHandler_9_5 != nullptr) ExtiIrqHandler_9_5();
+    else PrintfC("Unhandled %S\r", __FUNCTION__);
+#endif
+    EXTI->PD = 0x03E0UL; // Clean IRQ flags
+    Sys::UnlockFromIRQ();
+    Sys::IrqEpilogue();
+}
+
+void EXTI10_15_IRQHandler() {
+    Sys::IrqPrologue();
+    Sys::LockFromIRQ();
+#if INDIVIDUAL_EXTI_IRQ_REQUIRED
+    for(int i=10; i<=15; i++) {
+        if(ExtiIrqHandler[i] != nullptr) ExtiIrqHandler[i]->IIrqHandler();
+    }
+#else
+    if(ExtiIrqHandler_15_10 != nullptr) ExtiIrqHandler_15_10();
+    else PrintfC("Unhandled %S\r", __FUNCTION__);
+#endif
+    EXTI->PD = 0xFC00; // Clean IRQ flags
+    Sys::UnlockFromIRQ();
+    Sys::IrqEpilogue();
+}
+} // extern c
+#endif // EXTI
 
 #if 1 // ============================== Watchdog ===============================
 namespace Watchdog {

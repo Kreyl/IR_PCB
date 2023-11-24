@@ -21,3 +21,19 @@ void OnMSDDataIn() {
     if(PMsdThd and PMsdThd->state == ThdState::Sleeping) Sys::WakeI(&PMsdThd, retv::New);
 }
 
+
+==== Virtual Timer example ====
+void VTimCallback(void *p) {
+   ... 
+}
+
+VirtualTimer_t vt; 
+uint32_t MyParam;
+
+Starting:
+vt.Set(TIME_MS2I(99), VTimCallback, (void*)MyParam);
+
+==== PWM output ====
+#define LED_R_PIN { GPIOB, 1, TIM3, 4, invInverted, omPushPull, 255 }
+PinOutputPWM_t Led {LedPin};
+

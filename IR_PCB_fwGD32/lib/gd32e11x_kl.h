@@ -284,10 +284,7 @@ struct GPIO_TypeDef {
 struct AFIO_TypeDef {
     volatile uint32_t EC;      /*!< 0x00 AFIO event control register */
     volatile uint32_t PCF0;    /*!< 0x04 AFIO port configuration register 0 */
-    volatile uint32_t EXTISS0; /*!< 0x08 AFIO port EXTI sources selection register 0 */
-    volatile uint32_t EXTISS1; /*!< 0x0C AFIO port EXTI sources selection register 1 */
-    volatile uint32_t EXTISS2; /*!< 0x10 AFIO port EXTI sources selection register 2 */
-    volatile uint32_t EXTISS3; /*!< 0x14 AFIO port EXTI sources selection register 3 */
+    volatile uint32_t EXTISS[4]; /*!< 0x08..0x14 AFIO port EXTI sources selection register 0..3 */
     volatile uint32_t _Reserved; // 0x18
     volatile uint32_t PCF1;    /*!< 0x1C AFIO port configuration register 1 */
     volatile uint32_t CPSCTL;  /*!< 0x20 AFIO IO compensation control register */
@@ -301,9 +298,22 @@ struct AFIO_TypeDef {
     void RemapTim2_PB4501() { SET_BITS(PCF0, 0b11UL, 0b10UL, 10); } // PB 4,5,0,1
     void RemapTim2_PC6789() { PCF0 |= 0b11UL << 10; } // PC 6,7,8,9
 };
-#define AFIO   ((AFIO_TypeDef*)AFIO_BASE)
 
+#define AFIO   ((AFIO_TypeDef*)AFIO_BASE)
 #endif // GPIO
+
+#if 1 // =========================== EXTI ======================================
+struct EXTI_TypeDef {
+    volatile uint32_t INTEN; /*!< 0x00 Interrupt enable register */
+    volatile uint32_t EVEN;  /*!< 0x04 Event enable register */
+    volatile uint32_t RTEN;  /*!< 0x08 Rising edge trigger enable register */
+    volatile uint32_t FTEN;  /*!< 0x0C Falling edge trigger enable register */
+    volatile uint32_t SWIEV; /*!< 0x10 Software interrupt event register */
+    volatile uint32_t PD;    /*!< 0x14 Pending register */
+};
+
+#define EXTI    ((EXTI_TypeDef*) EXTI_BASE)
+#endif // EXTI
 
 #if 1 // =========================== UART ======================================
 /* USARTx_STAT0 */
@@ -522,8 +532,6 @@ struct TIM_TypeDef {
 #endif // timer
 
 #if 1 // ======================= Free Watchdog =================================
-
-
 struct FWDGT_TypeDef {
     volatile uint32_t CTL;  // 0x00 Control register
     volatile uint32_t PSC;  // 0x04 Prescaler register
@@ -1118,7 +1126,6 @@ struct FMC_TypeDef {
 #endif
 
 #if 1 // ======================= Option Bytes ==================================
-
 struct OPTB_Typedef {
     union {
         volatile uint32_t SPC_USER32;
@@ -1129,7 +1136,6 @@ struct OPTB_Typedef {
             volatile uint8_t USER_N;
         };
     };
-
 };
 
 #define OPTBYTES    ((OPTB_Typedef*)OB_BASE)
@@ -1648,7 +1654,6 @@ struct ADC_TypeDef {
 #endif
 
 #if 1 // ============================== DAC ====================================
-
 struct DAC_TypeDef {
     volatile uint32_t CTL;        /*!< Control register,                        0x00 */
     volatile uint32_t SWT;        /*!< Software trigger register,               0x04 */

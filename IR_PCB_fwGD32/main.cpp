@@ -3,7 +3,6 @@
 #include "yartos.h"
 #include "MsgQ.h"
 #include "usb_msdcdc.h"
-#include "usb.h"
 #include "SpiFlash.h"
 #include "led.h"
 #include "beeper.h"
@@ -12,6 +11,9 @@
 #include "ws2812bTim.h"
 #include "max98357.h"
 #include "mem_msd_glue.h"
+#include "Settings.h"
+#include "kl_fs_utils.h"
+#include "app.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
@@ -30,6 +32,7 @@ Neopixels_t NpxLeds{&NParams};
 Beeper_t Beeper {BEEPER_PIN};
 
 SpiFlash_t SpiFlash(SPI0);
+FATFS FlashFS;
 
 EvtTimer_t TmrUartCheck(TIME_MS2I(UART_RX_POLL_MS), EvtId::UartCheckTime, EvtTimer_t::Type::Periodic);
 EvtTimer_t TmrSecond(TIME_MS2I(999), EvtId::EverySecond, EvtTimer_t::Type::Periodic);
@@ -48,19 +51,16 @@ uint32_t TstIndx = 0;
 
 #endif
 
-void IrRxCallbackI(uint32_t Rcvd) {
-    if(IsTesting) PrintfI("RX: 0x%X\r", Rcvd);
-}
+void TestIrRxCallbackI(uint32_t Rcvd) { PrintfI("RX: 0x%X\r", Rcvd); }
 
 void I2SDmaDoneCbI() {
     if(IsTesting and TstIndx == 0) {
         Codec::TransmitBuf((void*)sinbuf, SIN_SZ);
     }
-//    PrintfI("aga\r");
 }
 
 static inline void InitClk() {
-    // Start initialization
+    // Initial initialization
     FMC->EnableCashAndPrefetch();
     RCU->EnPwrMgmtUnit();
     FMC->SetLatency(50); // 50 MHz required for NPX LEDs
@@ -106,31 +106,31 @@ static inline void InitClk() {
 void main(void) {
     Watchdog::InitAndStart(999);
     InitClk();
-    // Init peripheral
+    // ==== Disable JTAG ====
     RCU->EnAFIO();
     AFIO->DisableJtagDP(); // Disable JTAG, leaving SWD. Otherwise PB3 & PB4 are occupied by JTDO & JTRST
-    Uart.Init();
 
-    // RTOS & Event queue
+    // ==== UART, RTOS & Event queue ====
+    Uart.Init();
     Sys::Init();
     EvtQMain.Init();
     Printf("\r%S %S\r\n", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk::PrintFreqs();
 
-    Beeper.Init();
-//    Beeper.StartOrRestart(bsqShot);
-
-    // LEDs
-    for(auto &Led : SideLEDs) Led.Init();
-    for(auto &Led : FrontLEDs) Led.Init();
+    // ==== LEDs ====
     Lumos.Init();
     Lumos.StartOrRestart(lsqFadeIn);
-
+    for(auto &Led : SideLEDs) Led.Init();
+    for(auto &Led : FrontLEDs) Led.Init();
     NpxLeds.Init();
     NpxLeds.SetAll(clBlack);
     NpxLeds.SetCurrentColors();
 
-    // Spi Fplash and Msd glue
+    // ==== Audio ====
+    Codec::Init();
+    Beeper.Init();
+
+    // ==== Spi Flash, MsdGlue, filesystem ====
     AFIO->RemapSPI0_PB345();
     SpiFlash.Init();
     SpiFlash.Reset();
@@ -138,18 +138,23 @@ void main(void) {
     MsdMem::BlockCnt = mp.SectorCnt;
     MsdMem::BlockSz = mp.SectorSz;
     Printf("Flash: %u sectors of %u bytes\r", mp.SectorCnt, mp.SectorSz);
-//    SpiFlash.ReleasePowerDown();
+    // Init filesystem
+    if(f_mount(&FlashFS, "", 0) != FR_OK) Printf("FS error\r\n");
 
+    // ==== USB ====
     UsbMsdCdc.Init();
     UsbMsdCdc.Connect();
-    Codec::Init();
 
+    // ==== IR ====
     irLed::Init();
     irRcvr::Init(IrRxCallbackI);
 
-    TmrUartCheck.StartOrRestart();
+    // ==== App ====
+    Settings.Load();
+    AppInit();
 
-    // Main evt cycle
+    // ==== Main evt cycle ====
+    TmrUartCheck.StartOrRestart();
     while(true) {
         EvtMsg_t Msg = EvtQMain.Fetch(TIME_INFINITE);
         switch(Msg.ID) {
@@ -163,9 +168,8 @@ void main(void) {
                 break;
 
             case EvtId::EverySecond:
-                Printf("1S %u\r");
                 if(IsTesting) {
-                    // Set Npx color
+                    // Npx
                     switch(TstIndx) {
                         case 0: NpxLeds.SetAll({TESTING_NPX_BRT, 0, 0}); break;
                         case 1: NpxLeds.SetAll({0, TESTING_NPX_BRT, 0}); break;
@@ -195,7 +199,7 @@ void main(void) {
 
             case EvtId::UsbReady:
                 Printf("Usb ready\r");
-//                CTC->Enable(); // Start autotrimming of IRC48M
+                CTC->Enable(); // Start autotrimming of IRC48M
                 break;
 
             default: break;
@@ -211,6 +215,7 @@ void OnCmd(Shell_t *PShell) {
 
     else if(PCmd->NameIs("Test")) {
         IsTesting = true;
+        irRcvr::SetCallback(TestIrRxCallbackI);
         // Gpios
         Gpio::SetupOut(Gpio1, Gpio::PushPull, Gpio::speed2MHz);
         Gpio::SetupOut(Gpio2, Gpio::PushPull, Gpio::speed2MHz);
@@ -231,41 +236,90 @@ void OnCmd(Shell_t *PShell) {
         while(true);
     }
 
-    else if(PCmd->NameIs("conn")) {
-        UsbMsdCdc.Connect();
-        PShell->Ok();
+    // ==== App ====
+    else if(PCmd->NameIs("GetSta")) {
+        Printf("Hits: %d; Rnds: %d; mgzs: %d\r", HitCnt, RoundsCnt, MagazinesCnt);
     }
-    else if(PCmd->NameIs("dsc")) {
-        UsbMsdCdc.Disconnect();
+    else if(PCmd->NameIs("Restore")) {
+        Reset();
         PShell->Ok();
     }
 
-    else if(PCmd->NameIs("IRTX")) {
-        uint16_t w, Pwr;
-        if(PCmd->GetParams<uint16_t>(2, &w, &Pwr) == retv::Ok) {
-            irLed::TransmitWord(w, 16, Pwr, nullptr);
-            PShell->Ok();
+    else if(PCmd->NameIs("GetSettings")) {
+        Value_t *Arr = (Value_t*)&Settings;
+        for(uint32_t i=0; i<SETTINGS_CNT; i++, Arr++) {
+            Printf("%*S = %4u; Min = %u; Max = %4u; default = %4u\r\n",
+                    16, Arr->Name, Arr->v, Arr->Min, Arr->Max, Arr->Default);
         }
-        else PShell->BadParam();
     }
 
-//    else if(PCmd->NameIs("I2STX")) {
-//        Proceed = false;
-//        uint32_t w;
-//        if(PCmd->GetNext(&w) == retv::Ok) {
-//            if(Codec::SetupSampleRate(w) == retv::Ok) {
-//                Codec::I2SDmaDoneCbI = I2SDmaDoneCbI;
-//                Proceed = true;
-//                Codec::TransmitBuf((void*)sinbuf, SIN_SZ);
-//                PShell->Ok();
-//            }
-//            else PShell->Failure();
+    else if(PCmd->NameIs("Set")) {
+        const char* Name;
+        uint32_t v, N = 0;
+        bool Found;
+        // Get pairs of values
+        while((((Name = PCmd->GetNextString()) != nullptr) and PCmd->GetNext(&v) == retv::Ok)) {
+            Found = false;
+            Value_t *Arr = (Value_t*)&Settings;
+            for(uint32_t i=0; i<SETTINGS_CNT; i++, Arr++) { // Find by name
+                if(kl_strcasecmp(Name, Arr->Name) == 0) {
+                    if(Arr->CheckAndSetIfOk(v)) {
+                        Printf("%S = %u\r\n", Name, v);
+                        N++;
+                        Found = true;
+                        break;
+                    }
+                    else {
+                        Printf("%S BadValue: %u\r\n", Name, v);
+                        return;
+                    }
+                } // if
+            } // for
+            if(!Found) {
+                Printf("BadName: %S\r\n", Name);
+                break;
+            }
+        } // while
+        Printf("Set %u values\r\n", N);
+        Reset();
+    }
+
+    else if(PCmd->NameIs("SaveSettings")) {
+        if(Settings.Save() == retv::Ok) Printf("Saved\r\n");
+        else Printf("Saving fail\r\n");
+    }
+
+    else if(PCmd->NameIs("LoadSettings")) {
+        Settings.Load();
+        Reset();
+    }
+
+    // ==== Debug ====
+    else if(PCmd->NameIs("CtrlSet")) {
+        uint32_t In[2] = { 0, 0, };
+        for(int i=0; i<2; i++) {
+            if(PCmd->GetNext(&In[i]) != retv::Ok) break;
+        }
+        SetInputs(In);
+        PShell->Ok();
+    }
+
+    else if(PCmd->NameIs("irtx")) {
+        uint32_t Word, Pwr, BitCnt;
+        if(PCmd->GetNext(&Word) != retv::Ok) { PShell->BadParam(); return; }
+        if(PCmd->GetNext(&BitCnt) != retv::Ok) { PShell->BadParam(); return; }
+        if(PCmd->GetNext(&Pwr) != retv::Ok) { PShell->BadParam(); return; }
+        irLed::TransmitWord(Word, BitCnt, Pwr, nullptr);
+        PShell->Ok();
+    }
+
+//    else if(PCmd->NameIs("IRTX")) {
+//        uint16_t w, Pwr;
+//        if(PCmd->GetParams<uint16_t>(2, &w, &Pwr) == retv::Ok) {
+//            irLed::TransmitWord(w, 16, Pwr, nullptr);
+//            PShell->Ok();
 //        }
 //        else PShell->BadParam();
-//    }
-
-//    else if(PCmd->NameIs("stop")) {
-//        Proceed = false;
 //    }
 
     else if(PCmd->NameIs("Npx")) {

@@ -37,5 +37,6 @@ namespace irLed {
 
 namespace irRcvr {
     void Init(ftVoidU32 CallbackI);
+    void SetCallback(ftVoidU32 CallbackI);
 } // namespace
 #endif

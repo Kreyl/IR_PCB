@@ -301,6 +301,96 @@ struct PwmSetup_t {
                     TopValue(ATopValue) {}
 };
 
+#if 1 // =========================== External IRQ ==============================
+enum ExtiTrigType_t {ttRising, ttFalling, ttRisingFalling};
+
+/* Make your class descendant of IrqHandler_t:
+class cc1101_t : public IrqHandler_t {
+    const PinIrq_t IGdo0;
+    void IIrqHandler() { ... }
+    cc1101_t(...) ... IGdo0(APGpio, AGdo0, pudNone, this), ...
+}
+    ...IGdo0.Init(ttFalling);
+    ...IGdo0.EnableIrq(IRQ_PRIO_HIGH);
+*/
+
+// Pin to IRQ channel
+#define PIN2IRQ_CHNL(Pin)   (IRQn_Type)(((Pin) > 9)? EXTI10_15_IRQn : (((Pin) > 4)? EXTI5_9_IRQn : ((Pin) + EXTI0_IRQn)))
+
+// IRQ handlers
+extern "C" {
+#if INDIVIDUAL_EXTI_IRQ_REQUIRED
+extern IrqHandler_t *ExtiIrqHandler[16];
+#else
+extern ftVoidVoid ExtiIrqHandler[5], ExtiIrqHandler_9_5, ExtiIrqHandler_15_10;
+#endif // INDIVIDUAL_EXTI_IRQ_REQUIRED
+}
+
+class PinIrq_t {
+public:
+    GPIO_TypeDef *PGpio;
+    uint16_t PinN;
+    Gpio::PullUpDown_t PullUpDown;
+    PinIrq_t(GPIO_TypeDef *APGpio, uint16_t APinN, Gpio::PullUpDown_t APullUpDown, ftVoidVoid PIrqHandler) :
+        PGpio(APGpio), PinN(APinN), PullUpDown(APullUpDown) {
+#if INDIVIDUAL_EXTI_IRQ_REQUIRED
+        ExtiIrqHandler[APinN] = PIrqHandler;
+#else
+        if(APinN >= 0 and APinN <= 4) ExtiIrqHandler[APinN] = PIrqHandler;
+        else if(APinN <= 9) ExtiIrqHandler_9_5 = PIrqHandler;
+        else ExtiIrqHandler_15_10 = PIrqHandler;
+#endif // INDIVIDUAL_EXTI_IRQ_REQUIRED
+    }
+
+    bool IsHi() const { return Gpio::IsHi(PGpio, PinN); }
+
+    void SetTriggerType(ExtiTrigType_t ATriggerType) const {
+        uint32_t IrqMsk = 1 << PinN;
+        switch(ATriggerType) {
+            case ttRising:
+                EXTI->RTEN |=  IrqMsk;  // Rising trigger enabled
+                EXTI->FTEN &= ~IrqMsk;  // Falling trigger disabled
+                break;
+            case ttFalling:
+                EXTI->RTEN &= ~IrqMsk;  // Rising trigger disabled
+                EXTI->FTEN |=  IrqMsk;  // Falling trigger enabled
+                break;
+            case ttRisingFalling:
+                EXTI->RTEN |=  IrqMsk;  // Rising trigger enabled
+                EXTI->FTEN |=  IrqMsk;  // Falling trigger enabled
+                break;
+        } // switch
+    }
+
+    // ttRising, ttFalling, ttRisingFalling
+    void Init(ExtiTrigType_t ATriggerType) const {
+        // Init pin as input
+        Gpio::SetupInput(PGpio, PinN, PullUpDown);
+        // Connect EXTI line to the pin of the port
+        uint32_t Indx   = PinN / 4;            // Indx of EXTICR register
+        uint32_t Offset = (PinN & 0x03UL) * 4; // Offset in EXTICR register
+        // Clear bits
+        AFIO->EXTISS[Indx] &= ~(0b1111UL << Offset);
+        // GPIOA requires all zeroes
+        if     (PGpio == GPIOB) AFIO->EXTISS[Indx] |= 1UL << Offset;
+        else if(PGpio == GPIOC) AFIO->EXTISS[Indx] |= 2UL << Offset;
+        else if(PGpio == GPIOD) AFIO->EXTISS[Indx] |= 3UL << Offset;
+        else if(PGpio == GPIOE) AFIO->EXTISS[Indx] |= 4UL << Offset;
+        // Configure EXTI line
+        uint32_t IrqMsk = 1 << PinN;
+        EXTI->INTEN  |=  IrqMsk;      // Interrupt mode enabled
+        EXTI->EVEN  &= ~IrqMsk;      // Event mode disabled
+        SetTriggerType(ATriggerType);
+        EXTI->PD     =  IrqMsk;      // Clean irq flag
+    }
+    void EnableIrq(const uint32_t Priority) const { Nvic::EnableVector(PIN2IRQ_CHNL(PinN), Priority); }
+    void DisableIrq() const { Nvic::DisableVector(PIN2IRQ_CHNL(PinN)); }
+    void CleanIrqFlag() const { EXTI->PD = (1 << PinN); }
+    bool IsIrqPending() const { return EXTI->PD & (1 << PinN); }
+    void GenerateIrq()  const { EXTI->SWIEV = (1 << PinN); }
+};
+#endif // EXTI
+
 #if 1 // ============================== Watchdog ===============================
 namespace Watchdog {
 // Up to 32000 ms
