@@ -222,10 +222,18 @@ void RunUSB() {
     }
 }
 
+void Reboot() {
+    // Use watchdog to reset
+    __disable_irq();
+    while(true);
+}
+
 void OnCmd(Shell_t *PShell) {
     Cmd_t *PCmd = &PShell->Cmd;
     if(PCmd->NameIs("Ping")) PShell->Ok();
     else if(PCmd->NameIs("Version")) PShell->Print("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
+
+    else if(PCmd->NameIs("Reboot")) Reboot();
 
     else PShell->CmdUnknown();
 }
