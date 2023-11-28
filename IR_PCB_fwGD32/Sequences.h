@@ -220,6 +220,12 @@ const BeepChunk_t bsqHitsEnded[] = {
         {Chunk::End}
 };
 
+const BeepChunk_t bsqBeep[] = {
+        {Chunk::Setup, 1, 1975},
+        {Chunk::Wait, 54},
+        {Chunk::Setup, 0},
+        {Chunk::End}
+};
 const BeepChunk_t bsqBeepBeep[] = {
         {Chunk::Setup, BEEP_VOLUME, 1975},
         {Chunk::Wait, 54},

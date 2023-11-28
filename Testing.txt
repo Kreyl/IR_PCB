@@ -10,4 +10,6 @@
 9) GPIO
 10) Buzzer
 
+FULL FW
+
 11) USB + power

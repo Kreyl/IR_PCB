@@ -35,7 +35,7 @@ SpiFlash_t SpiFlash(SPI0);
 FATFS FlashFS;
 
 EvtTimer_t TmrUartCheck(TIME_MS2I(UART_RX_POLL_MS), EvtId::UartCheckTime, EvtTimer_t::Type::Periodic);
-EvtTimer_t TmrSecond(TIME_MS2I(999), EvtId::EverySecond, EvtTimer_t::Type::Periodic);
+EvtTimer_t TmrSecond(TIME_MS2I(540), EvtId::EverySecond, EvtTimer_t::Type::Periodic);
 
 // Testing variables
 static const int32_t sinbuf[] = {
@@ -108,6 +108,8 @@ static inline void InitClk() {
     Clk::UpdateFreqValues();
 }
 
+bool Beeped = false;
+
 void main(void) {
     Watchdog::InitAndStart(999);
     InitClk();
@@ -156,8 +158,8 @@ void main(void) {
     irRcvr::Init(IrRxCallbackI);
 
     // ==== App ====
-    Settings.Load();
-    AppInit();
+//    Settings.Load();
+//    AppInit();
 
     // ==== Main evt cycle ====
     TmrUartCheck.StartOrRestart();
@@ -196,7 +198,10 @@ void main(void) {
                     Gpio::Set(Gpio3, TstIndx == 2);
                     Gpio::Set(Gpio4, TstIndx == 3);
                     // Buzzer
-                    if(TstIndx == 0) Beeper.StartOrRestart(bsqShot);
+                    if(TstIndx == 0 and !Beeped) {
+                        Beeper.StartOrRestart(bsqBeepBeep);
+                        Beeped = true;
+                    }
                     // Increment TstIndx
                     if(TstIndx < 3) TstIndx++;
                     else TstIndx = 0;
@@ -221,6 +226,7 @@ void OnCmd(Shell_t *PShell) {
 
     else if(PCmd->NameIs("Test")) {
         IsTesting = true;
+        Beeped = false;
         irRcvr::SetCallback(TestIrRxCallbackI);
         // Gpios
         Gpio::SetupOut(Gpio1, Gpio::PushPull, Gpio::speed2MHz);

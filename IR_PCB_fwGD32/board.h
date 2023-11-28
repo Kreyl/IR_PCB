@@ -10,7 +10,7 @@
 
 // ==== General ====
 #define BOARD_NAME          "IR_PCBv3"
-#define APP_NAME            "IR_PCB"
+#define APP_NAME            "Testing"
 
 #ifndef TRUE
 #define TRUE    1
