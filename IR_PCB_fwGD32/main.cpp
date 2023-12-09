@@ -246,7 +246,7 @@ void OnCmd(Shell_t *PShell) {
 
     // ==== App ====
     else if(PCmd->NameIs("GetSta")) {
-        Printf("Hits: %d; Rnds: %d; mgzs: %d\r", HitCnt, RoundsCnt, MagazinesCnt);
+        PShell->Print("Hits: %d; Rnds: %d; mgzs: %d\r", HitCnt, RoundsCnt, MagazinesCnt);
     }
     else if(PCmd->NameIs("Restore")) {
         Reset();
@@ -256,7 +256,7 @@ void OnCmd(Shell_t *PShell) {
     else if(PCmd->NameIs("GetSettings")) {
         Value_t *Arr = (Value_t*)&Settings;
         for(uint32_t i=0; i<SETTINGS_CNT; i++, Arr++) {
-            Printf("%*S = %4u; Min = %u; Max = %4u; default = %4u\r\n",
+            PShell->Print("%*S = %4u; Min = %u; Max = %4u; default = %4u\r\n",
                     16, Arr->Name, Arr->v, Arr->Min, Arr->Max, Arr->Default);
         }
     }
@@ -272,29 +272,29 @@ void OnCmd(Shell_t *PShell) {
             for(uint32_t i=0; i<SETTINGS_CNT; i++, Arr++) { // Find by name
                 if(kl_strcasecmp(Name, Arr->Name) == 0) {
                     if(Arr->CheckAndSetIfOk(v)) {
-                        Printf("%S = %u\r\n", Name, v);
+                        PShell->Print("%S = %u\r\n", Name, v);
                         N++;
                         Found = true;
                         break;
                     }
                     else {
-                        Printf("%S BadValue: %u\r\n", Name, v);
+                        PShell->Print("%S BadValue: %u\r\n", Name, v);
                         return;
                     }
                 } // if
             } // for
             if(!Found) {
-                Printf("BadName: %S\r\n", Name);
+                PShell->Print("BadName: %S\r\n", Name);
                 break;
             }
         } // while
-        Printf("Set %u values\r\n", N);
+        PShell->Print("Set %u values\r\n", N);
         Reset();
     }
 
     else if(PCmd->NameIs("SaveSettings")) {
-        if(Settings.Save() == retv::Ok) Printf("Saved\r\n");
-        else Printf("Saving fail\r\n");
+        if(Settings.Save() == retv::Ok) PShell->Print("Saved\r\n");
+        else PShell->Print("Saving fail\r\n");
     }
 
     else if(PCmd->NameIs("LoadSettings")) {
