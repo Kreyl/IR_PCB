@@ -12,7 +12,8 @@ enum class EvtId : uint8_t {
     None = 0, // Always
 
     UartCheckTime,
-    EverySecond,
+
+    TestingTime,
 
     // Usb
     UsbConnect,

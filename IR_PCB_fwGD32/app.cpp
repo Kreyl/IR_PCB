@@ -18,6 +18,7 @@
 
 int32_t HitCnt, RoundsCnt, MagazinesCnt;
 extern Beeper_t Beeper;
+extern bool IsTesting;
 
 #if 1 // ========================== Message queue ==============================
 enum class AppEvt : uint16_t {
@@ -333,7 +334,11 @@ static THD_WORKSPACE(waAppThread, 256);
 static void AppThread() {
     while(true) {
         AppMsg_t Msg = EvtQ.Fetch(TIME_INFINITE);
-        // Will be here when new Evt occur
+        if(IsTesting) { // Sleep if testing
+            Sys::SleepMilliseconds(999);
+            continue;
+        }
+        // Will be here when new Evt occur and if not in testing mode
         if(Msg.Evt == AppEvt::Reset) Reset();
         else if(Msg.Evt == AppEvt::IrRx) ProcessRxPkt(IRPkt_t(Msg.Data16));
         else if(HitCnt > 0) switch(Msg.Evt) { // Do nothing if no hits left

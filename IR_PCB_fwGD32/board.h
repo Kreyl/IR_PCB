@@ -10,7 +10,7 @@
 
 // ==== General ====
 #define BOARD_NAME          "IR_PCBv3"
-#define APP_NAME            "Testing"
+#define APP_NAME            "IR_PCB"
 
 #ifndef TRUE
 #define TRUE    1
@@ -121,7 +121,7 @@
 #if 1 // ==== USB ====
 #define USB_SOF_CB_EN       FALSE // SOF callback not used
 #define USB_IRQ_PRIO        14
-#define USB_TXBUF_CNT       4   // 4 buffers of size=EP_BULK_SZ each
+#define USB_TXBUF_CNT       16   // 16 buffers of size=EP_BULK_SZ=64 each results in 1024 bytes total
 // Crystalless mode: IRC48M utilized, it syncs using SOF pulses at PA8. Therefore, PA8 is occupied.
 #define USB_CRYSTALLESS_EN  TRUE
 // Next options: set to 1U if enabled, 0U if disabled. Required for Setup Request reply.

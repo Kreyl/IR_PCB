@@ -35,7 +35,7 @@ SpiFlash_t SpiFlash(SPI0);
 FATFS FlashFS;
 
 EvtTimer_t TmrUartCheck(TIME_MS2I(UART_RX_POLL_MS), EvtId::UartCheckTime, EvtTimer_t::Type::Periodic);
-EvtTimer_t TmrSecond(TIME_MS2I(540), EvtId::EverySecond, EvtTimer_t::Type::Periodic);
+EvtTimer_t TmrTesting(TIME_MS2I(540), EvtId::TestingTime, EvtTimer_t::Type::Periodic);
 
 // Testing variables
 static const int32_t sinbuf[] = {
@@ -158,8 +158,8 @@ void main(void) {
     irRcvr::Init(IrRxCallbackI);
 
     // ==== App ====
-//    Settings.Load();
-//    AppInit();
+    Settings.Load();
+    AppInit();
 
     // ==== Main evt cycle ====
     TmrUartCheck.StartOrRestart();
@@ -175,7 +175,7 @@ void main(void) {
                 while(UsbMsdCdc.TryParseRxBuff() == retv::Ok) OnCmd((Shell_t*)&UsbMsdCdc);
                 break;
 
-            case EvtId::EverySecond:
+            case EvtId::TestingTime:
                 if(IsTesting) {
                     // Npx
                     switch(TstIndx) {
@@ -224,6 +224,22 @@ void OnCmd(Shell_t *PShell) {
     if(PCmd->NameIs("Ping")) PShell->Ok();
     else if(PCmd->NameIs("Version")) PShell->Print("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
 
+    else if(PCmd->NameIs("Print")) {
+        uint32_t N;
+        if(PCmd->GetNext(&N) == retv::Ok) {
+            uint32_t i = 1;
+            uint32_t N10 = N / 10;
+            while(N10--) {
+                PShell->Print("%08u\r\n", i++);
+                N -= 10;
+            }
+            i = 1;
+            while(N--) PShell->Print("%u", i++);
+//            PShell->PrintEOL();
+        }
+        else PShell->BadParam();
+    }
+
     else if(PCmd->NameIs("Test")) {
         IsTesting = true;
         Beeped = false;
@@ -239,7 +255,7 @@ void OnCmd(Shell_t *PShell) {
             Codec::TransmitBuf((void*)sinbuf, SIN_SZ);
         }
         else Printf("FS setup fail\r");
-        TmrSecond.StartOrRestart();
+        TmrTesting.StartOrRestart();
     }
 
     else if(PCmd->NameIs("Reboot")) Reboot();

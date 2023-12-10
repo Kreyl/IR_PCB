@@ -248,19 +248,23 @@ void Usb::EventCallback(Usb::Evt event) {
 #if 1 // =========================== CDC =======================================
 retv UsbMsdCdc_t::IPutChar(char c) {
     if(!Usb::IsActive()) return retv::Disconnected;
+    Sys::Lock();
     retv r = CdcInBuf.Put(c);
     if(CdcInBuf.IsFullBufPresent() and !Usb::IsEpTransmitting(EP_CDC_DATA)) { // New buffer is full
         BufType_t<uint8_t> buf = CdcInBuf.GetAndLockBuf();
-        Usb::StartTransmit(EP_CDC_DATA, buf.Ptr, buf.Sz);
+        Usb::StartTransmitI(EP_CDC_DATA, buf.Ptr, buf.Sz);
     }
+    Sys::Unlock();
     return r;
 }
 
 void UsbMsdCdc_t::IStartTransmissionIfNotYet() {
     // Start tx if it has not already started and if buf is not empty.
     if(Usb::IsActive() and !Usb::IsEpTransmitting(EP_CDC_DATA) and !CdcInBuf.IsEmpty()) {
+        Sys::Lock();
         BufType_t<uint8_t> buf = CdcInBuf.GetAndLockBuf();
-        Usb::StartTransmit(EP_CDC_DATA, buf.Ptr, buf.Sz);
+        Usb::StartTransmitI(EP_CDC_DATA, buf.Ptr, buf.Sz);
+        Sys::Unlock();
     }
 }
 
@@ -349,7 +353,7 @@ static uint32_t Buf32[(MSD_DATABUF_SZ/4)];
 
 static void SCSICmdHandler();
 // Scsi commands
-static void CmdTestReady();
+static void CmdTestUnitReady();
 static retv CmdStartStopUnit();
 static retv CmdInquiry();
 static retv CmdRequestSense();
@@ -436,23 +440,28 @@ void SCSICmdHandler() {
 //    Printf("SCmd=%A\r", CmdBlock.SCSICmdData, CmdBlock.SCSICmdLen, ' ');
     retv CmdRslt = retv::Fail;
     switch(CmdBlock.SCSICmdData[0]) {
-        case SCSI_CMD_TEST_UNIT_READY:    CmdTestReady(); return; break; // Will report inside
-        case SCSI_CMD_START_STOP_UNIT:    CmdRslt = CmdStartStopUnit(); break;
-        case SCSI_CMD_INQUIRY:            CmdRslt = CmdInquiry(); break;
-        case SCSI_CMD_REQUEST_SENSE:      CmdRslt = CmdRequestSense(); break;
-        case SCSI_CMD_READ_CAPACITY_10:   CmdRslt = CmdReadCapacity10(); break;
-        case SCSI_CMD_SEND_DIAGNOSTIC:    CmdRslt = CmdSendDiagnostic(); break;
-        case SCSI_READ_FORMAT_CAPACITIES: CmdRslt = CmdReadFormatCapacities(); break;
-        case SCSI_CMD_WRITE_10:           CmdRslt = CmdWrite10(); break;
-        case SCSI_CMD_READ_10:            CmdRslt = CmdRead10(); break;
-        case SCSI_CMD_MODE_SENSE_6:       CmdRslt = CmdModeSense6(); break;
+        case 0x00: CmdTestUnitReady(); return; // Will report inside
+        case 0x03: CmdRslt = CmdRequestSense(); break;
+        case 0x12: CmdRslt = CmdInquiry(); break;
+        case 0x1A: CmdRslt = CmdModeSense6(); break;
+        case 0x1B: CmdRslt = CmdStartStopUnit(); break;
+        case 0x1D: CmdRslt = CmdSendDiagnostic(); break;
+        case 0x23: CmdRslt = CmdReadFormatCapacities(); break;
+        case 0x25: CmdRslt = CmdReadCapacity10(); break;
+        case 0x28: CmdRslt = CmdRead10(); break;
+        case 0x2A: CmdRslt = CmdWrite10(); break;
         // These commands should just succeed, no handling required
-        case SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL:
-        case SCSI_CMD_VERIFY_10:
-        case SCSI_CMD_SYNCHRONIZE_CACHE_10:
+        case 0x1E: // Prevent/Allow Medium Removal
+        case 0x2F: // Verify10
+        case 0x35: // SynchronizeCache10
             CmdRslt = retv::Ok;
             CmdBlock.DataTransferLen = 0;
             break;
+        // Not implemented
+        case 0x15: // ModeSelect6
+        case 0x55: // ModeSelect10
+        case 0x5A: // ModeSense10
+        case 0xA0: // ReportLUNs
         default:
             Printf("MSCmd %X not supported\r", CmdBlock.SCSICmdData[0]);
             // Update the SENSE key to reflect the invalid command
@@ -479,20 +488,10 @@ void SCSICmdHandler() {
         CmdStatus.Status = SCSI_STATUS_CHECK_CONDITION;
         CmdStatus.DataTransferResidue = 0;    // 0 or requested length?
     }
-
-    // Stall if cmd failed and there is data to send
-//    bool ShouldSendStatus = true;
-//    if((CmdRslt != retvOk)) {
-//        chSysLock();
-//        ShouldSendStatus = !usbStallTransmitI(&USBDrv, EP_DATA_IN_ID);  // transmit status if successfully stalled
-//        chSysUnlock();
-//    }
-//    if(ShouldSendStatus) {
-        TransmitBuf((uint32_t*)&CmdStatus, sizeof(MS_CommandStatusWrapper_t));
-//    }
+    TransmitBuf((uint32_t*)&CmdStatus, sizeof(MS_CommandStatusWrapper_t));
 }
 
-void CmdTestReady() {
+void CmdTestUnitReady() {
 #if DBG_PRINT_CMD
     Printf("CmdTestReady (Rdy: %u)\r", ISayIsReady);
 #endif
