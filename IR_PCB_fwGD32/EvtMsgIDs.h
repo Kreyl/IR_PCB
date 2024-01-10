@@ -14,6 +14,8 @@ enum class EvtId : uint8_t {
     UartCheckTime,
     EverySecond,
 
+    LedsDone,
+
     // Usb
     UsbConnect,
     UsbDisconnect,

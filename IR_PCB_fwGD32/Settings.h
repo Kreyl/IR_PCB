@@ -1,63 +1,112 @@
 /*
  * Settings.h
  *
- *  Created on: 20.11.2022
+ *  Created on: 20 нояб. 2022 г.
  *      Author: layst
  */
 
 #ifndef SETTINGS_H_
 #define SETTINGS_H_
 
-#include "types.h"
+#include <inttypes.h>
+#include "color.h"
+#include <vector>
 
-#define SETTINGS_FILENAME   "Settings.ini"
+//#define DEBUG   TRUE
 
-class Value_t {
-public:
-    int32_t v;
-    const int32_t Default, Min, Max;
-    const char* const Section;
-    const char* const Name;
-    bool IsInfinity() { return v == (Max + 1L); }
-    void SetToDefault() { v = Default; }
-    bool CheckAndSetIfOk(int32_t AValue) {
-        if(AValue < Min or AValue > (Max + 1L)) return false;
-        v = AValue;
-        return true;
+#define SETTINGS_MAX_CNT        27
+
+#define CORE_MAX_SZ             FLAME_LEN
+#define SPARKS_MODE_RANDOM      0
+#define SPARKS_MODE_GRADIENT    1
+#define SPARK_CENTER_SZ         1
+#define SPARK_TAIL_LEN_MAX      27
+#define SPARK_LEN_MAX           (SPARK_CENTER_SZ + SPARK_TAIL_LEN_MAX * 2)
+#define SPARKS_CNT_MAX          99
+
+
+struct FlameSettings_t {
+    struct {
+#if DEBUG
+        uint8_t Sz = 0;
+#else
+        uint8_t Sz = 1;
+#endif
+        uint16_t ClrHMin = 15, ClrHMax = 15;
+        uint8_t ClrV = 28;
+        uint8_t ClrW = 0;
+        bool IsOk() { return Sz <= CORE_MAX_SZ and ClrHMax <= 360 and ClrHMin <= 360 and ClrV <= 100; }
+    } Core;
+    struct {
+#if DEBUG // DEBUG
+        uint8_t Cnt = 1;
+        uint8_t TailLen = 0;
+        uint16_t ClrHMin = 0, ClrHMax = 120;
+        uint8_t ClrV = 100;
+        uint8_t ClrWMin = 0, ClrWMax = 0;
+        uint16_t DelayBeforeRestart = 540;
+        int16_t AccMin = 0, AccMax = 0;
+        int16_t StartDelayMin = 200, StartDelayMax = 200;
+#else
+        uint8_t Cnt = 7;
+        uint8_t TailLen = 0;
+        uint16_t ClrHMin = 4, ClrHMax = 15;
+        uint8_t ClrV = 100;
+        uint8_t ClrWMin = 0, ClrWMax = 0;
+        uint16_t DelayBeforeRestart = 630;
+        int16_t AccMin = 9, AccMax = 27;
+        int16_t StartDelayMin = 81, StartDelayMax = 117;
+#endif
+        uint8_t Mode = 1;
+        bool IsOk() { return Cnt <= SPARKS_CNT_MAX and TailLen < SPARK_TAIL_LEN_MAX and ClrHMax <= 360 and ClrHMin <= 360 and ClrV <= 100
+                and AccMin < 99 and AccMax < 99; }
+        uint16_t GetRandomHue() {
+            if(ClrHMin < ClrHMax) return Random::Generate(ClrHMin, ClrHMax);
+            else return Random::Generate(ClrHMax, ClrHMin);
+        }
+        uint8_t GetRandomW() {
+            if(ClrWMin < ClrWMax) return Random::Generate(ClrWMin, ClrWMax);
+            else return Random::Generate(ClrWMax, ClrWMin);
+        }
+    } Sparks;
+
+    bool IsOk() { return Core.IsOk() and Sparks.IsOk(); }
+    void Print() {
+        Printf("Core: Sz=%u ClrHMin=%u ClrHMax=%u ClrV=%u\r"
+                "Sparks: Cnt=%u TailLen=%u ClrHMin=%u ClrHMax=%u ClrV=%u "
+                "DelayBeforeRestart=%u AccMin=%u AccMax=%u "
+                "StartDelayMin=%u StartDelayMax=%u Mode=%u\r",
+                Core.Sz, Core.ClrHMin, Core.ClrHMax, Core.ClrV,
+                Sparks.Cnt, Sparks.TailLen, Sparks.ClrHMin, Sparks.ClrHMax, Sparks.ClrV,
+                Sparks.DelayBeforeRestart, Sparks.AccMin, Sparks.AccMax,
+                Sparks.StartDelayMin, Sparks.StartDelayMax, Sparks.Mode);
     }
-    Value_t(int32_t ADefault, int32_t AMin, int32_t AMax, const char* ASection, const char* AName) :
-        v(ADefault), Default(ADefault), Min(AMin), Max(AMax), Section(ASection), Name(AName) {}
-    operator uint32_t() const { return v; }
-};
+} __attribute__ ((aligned));
+
 
 class Settings_t {
+private:
+    std::vector<FlameSettings_t> ISetups;
+    uint8_t CurrIndx = 0;
+    void LoadCurrIndx();
+    void SaveCurrIndx();
 public:
+    Settings_t() {
+        ISetups.reserve(SETTINGS_MAX_CNT);
+    }
     void Load();
     retv Save();
-    void SetAllToDefault();
-
-    // IDs
-    Value_t PlayerID { 0, 0, 127, "IDs", "PlayerID" };
-    Value_t TeamID   { 0, 0,  3,  "IDs", "TeamID" };
-
-    // Counts
-    Value_t HitCnt           { 4, 1, 254, "Counts", "HitCnt" };
-    Value_t RoundsInMagazine { 9, 1, 254, "Counts", "RoundsInMagazine" };
-    Value_t MagazinesCnt     { 4, 1, 254, "Counts", "MagazinesCnt" };
-
-    // Delays
-    Value_t ShotsPeriod_ms   { 252, 0, 9999, "Delays", "ShotsPeriod_ms" };
-    Value_t MagazReloadDelay {   4, 0,   60, "Delays", "MagazReloadDelay" };
-    Value_t MinDelayBetwHits {   0, 0,   60, "Delays", "MinDelayBetwHits" };
-    Value_t PulseLenHit_ms   { 100, 1, 9999, "Delays", "PulseLenHit_ms" };
-
-    // TX
-    Value_t TXPwr   {  90, 1,    255, "IRTX", "TXPwr" };
-    Value_t PktType {   0, 0, 0xFFFF, "IRTX", "PktType" };
+    void Clear() {
+        ISetups.clear();
+    }
+    retv Add(FlameSettings_t &ASetup);
+    uint32_t Cnt() {
+        return ISetups.size();
+    }
+    FlameSettings_t& GetNext();
+    FlameSettings_t& GetPrev();
+    FlameSettings_t& GetCurrent();
+    FlameSettings_t& operator[](const uint8_t Indx);
 };
-
-#define SETTINGS_CNT    (sizeof(Settings_t) / sizeof(Value_t))
-
-extern Settings_t Settings;
 
 #endif // SETTINGS_H_

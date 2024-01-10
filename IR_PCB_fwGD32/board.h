@@ -10,7 +10,7 @@
 
 // ==== General ====
 #define BOARD_NAME          "IR_PCBv3"
-#define APP_NAME            "Testing"
+#define APP_NAME            "RTT"
 
 #ifndef TRUE
 #define TRUE    1
@@ -79,6 +79,8 @@
 
 // Neopixel LEDs
 #define NPX_PARAMS      PA0, TIM4, 0
+#define FLAME_LEN       12 // LEDs by one side
+#define NPX_LED_CNT     (FLAME_LEN * 2) // Two-sided PCB
 
 // Beeper
 #define BEEPER_TOP      22 // 22 < 255: needed to increase frequency
