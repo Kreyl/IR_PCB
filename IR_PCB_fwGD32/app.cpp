@@ -325,6 +325,8 @@ void Reset(bool quiet) {
     FireTmr.ResetI();
     HitCnt = Settings.HitCnt;
     PrevHitTime = Sys::GetSysTimeX();
+    // IR tx
+    irLed::SetCarrierFreq(Settings.TXFreq);
     Sys::Unlock();
     Indication::Reset(quiet);
 }

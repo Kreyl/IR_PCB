@@ -67,7 +67,8 @@ retv Settings_t::Save() {
     SaveValueWithCommentMinMaxInfDefault(PulseLenHit_ms, "Duration of side LEDs blink in case of loss a hit");
     // IRTX
     f_printf(&CommonFile, "\r\n[IRTX]\r\n");
-    SaveValueWithCommentMinMaxDefault(TXPwr, "Power of IR LED impulse");
+    SaveValueWithCommentMinMaxDefault(TXPwr,  "Power of IR LED impulse");
+    SaveValueWithCommentMinMaxDefault(TXFreq, "Carrier frequency of IR LED");
     f_printf(&CommonFile, "# PktType to transmit: SHOT is 0x0000, RESET is 0x8305\r\n");
     f_printf(&CommonFile, "%S = 0x%04X\r\n\r\n", PktType.Name, PktType.v);
     CloseFile(&CommonFile);

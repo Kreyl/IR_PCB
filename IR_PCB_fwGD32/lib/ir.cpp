@@ -18,17 +18,13 @@ ftVoidVoid ICallbackI = nullptr;
 static uint32_t TransactionSz;
 static void DmaTxEndIrqHandler(void *p, uint32_t flags);
 static const DMA_t DmaTx {DAC_DMA, DmaTxEndIrqHandler, nullptr, IRQ_PRIO_MEDIUM};
+// Samples count
+static struct {
+    int32_t Header, Space, One, Zero, Pause;
+} NSamples;
 
-#define SAMPLING_FREQ_HZ    (IR_CARRIER_HZ * 2)
-// Every SamplePair contains 4 actual samples
-#define NSAMPLES_HEADER     (((IR_HEADER_uS * IR_CARRIER_HZ) + 1999999UL) / 2000000UL)
-#define NSAMPLES_SPACE      (((IR_SPACE_uS * IR_CARRIER_HZ) + 1999999UL) / 2000000UL)
-#define NSAMPLES_ZERO       (((IR_ZERO_uS * IR_CARRIER_HZ) + 1999999UL) / 2000000UL)
-#define NSAMPLES_ONE        (((IR_ONE_uS * IR_CARRIER_HZ) + 1999999UL) / 2000000UL)
-#define NSAMPLES_PAUSE      (((IR_PAUSE_AFTER_uS * IR_CARRIER_HZ) + 1999999UL) / 2000000UL)
-
-// DAC buf
-#define DAC_BUF_SZ          (NSAMPLES_HEADER + NSAMPLES_SPACE + (NSAMPLES_ONE + NSAMPLES_SPACE) * IR_BIT_CNT_MAX + NSAMPLES_PAUSE)
+// DAC buf: reserve size fo 56kHz (969)
+#define DAC_BUF_SZ          999UL
 
 union DacSamplePair_t {
     uint32_t W32;
@@ -79,30 +75,43 @@ void Init() {
     DmaTx.Init(&DAC->DAC0_R8DH, IRLED_DMA_MODE);
     // ==== Sampling timer ====
     SamplingTmr.Init();
-    SamplingTmr.SetUpdateFreqChangingTopValue(SAMPLING_FREQ_HZ);
     SamplingTmr.SelectMasterMode(HwTim::MasterMode::Update);
 }
 
+void SetCarrierFreq(uint32_t CarrierFreqHz) {
+    uint32_t SamplingFreqHz = CarrierFreqHz * 2;
+    SamplingTmr.SetUpdateFreqChangingTopValue(SamplingFreqHz);
+    // Every SamplePair contains 4 actual samples
+    NSamples.Header = (((IR_HEADER_uS * CarrierFreqHz) + 1999999L) / 2000000L);
+    NSamples.Space  = (((IR_SPACE_uS  * CarrierFreqHz) + 1999999L) / 2000000L);
+    NSamples.Zero   = (((IR_ZERO_uS   * CarrierFreqHz) + 1999999L) / 2000000L);
+    NSamples.One    = (((IR_ONE_uS    * CarrierFreqHz) + 1999999L) / 2000000L);
+    NSamples.Pause  = (((IR_PAUSE_AFTER_uS * CarrierFreqHz) + 1999999UL) / 2000000UL);
+    // Check if buf sz is enough
+    uint32_t N = NSamples.Header + NSamples.Space + (NSamples.One + NSamples.Space) * IR_BIT_CNT_MAX + NSamples.Pause;
+    if(N > DAC_BUF_SZ) Printf("IR TX DAC Buf Sz too small: %d < %d\r\n", DAC_BUF_SZ, N);
+}
+
 // Power is 8-bit DAC value
-void TransmitWord(uint16_t wData, uint32_t BitCnt, uint8_t Power, ftVoidVoid CallbackI) {
+void TransmitWord(uint16_t wData, int32_t BitCnt, uint8_t Power, ftVoidVoid CallbackI) {
     ICallbackI = CallbackI;
     // ==== Fill buffer depending on data ====
     DacSamplePair_t *p = DacBuf, ISampleCarrier{Power}, ISampleSpace{0};
-    uint32_t i, j;
+    int32_t i, j;
     // Put header
-    for(i=0; i<NSAMPLES_HEADER; i++) *p++ = ISampleCarrier;
-    for(i=0; i<NSAMPLES_SPACE; i++)  *p++ = ISampleSpace;
+    for(i=0; i<NSamples.Header; i++) *p++ = ISampleCarrier;
+    for(i=0; i<NSamples.Space; i++)  *p++ = ISampleSpace;
     // Put data
     for(j=0; j<BitCnt; j++) {
         // Carrier
-        if(wData & 0x8000) { for(i=0; i<NSAMPLES_ONE;  i++) *p++ = ISampleCarrier; }
-        else               { for(i=0; i<NSAMPLES_ZERO; i++) *p++ = ISampleCarrier; }
+        if(wData & 0x8000) { for(i=0; i<NSamples.One;  i++) *p++ = ISampleCarrier; }
+        else               { for(i=0; i<NSamples.Zero; i++) *p++ = ISampleCarrier; }
         // Space
-        for(i=0; i<NSAMPLES_SPACE; i++)  *p++ = ISampleSpace;
+        for(i=0; i<NSamples.Space; i++)  *p++ = ISampleSpace;
         wData <<= 1;
     }
     // Put pause
-    for(i=0; i<NSAMPLES_PAUSE; i++) *p++ = ISampleSpace;
+    for(i=0; i<NSamples.Pause; i++) *p++ = ISampleSpace;
     // ==== Start transmission ====
     TransactionSz = (p - DacBuf) * 4; // Every sample pair contains 4 actual samples
     StartTx();

@@ -25,7 +25,8 @@
 
 namespace irLed {
     void Init();
-    void TransmitWord(uint16_t wData, uint32_t BitCnt, uint8_t Power, ftVoidVoid CallbackI);
+    void SetCarrierFreq(uint32_t CarrierFreqHz);
+    void TransmitWord(uint16_t wData, int32_t BitCnt, uint8_t Power, ftVoidVoid CallbackI);
     void ResetI();
 } // namespace
 #endif

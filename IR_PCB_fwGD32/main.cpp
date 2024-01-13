@@ -17,10 +17,11 @@
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
+const char* FWVersion = XSTRINGIFY(BUILD_TIME);
 EvtMsgQ_t<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
 static const UartParams_t CmdUartParams(115200, CMD_UART_PARAMS);
 CmdUart_t Uart{CmdUartParams};
-void OnCmd(Shell_t *PShell);
+extern void OnCmd(Shell_t *PShell); // See Command.cpp
 
 LedSmooth_t Lumos{LUMOS_PIN};
 LedSmooth_t SideLEDs[SIDE_LEDS_CNT] = { {LED_PWM1}, {LED_PWM2}, {LED_PWM3}, {LED_PWM4} };
@@ -38,13 +39,6 @@ EvtTimer_t TmrUartCheck(TIME_MS2I(UART_RX_POLL_MS), EvtId::UartCheckTime, EvtTim
 EvtTimer_t TmrTesting(TIME_MS2I(540), EvtId::TestingTime, EvtTimer_t::Type::Periodic);
 
 // Testing variables
-static const int32_t sinbuf[] = {
-0, 1389, 2736, 3999, 5142, 6128, 6928, 7517, 7878, 8000,
-7878, 7517, 6928, 6128, 5142, 4000, 2736, 1389, 0, -1389,
--2736, -4000, -5142, -6128, -6928, -7517, -7878, -8000, -7878, -7517,
--6928, -6128, -5142, -3999, -2736, -1389};
-#define SIN_SZ    36
-
 #define TESTING_NPX_BRT     72
 bool IsTesting = false;
 uint32_t TstIndx = 0;
@@ -54,14 +48,6 @@ void Reboot() {
     // Use watchdog to reset
     __disable_irq();
     while(true);
-}
-
-void TestIrRxCallbackI(uint32_t Rcvd) { PrintfI("RX: 0x%X\r", Rcvd); }
-
-void I2SDmaDoneCbI() {
-    if(IsTesting and TstIndx == 0) {
-        Codec::TransmitBuf((void*)sinbuf, SIN_SZ);
-    }
 }
 
 static inline void InitClk() {
@@ -121,7 +107,7 @@ void main(void) {
     Uart.Init();
     Sys::Init();
     EvtQMain.Init();
-    Printf("\r%S %S\r\n", APP_NAME, XSTRINGIFY(BUILD_TIME));
+    Printf("\r%S %S\r\n", APP_NAME, FWVersion);
     Clk::PrintFreqs();
 
     // ==== LEDs ====
@@ -145,7 +131,7 @@ void main(void) {
     MsdMem::BlockCnt = mp.SectorCnt;
     MsdMem::BlockSz = mp.SectorSz;
     Printf("Flash: %u sectors of %u bytes\r", mp.SectorCnt, mp.SectorSz);
-    if(mp.SectorCnt == 0 or mp.SectorSz == 0) Reboot();
+//    if(mp.SectorCnt == 0 or mp.SectorSz == 0) Reboot();
     // Init filesystem
     if(f_mount(&FlashFS, "", 0) != FR_OK) Printf("FS error\r\n");
 
@@ -153,7 +139,7 @@ void main(void) {
     UsbMsdCdc.Init();
     UsbMsdCdc.Connect();
 
-    // ==== IR ====
+    // ==== IR ==== TX LED SetFreq is called within App Reset, which is called within AppInit
     irLed::Init();
     irRcvr::Init(IrRxCallbackI);
 
@@ -216,143 +202,4 @@ void main(void) {
             default: break;
         } // switch
     }
-}
-
-void OnCmd(Shell_t *PShell) {
-    Cmd_t *PCmd = &PShell->Cmd;
-    // Handle command
-    if(PCmd->NameIs("Ping")) PShell->Ok();
-    else if(PCmd->NameIs("Version")) PShell->Print("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
-
-    else if(PCmd->NameIs("Print")) {
-        uint32_t N;
-        if(PCmd->GetNext(&N) == retv::Ok) {
-            uint32_t i = 1;
-            uint32_t N10 = N / 10;
-            while(N10--) {
-                PShell->Print("%08u\r\n", i++);
-                N -= 10;
-            }
-            i = 1;
-            while(N--) PShell->Print("%u", i++);
-//            PShell->PrintEOL();
-        }
-        else PShell->BadParam();
-    }
-
-    else if(PCmd->NameIs("Test")) {
-        IsTesting = true;
-        Beeped = false;
-        irRcvr::SetCallback(TestIrRxCallbackI);
-        // Gpios
-        Gpio::SetupOut(Gpio1, Gpio::PushPull, Gpio::speed2MHz);
-        Gpio::SetupOut(Gpio2, Gpio::PushPull, Gpio::speed2MHz);
-        Gpio::SetupOut(Gpio3, Gpio::PushPull, Gpio::speed2MHz);
-        Gpio::SetupOut(Gpio4, Gpio::PushPull, Gpio::speed2MHz);
-        // Audio codec
-        if(Codec::SetupSampleRate(48000) == retv::Ok) {
-            Codec::I2SDmaDoneCbI = I2SDmaDoneCbI;
-            Codec::TransmitBuf((void*)sinbuf, SIN_SZ);
-        }
-        else Printf("FS setup fail\r");
-        TmrTesting.StartOrRestart();
-    }
-
-    else if(PCmd->NameIs("Reboot")) Reboot();
-
-    // ==== App ====
-    else if(PCmd->NameIs("GetSta")) {
-        PShell->Print("Hits: %d; Rnds: %d; mgzs: %d\r", HitCnt, RoundsCnt, MagazinesCnt);
-    }
-    else if(PCmd->NameIs("Restore")) {
-        Reset();
-        PShell->Ok();
-    }
-
-    else if(PCmd->NameIs("GetSettings")) {
-        Value_t *Arr = (Value_t*)&Settings;
-        for(uint32_t i=0; i<SETTINGS_CNT; i++, Arr++) {
-            PShell->Print("%*S = %4u; Min = %u; Max = %4u; default = %4u\r\n",
-                    16, Arr->Name, Arr->v, Arr->Min, Arr->Max, Arr->Default);
-        }
-    }
-
-    else if(PCmd->NameIs("Set")) {
-        const char* Name;
-        uint32_t v, N = 0;
-        bool Found;
-        // Get pairs of values
-        while((((Name = PCmd->GetNextString()) != nullptr) and PCmd->GetNext(&v) == retv::Ok)) {
-            Found = false;
-            Value_t *Arr = (Value_t*)&Settings;
-            for(uint32_t i=0; i<SETTINGS_CNT; i++, Arr++) { // Find by name
-                if(kl_strcasecmp(Name, Arr->Name) == 0) {
-                    if(Arr->CheckAndSetIfOk(v)) {
-                        PShell->Print("%S = %u\r\n", Name, v);
-                        N++;
-                        Found = true;
-                        break;
-                    }
-                    else {
-                        PShell->Print("%S BadValue: %u\r\n", Name, v);
-                        return;
-                    }
-                } // if
-            } // for
-            if(!Found) {
-                PShell->Print("BadName: %S\r\n", Name);
-                break;
-            }
-        } // while
-        PShell->Print("Set %u values\r\n", N);
-        Reset();
-    }
-
-    else if(PCmd->NameIs("SaveSettings")) {
-        if(Settings.Save() == retv::Ok) PShell->Print("Saved\r\n");
-        else PShell->Print("Saving fail\r\n");
-    }
-
-    else if(PCmd->NameIs("LoadSettings")) {
-        Settings.Load();
-        Reset();
-    }
-
-    // ==== Debug ====
-    else if(PCmd->NameIs("CtrlSet")) {
-        uint32_t In[2] = { 0, 0, };
-        for(int i=0; i<2; i++) {
-            if(PCmd->GetNext(&In[i]) != retv::Ok) break;
-        }
-        SetInputs(In);
-        PShell->Ok();
-    }
-
-    else if(PCmd->NameIs("irtx")) {
-        uint32_t Word, Pwr, BitCnt;
-        if(PCmd->GetNext(&Word) != retv::Ok) { PShell->BadParam(); return; }
-        if(PCmd->GetNext(&BitCnt) != retv::Ok) { PShell->BadParam(); return; }
-        if(PCmd->GetNext(&Pwr) != retv::Ok) { PShell->BadParam(); return; }
-        irLed::TransmitWord(Word, BitCnt, Pwr, nullptr);
-        PShell->Ok();
-    }
-
-//    else if(PCmd->NameIs("IRTX")) {
-//        uint16_t w, Pwr;
-//        if(PCmd->GetParams<uint16_t>(2, &w, &Pwr) == retv::Ok) {
-//            irLed::TransmitWord(w, 16, Pwr, nullptr);
-//            PShell->Ok();
-//        }
-//        else PShell->BadParam();
-//    }
-
-    else if(PCmd->NameIs("Npx")) {
-        Color_t clr;
-        if(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.SetAll(clr);
-//        uint32_t i=0;
-//        while(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.ClrBuf[i++] = clr;
-        NpxLeds.SetCurrentColors();
-    }
-
-    else PShell->CmdUnknown();
 }

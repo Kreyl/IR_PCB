@@ -86,7 +86,6 @@
 
 // IR LED
 #define IR_LED          PA4 // DAC
-#define IR_CARRIER_HZ   38000UL
 #define IR_BIT_CNT_MAX  16L     // Just for buffer reservation
 
 // IR Rcvr
