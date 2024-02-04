@@ -1,6 +1,6 @@
 {
   "board": {
-    "active_layer": 40,
+    "active_layer": 37,
     "active_layer_preset": "",
     "auto_track_width": true,
     "hidden_netclasses": [],
@@ -16,7 +16,7 @@
     },
     "selection_filter": {
       "dimensions": false,
-      "footprints": false,
+      "footprints": true,
       "graphics": false,
       "keepouts": false,
       "lockedItems": true,
@@ -40,7 +40,6 @@
       13,
       15,
       16,
-      17,
       18,
       19,
       20,
@@ -61,8 +60,8 @@
       36,
       40
     ],
-    "visible_layers": "ffc1f23_7ffffff9",
-    "zone_display_mode": 1
+    "visible_layers": "ffc1e13_7ffffff8",
+    "zone_display_mode": 0
   },
   "meta": {
     "filename": "IR_PCB.kicad_prl",
