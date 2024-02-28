@@ -227,7 +227,7 @@ static inline char* striptrailing(char *S) {
 
 retv ReadString(const char *AFileName, const char *ASection, const char *AKey, char **PPOutput) {
     FRESULT rslt;
-//    Printf("%S %S %S\r", __FUNCTION__, AFileName, ASection);
+//    Printf("%S %S %S %S\r", __FUNCTION__, AFileName, ASection, AKey);
     // Open file
     rslt = f_open(&CommonFile, AFileName, FA_READ+FA_OPEN_EXISTING);
     if(rslt != FR_OK) {

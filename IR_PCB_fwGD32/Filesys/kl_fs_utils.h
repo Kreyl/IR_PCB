@@ -164,7 +164,7 @@ template <typename T>
 static retv Read(const char *AFileName, const char *ASection, const char *AKey, T *POutput) {
     char *S = nullptr;
     if(ReadString(AFileName, ASection, AKey, &S) == retv::Ok) {
-        int32_t tmp = strtol(S, NULL, 10);
+        int32_t tmp = kl_strtol(S, NULL, 0);
         *POutput = (T)tmp;
         return retv::Ok;
     }

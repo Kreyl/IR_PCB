@@ -14,6 +14,7 @@ void Settings_t::Load() {
             Printf("Default settings loaded\r\n");
             return;
         }
+//        else Printf("%S %S: 0x%04X\r", Arr[i].Section, Arr[i].Name, v);
     }
     Printf("Settings loaded\r\n");
 }

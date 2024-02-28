@@ -145,6 +145,7 @@ void main(void) {
 
     // ==== App ====
     Settings.Load();
+    Printf("Pkt type: 0x%04X\r", Settings.PktType.v);
     AppInit();
 
     // ==== Main evt cycle ====
