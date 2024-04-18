@@ -92,9 +92,9 @@ void BaseUart_t::Init() {
 
 void BaseUart_t::OnClkChange() {
     if(Params->Uart == USART0)
-        Params->Uart->BAUD = Clk::APB2FreqHz / Params->Baudrate; // The only UART on APB2
+        Params->Uart->BAUD = Clk::APB2FreqHz / Params->baudrate; // The only UART on APB2
     else
-        Params->Uart->BAUD = Clk::APB1FreqHz / Params->Baudrate; // Others are on APB1
+        Params->Uart->BAUD = Clk::APB1FreqHz / Params->baudrate; // Others are on APB1
 }
 
 void BaseUart_t::StopTx() {

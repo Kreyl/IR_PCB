@@ -96,21 +96,21 @@ public:
 // Example: EvtTimer_t TmrS(TIME_S2I(1), EvtId::EverySecond, EvtTimer_t::Type::Periodic);
 class EvtTimer_t : private VirtualTimer_t {
 private:
-    systime_t Period;
-    EvtId IEvtId;
+    systime_t period;
+    EvtId evt_id;
     void StartI();
     friend void TmrEvtCallback(void *p);
 public:
-    enum class Type {OneShot, Periodic} TmrType;
+    enum class Type {OneShot, Periodic} tmr_type;
     EvtTimer_t(systime_t APeriod, EvtId AEvtId, Type AType) :
-        Period(APeriod), IEvtId(AEvtId), TmrType(AType) {}
+        period(APeriod), evt_id(AEvtId), tmr_type(AType) {}
     void StartOrRestart();
     void StartOrRestart(systime_t NewPeriod);
     void StartIfNotRunning();
     inline void Stop() { Reset(); }
     inline bool IsRunning() { return IsArmedX(); }
-    void SetNewPeriod_ms(uint32_t NewPeriod) { Period = TIME_MS2I(NewPeriod); }
-    void SetNewPeriod_s(uint32_t NewPeriod)  { Period = TIME_S2I(NewPeriod); }
+    void SetNewPeriod_ms(uint32_t NewPeriod) { period = TIME_MS2I(NewPeriod); }
+    void SetNewPeriod_s(uint32_t NewPeriod)  { period = TIME_S2I(NewPeriod); }
 };
 #endif
 

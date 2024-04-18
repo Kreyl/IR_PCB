@@ -311,13 +311,13 @@ void VirtualTimer_t::Set(systime_t delay, vtfunc_t ACallback, void *param) {
 void TmrEvtCallback(void *p) {
     Sys::LockFromIRQ();
     EvtTimer_t *vt = (EvtTimer_t*)p;
-    EvtQMain.SendNowOrExitI(EvtMsg_t(vt->IEvtId));
-    if(vt->TmrType == vt->Type::Periodic) vt->StartI();
+    EvtQMain.SendNowOrExitI(EvtMsg_t(vt->evt_id));
+    if(vt->tmr_type == vt->Type::Periodic) vt->StartI();
     Sys::UnlockFromIRQ();
 }
 
 // Will be before start
-void EvtTimer_t::StartI() { SetI(Period, TmrEvtCallback, this); }
+void EvtTimer_t::StartI() { SetI(period, TmrEvtCallback, this); }
 
 void EvtTimer_t::StartOrRestart() {
     Sys::Lock();
@@ -326,7 +326,7 @@ void EvtTimer_t::StartOrRestart() {
 }
 void EvtTimer_t::StartOrRestart(systime_t NewPeriod) {
     Sys::Lock();
-    Period = NewPeriod;
+    period = NewPeriod;
     StartI();
     Sys::Unlock();
 }

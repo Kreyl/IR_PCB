@@ -6,7 +6,7 @@
 #include "shell.h"
 
 struct UartParams_t {
-    uint32_t Baudrate;
+    uint32_t baudrate;
     USART_TypeDef* Uart;
     GPIO_TypeDef *PGpioTx;
     uint16_t PinTx;
@@ -19,7 +19,7 @@ struct UartParams_t {
             GPIO_TypeDef *APGpioTx, uint16_t APinTx,
             GPIO_TypeDef *APGpioRx, uint16_t APinRx,
             DMAChannel_t *ADmaChnlTx, DMAChannel_t *ADmaChnlRx
-    ) : Baudrate(ABaudrate), Uart(AUart),
+    ) : baudrate(ABaudrate), Uart(AUart),
             PGpioTx(APGpioTx), PinTx(APinTx), PGpioRx(APGpioRx), PinRx(APinRx),
             DmaChnlTx(ADmaChnlTx), DmaChnlRx(ADmaChnlRx) {}
 };

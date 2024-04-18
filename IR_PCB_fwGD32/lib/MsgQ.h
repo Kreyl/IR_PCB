@@ -50,7 +50,7 @@ EvtMsgQ_t<RMsg_t, RMSG_Q_LEN> MsgQ;
 #define EMSG_DATA16_CNT     3   // ID + 3x2bytes = 3
 
 union EvtMsg_t {
-    uint32_t DWord[2];
+    uint32_t dword[2];
     struct {
         union {
             void* Ptr;
@@ -68,8 +68,8 @@ union EvtMsg_t {
     } __attribute__((__packed__));
 
     EvtMsg_t& operator = (const EvtMsg_t &Right) {
-        DWord[0] = Right.DWord[0];
-        DWord[1] = Right.DWord[1];
+        dword[0] = Right.dword[0];
+        dword[1] = Right.dword[1];
         return *this;
     }
     EvtMsg_t() : Ptr(nullptr), ID(EvtId::None) {}
@@ -80,23 +80,23 @@ union EvtMsg_t {
 } __attribute__((__packed__));
 
 
-template<typename T, uint32_t Sz>
+template<typename T, uint32_t sz>
 class EvtMsgQ_t {
 private:
     union {
         uint64_t __Align;
-        T IBuf[Sz];
+        T IBuf[sz];
     };
-    T *ReadPtr, *WritePtr;
-    Semaphore_t FullSem;    // Full slots counter
-    Semaphore_t EmptySem;   // Empty slots counter
+    T *read_ptr, *write_ptr;
+    Semaphore_t full_sem;    // Full slots counter
+    Semaphore_t empty_sem;   // Empty slots counter
 public:
-    EvtMsgQ_t() : __Align(0), ReadPtr(IBuf), WritePtr(IBuf) {}
+    EvtMsgQ_t() : __Align(0), read_ptr(IBuf), write_ptr(IBuf) {}
     void Init() {
-        ReadPtr = IBuf;
-        WritePtr = IBuf;
-        EmptySem.Init(Sz);
-        FullSem.Init(0);
+        read_ptr = IBuf;
+        write_ptr = IBuf;
+        empty_sem.Init(sz);
+        full_sem.Init(0);
     }
 
     /* Retrieves a message from a mailbox, returns empty Msg if failed.
@@ -105,11 +105,11 @@ public:
     T Fetch(systime_t Timeout) {
         T Msg;
         Sys::Lock();
-        if(FullSem.WaitTimeoutS(Timeout) == retv::Ok) {
+        if(full_sem.WaitTimeoutS(Timeout) == retv::Ok) {
             // There is something in the queue, get it
-            Msg = *ReadPtr++;
-            if(ReadPtr >= &IBuf[Sz]) ReadPtr = IBuf;  // Circulate pointer
-            EmptySem.SignalI();
+            Msg = *read_ptr++;
+            if(read_ptr >= &IBuf[sz]) read_ptr = IBuf;  // Circulate pointer
+            empty_sem.SignalI();
             Sys::RescheduleS();
         }
         Sys::Unlock();
@@ -119,11 +119,11 @@ public:
     /* Post a message into a mailbox.
      * The function returns a timeout condition if the queue is full */
     retv SendNowOrExitI(const T &Msg) {
-        if(EmptySem.GetCntI() <= 0L) return retv::Timeout; // Q is full
-        EmptySem.FastWaitI();
-        *WritePtr++ = Msg;
-        if(WritePtr >= &IBuf[Sz]) WritePtr = IBuf;  // Circulate pointer
-        FullSem.SignalI();
+        if(empty_sem.GetCntI() <= 0L) return retv::Timeout; // Q is full
+        empty_sem.FastWaitI();
+        *write_ptr++ = Msg;
+        if(write_ptr >= &IBuf[sz]) write_ptr = IBuf;  // Circulate pointer
+        full_sem.SignalI();
         return retv::Ok;
     }
 
@@ -140,11 +140,11 @@ public:
      * or the specified time runs out. */
     retv SendWaitingAbility(const T &Msg, systime_t timeout) {
         Sys::Lock();
-        retv msg = EmptySem.WaitTimeoutS(timeout);
+        retv msg = empty_sem.WaitTimeoutS(timeout);
         if(msg == retv::Ok) {
-            *WritePtr++ = Msg;
-            if(WritePtr >= &IBuf[Sz]) WritePtr = IBuf;  // Circulate pointer
-            FullSem.SignalI();
+            *write_ptr++ = Msg;
+            if(write_ptr >= &IBuf[sz]) write_ptr = IBuf;  // Circulate pointer
+            full_sem.SignalI();
             Sys::RescheduleS();
         }
         Sys::Unlock();
@@ -155,7 +155,7 @@ public:
 
     uint32_t GetFullCnt() {
         Sys::Lock();
-        uint32_t rslt = FullSem.GetCntI();
+        uint32_t rslt = full_sem.GetCntI();
         Sys::Unlock();
         return rslt;
     }
