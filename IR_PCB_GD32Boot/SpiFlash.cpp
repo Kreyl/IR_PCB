@@ -67,11 +67,11 @@ SpiFlash_t::MemParams_t SpiFlash_t::GetParams() {
             r.SectorCnt = 1024UL;
             r.SectorSz = 4096UL;
             break;
-        case 0xEF4018: // W25Q64 - NOT TESTED
+        case 0xEF4017: // W25Q64
             r.SectorCnt = 2048UL;
             r.SectorSz = 4096UL;
             break;
-        default: break;
+        default: Printf("Unknown Flash JID: 0x%X\r", JID); break;
     } // switch
     return r;
 }
