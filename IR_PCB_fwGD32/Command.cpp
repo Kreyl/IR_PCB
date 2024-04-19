@@ -14,6 +14,7 @@
 
 typedef void (*ftVoidPShell)(Shell_t *PShell);
 extern const char* FWVersion;
+__attribute__((unused))
 extern Neopixels_t NpxLeds;
 
 extern void Reboot();
