@@ -927,11 +927,11 @@ inline void StartAlarm(systime_t time) {
     SYS_TIM->DMAINTEN = TIM_DMAINTEN_CH0IE;
 }
 
-inline systime_t GetCounter()        { return (systime_t)SYS_TIM->CNT; }
+//inline systime_t GetCounter()        { return (systime_t)SYS_TIM->CNT; }
 inline void StopAlarm()              { SYS_TIM->DMAINTEN = 0; }
 inline void SetAlarm(systime_t time) { SYS_TIM->CH0CV = (uint32_t)time; }
-inline systime_t GetAlarm()          { return (systime_t)SYS_TIM->CH0CV; }
-inline bool IsAlarmActive()          { return (SYS_TIM->DMAINTEN & TIM_DMAINTEN_CH0IE); }
+//inline systime_t GetAlarm()          { return (systime_t)SYS_TIM->CH0CV; }
+//inline bool IsAlarmActive()          { return (SYS_TIM->DMAINTEN & TIM_DMAINTEN_CH0IE); }
 
 } // namespace
 
