@@ -10,6 +10,8 @@
 
 #include <inttypes.h>
 
+#define elif    else if
+
 // ==== Return values ====
 enum class retv : uint8_t {
     Ok =            0,

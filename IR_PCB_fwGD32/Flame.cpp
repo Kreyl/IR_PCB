@@ -13,27 +13,31 @@
 Flames_t Flames;
 extern Neopixels_t NpxLeds;
 static FlameSettings_t ISettings;
+uint32_t band_brts[3] = {255, 255, 255};
 
 // Set pix pair, mixing it with current color
-inline void SetPixRing(int32_t x, Color_t Clr) {
+inline void SetPixRing(int32_t band_indx, int32_t x, Color_t clr) {
 //    Printf("%d\r", x);
-    if (x >= FLAME_LEN or x < 0) return; // too far
-    uint32_t Indx0 = 0; // Start of flame
-//    Leds.ClrBuf[Indx0 + x].MixAveragingRGBW(Clr); // One side of PCB
-    NpxLeds.ClrBuf[Indx0 + x].MixAddingRGBW(Clr); // One side of PCB
-//    NpxLeds.ClrBuf[Indx0 + (FLAME_LEN * 2 - 1) - x] = NpxLeds.ClrBuf[Indx0 + x]; // Second side
+    if (x >= Flames.flame_len or x < 0) return; // too far
+    int32_t indx;
+    if  (band_indx == 0) indx = x;
+    elif(band_indx == 1) indx = (Flames.flame_len * 2 - 1) - x;
+    else indx = (Flames.flame_len * 2) + x;
+    // Apply brightness
+    clr.SetRGBBrightness(band_brts[band_indx], 255UL);
+
+    NpxLeds.ClrBuf[indx].MixAddingRGBW(clr);
+
+//    NpxLeds.ClrBuf[x].MixAddingRGBW(Clr); // One band
+//    NpxLeds.ClrBuf[(FLAME_LEN * 2 - 1) - x] = NpxLeds.ClrBuf[x]; // Second band
+//    NpxLeds.ClrBuf[(FLAME_LEN * 2) + x] = NpxLeds.ClrBuf[x]; // Third band
 }
 
 #if 1 // ============================ Spark ====================================
 void SparkTmrCallback(void *p);
 
-template <typename T>
-static inline T Proportion(T MinX, T MaxX, T MinY, T MaxY, T x) {
-    return (((x - MaxX) * (MaxY - MinY)) / (MaxX - MinX)) + MaxY;
-}
-
 // Proportion for gradients calculation
-uint16_t x2Value(uint16_t x, uint16_t fMin, uint16_t fMax) { return Proportion<uint16_t>(0, (FLAME_LEN-1), fMin, fMax, x); }
+uint16_t x2Value(uint16_t x, uint16_t fMin, uint16_t fMax) { return Proportion<uint16_t>(0, (Flames.flame_len-1), fMin, fMax, x); }
 
 // Tail Brightness for short tails
 #define BRT_TAIL1_1     128
@@ -47,9 +51,10 @@ private:
     int16_t Acceleration = 27;
     int32_t x = -1, xMax = 0;
     VirtualTimer_t ITmrMove;
-    uint32_t SystimeToStart = 540;
+    systime_t SystimeToStart = 540;
     std::vector<Color_t> IBuf;
 public:
+    int32_t band_indx = 0;
     void Init() { // Recreate IBuf making it's colors black
         IBuf.clear();
         if(ISettings.Sparks.Mode == SPARKS_MODE_RANDOM)
@@ -63,7 +68,7 @@ public:
 
     void Generate() {
         if(ISettings.Sparks.Mode == SPARKS_MODE_RANDOM) { // Prepare buf which is spark's image
-            xMax = (FLAME_LEN - 1) + (int32_t)IBuf.size();
+            xMax = (Flames.flame_len - 1) + (int32_t)IBuf.size();
             int32_t N = 0, TailLen = ISettings.Sparks.TailLen, MaxV = ISettings.Sparks.ClrV, BrtRGB, BrtW;
             ColorHSV_t hsv{ISettings.Sparks.GetRandomHue(), 100, (uint8_t)MaxV};
             Color_t rgbw = hsv.ToRGB();
@@ -119,7 +124,7 @@ public:
             }
         }
         else { // Gradient
-            xMax = FLAME_LEN + ISettings.Sparks.TailLen;
+            xMax = Flames.flame_len + ISettings.Sparks.TailLen;
         }
         // === Init coord, speed, acceleration ===
         x = 0;
@@ -137,10 +142,10 @@ public:
         // Draw it
         if(ISettings.Sparks.Mode == SPARKS_MODE_RANDOM) {
             int32_t Len = IBuf.size();
-            int32_t Start = (x < FLAME_LEN)? 0 : x - (FLAME_LEN -1);
+            int32_t Start = (x < Flames.flame_len)? 0 : x - (Flames.flame_len -1);
             int32_t Stop  = (x < Len)? x : Len - 1;
-            int32_t xCurr = (x < FLAME_LEN)? x : (FLAME_LEN - 1);
-            for(int32_t i=Start; i<=Stop; i++) SetPixRing(xCurr--, IBuf[i]);
+            int32_t xCurr = (x < Flames.flame_len)? x : (Flames.flame_len - 1);
+            for(int32_t i=Start; i<=Stop; i++) SetPixRing(band_indx, xCurr--, IBuf[i]);
         }
         else { // Gradient
             int32_t SparkLen = ISettings.Sparks.TailLen + 1;
@@ -148,11 +153,11 @@ public:
                 int32_t fx = x - i;
 
                 if(fx < 0) break;
-                if(fx >= FLAME_LEN) continue;
+                if(fx >= Flames.flame_len) continue;
                 ColorHSV_t hsv{x2Value(fx, ISettings.Sparks.ClrHMin, ISettings.Sparks.ClrHMax), 100, ISettings.Sparks.ClrV};
                 Color_t rgbw = hsv.ToRGB();
                 rgbw.W = x2Value(fx, ISettings.Sparks.ClrWMin, ISettings.Sparks.ClrWMax);
-                SetPixRing(fx, rgbw);
+                SetPixRing(band_indx, fx, rgbw);
             }
         }
     }
@@ -169,6 +174,10 @@ public:
             ITmrMove.SetI(TIME_MS2I(MoveDelay_ms), SparkTmrCallback, this);
         }
         else Sleep();
+    }
+
+    void Print() {
+        Printf("%d %d %d %d; t=%u\r", MoveDelay_ms, Acceleration, x, xMax, SystimeToStart);
     }
 };
 
@@ -227,10 +236,11 @@ void Flames_t::IDraw() {
             Color_t Clr;
             Clr.FromHSV(x2Value(x, ISettings.Core.ClrHMin, ISettings.Core.ClrHMax), 100, ISettings.Core.ClrV);
             Clr.W = ISettings.Core.ClrW;
-            SetPixRing(x, Clr);
+            for(uint32_t i=0; i<NPX_BAND_CNT; i++) SetPixRing(i, x, Clr);
         }
         // ==== Sparks Layer ====
         for(Spark_t &Spark : Sparks) Spark.Process();
+
         // ==== On-Off Layer ====
         for(Color_t &Clr : NpxLeds.ClrBuf) Clr.SetRGBWBrightness(OnOffBrt, BRT_MAX);
 
@@ -309,10 +319,30 @@ void Flames_t::ApplyNewSettings() {
     ISettings = INewSettings;
     Sys::Unlock();
     // Prepare sparks buf
-    Sparks.resize(ISettings.Sparks.Cnt);
+    Sparks.resize(ISettings.Sparks.Cnt * NPX_BAND_CNT);
     // Prepare Sparks
-    for(uint8_t j=0; j<ISettings.Sparks.Cnt; j++) {
-        Sparks[j].Init();
-        Sparks[j].Generate();
+    uint32_t N=0;
+    for(int32_t i=0; i<NPX_BAND_CNT; i++) {
+        for(int32_t j=0; j<ISettings.Sparks.Cnt; j++) {
+            Sparks[N].Init();
+            Sparks[N].band_indx = i;
+            Sparks[N].Generate();
+            N++;
+        }
     }
+}
+
+void Flames_t::SetBandBrt(uint32_t brts[3]) {
+    band_brts[0] = brts[0];
+    band_brts[1] = brts[1];
+    band_brts[2] = brts[2];
+}
+
+void Flames_t::SetFlameLen(int32_t flen) {
+    flame_len = flen;
+    INewSettingsAppeared = true; // To restart sparks
+}
+
+void PrintSparks() {
+    for(auto &spark: Sparks) spark.Print();
 }

@@ -16,7 +16,7 @@
 
 #define SETTINGS_MAX_CNT        27
 
-#define CORE_MAX_SZ             FLAME_LEN
+#define CORE_MAX_SZ             FLAME_LEN_MAX
 #define SPARKS_MODE_RANDOM      0
 #define SPARKS_MODE_GRADIENT    1
 #define SPARK_CENTER_SZ         1

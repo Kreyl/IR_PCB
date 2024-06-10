@@ -35,6 +35,11 @@ public:
 #define ABS(a)      ( ((a) < 0)? -(a) : (a) )
 #define IS_LIKE(v, precise, deviation)  (((precise - deviation) < v) and (v < (precise + deviation)))
 
+template <typename T>
+static inline T Proportion(T MinX, T MaxX, T MinY, T MaxY, T x) {
+    return (((x - MaxX) * (MaxY - MinY)) / (MaxX - MinX)) + MaxY;
+}
+
 // IRQ priorities
 #define IRQ_PRIO_LOW            15  // Minimum
 #define IRQ_PRIO_MEDIUM         9

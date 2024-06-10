@@ -39,12 +39,17 @@ public:
     void StopNow();
     void SetNewSettings(FlameSettings_t &ASettings);
     void ShowCharge(ColorHSV_t hsv) { ClrBattery = hsv; }
+    void SetBandBrt(uint32_t brts[3]);
+    void SetFlameLen(int32_t flen);
     // Inner use
+    int32_t flame_len = FLAME_LEN_MAX;
     void IDraw();
     void OnOnOffTmrTickI();
     friend class Spark_t;
 };
 
 extern Flames_t Flames;
+
+void PrintSparks();
 
 #endif // FLAME_H__

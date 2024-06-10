@@ -13,7 +13,6 @@
 #include "mem_msd_glue.h"
 #include "Settings.h"
 #include "kl_fs_utils.h"
-#include "kl_rtt.h"
 
 #include "Flame.h"
 
@@ -26,7 +25,7 @@ void OnCmd(Shell_t *PShell);
 
 LedSmooth_t Lumos{LUMOS_PIN};
 
-static const NpxParams NParams{NPX_PARAMS, NPX_DMA, NPX_LED_CNT, NpxParams::ClrType::RGB};
+static const NpxParams NParams{NPX_PARAMS, NPX_DMA, NPX_LED_CNT_MAX, NpxParams::ClrType::RGB};
 Neopixels_t NpxLeds{&NParams};
 Settings_t Settings;
 
@@ -108,7 +107,26 @@ bool Beeped = false;
 //    }
 //};
 
-RTT_t Rtt;
+//21 280 280 18 0
+//7 9 280 280 100 0 0 630 9 27 99 153 0
+
+FlameSettings_t Setup = {
+    .Core = {
+            .Sz = 9,
+            .ClrHMin = 290, .ClrHMax = 290,
+            .ClrV = 27
+    },
+    .Sparks = {
+            .Cnt = 7,
+            .TailLen = 9,
+            .ClrHMin = 290, .ClrHMax = 290,
+            .ClrV = 100,
+            .DelayBeforeRestart = 630,
+            .AccMin = 9, .AccMax = 18,
+            .StartDelayMin = 99, .StartDelayMax = 153,
+            .Mode = 0
+    }
+};
 
 
 void main(void) {
@@ -128,15 +146,15 @@ void main(void) {
     // ==== LEDs ====
     Lumos.Init();
     Lumos.StartOrRestart(lsqFadeIn);
-//    NpxLeds.Init();
-//    NpxLeds.SetAll(clBlack);
-//    NpxLeds.SetCurrentColors();
-//    Flames.SetNewSettings(Settings.GetCurrent());
-//    Flames.SetNewSettings(Setup);
-//    Flames.Init();
-//    Flames.FadeIn();
+    NpxLeds.Init();
+    NpxLeds.SetAll(clBlack);
+    NpxLeds.SetCurrentColors();
+    Flames.SetNewSettings(Settings.GetCurrent());
+    Flames.SetNewSettings(Setup);
+    Flames.Init();
+    Flames.FadeIn();
 
-    TmrEverySecond.StartOrRestart();
+//    TmrEverySecond.StartOrRestart();
 
     // ==== USB ====
 //    UsbMsdCdc.Init();
@@ -161,9 +179,6 @@ void main(void) {
                 break;
 
             case EvtId::EverySecond: {
-                Rtt.IPutChar('a');
-                uint32_t Indx = 0;
-                Printf("%u %u\r", Rtt.GetRxBytesCnt(Indx), Rtt.GetTxBytesCnt(Indx));
             } break;
 
             case EvtId::UsbReady:
@@ -185,6 +200,26 @@ static const uint32_t gamma_table[12] = {
     2,5,9,14,20,28,37,47,58,71,85,100,
 };
 
+retv GetSetup(Cmd_t *PCmd, FlameSettings_t &FSett) {
+    if(     PCmd->GetNextU8(&FSett.Core.Sz) == retv::Ok and
+            PCmd->GetNextU16(&FSett.Core.ClrHMin) == retv::Ok and
+            PCmd->GetNextU16(&FSett.Core.ClrHMax) == retv::Ok and
+            PCmd->GetNextU8(&FSett.Core.ClrV) == retv::Ok and
+            PCmd->GetNextU8(&FSett.Sparks.Cnt) == retv::Ok and
+            PCmd->GetNextU8(&FSett.Sparks.TailLen) == retv::Ok and
+            PCmd->GetNextU16(&FSett.Sparks.ClrHMin) == retv::Ok and
+            PCmd->GetNextU16(&FSett.Sparks.ClrHMax) == retv::Ok and
+            PCmd->GetNextU8(&FSett.Sparks.ClrV) == retv::Ok and
+            PCmd->GetNextU16(&FSett.Sparks.DelayBeforeRestart) == retv::Ok and
+            PCmd->GetNextI16(&FSett.Sparks.AccMin) == retv::Ok and
+            PCmd->GetNextI16(&FSett.Sparks.AccMax) == retv::Ok and
+            PCmd->GetNextI16(&FSett.Sparks.StartDelayMin) == retv::Ok and
+            PCmd->GetNextI16(&FSett.Sparks.StartDelayMax) == retv::Ok and
+            PCmd->GetNextU8(&FSett.Sparks.Mode) == retv::Ok
+        ) return retv::Ok;
+    else return retv::Fail;
+}
+
 void OnCmd(Shell_t *PShell) {
     Cmd_t *PCmd = &PShell->Cmd;
     // Handle command
@@ -195,12 +230,12 @@ void OnCmd(Shell_t *PShell) {
 
     else if(PCmd->NameIs("Npx")) {
         Color_t clr;
-//        if(PCmd->GetClrRGB(&clr) == retv::Ok) {
-//            NpxLeds.SetAll(clr);
-//            NpxLeds.SetCurrentColors();
-//            PShell->Ok();
-//        }
-//        else PShell->BadParam();
+        if(PCmd->GetClrRGB(&clr) == retv::Ok) {
+            NpxLeds.SetAll(clr);
+            NpxLeds.SetCurrentColors();
+            PShell->Ok();
+        }
+        else PShell->BadParam();
         uint32_t i=0;
         while(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.ClrBuf[i++] = clr;
         NpxLeds.SetCurrentColors();
@@ -208,24 +243,44 @@ void OnCmd(Shell_t *PShell) {
         else PShell->BadParam();
     }
 
-//    else if(PCmd->NameIs("GetRtt")) {
-//        uint32_t Indx = 0;
-//        PCmd->GetNext(&Indx);
-//        uint32_t N = Rtt.GetRxBytesCnt(Indx);
-//        Printf("%u\r", N);
-//    }
+    else if(PCmd->NameIs("SetFlameLen")) {
+        uint32_t flen;
+        if(PCmd->GetNext(&flen) == retv::Ok and flen <= FLAME_LEN_MAX) {
+            Flames.SetFlameLen(flen);
+            PShell->Ok();
+        }
+        else PShell->BadParam();
+    }
 
     else if(PCmd->NameIs("Grad")) {
         Color_t clr;
         if(PCmd->GetClrRGB(&clr) == retv::Ok) {
             ColorHSV_t hsv;
             hsv.FromRGB(clr);
-            for(uint32_t i=0; i<FLAME_LEN; i++) {
-                hsv.V = gamma_table[FLAME_LEN-i-1];
+            for(int32_t i=0; i<Flames.flame_len; i++) {
+                hsv.V = gamma_table[Flames.flame_len-i-1];
                 NpxLeds.ClrBuf[i] = hsv.ToRGB();
                 Printf("%u\r", hsv.V);
             }
             NpxLeds.SetCurrentColors();
+        }
+        else PShell->BadParam();
+    }
+
+    else if(PCmd->NameIs("Setup")) {
+        FlameSettings_t FSett;
+        if(GetSetup(PCmd, FSett) == retv::Ok) {
+            Flames.SetNewSettings(FSett);
+            PShell->Ok();
+        }
+        else PShell->BadParam();
+    }
+
+    else if(PCmd->NameIs("BandBrt")) {
+        uint32_t brts[3];
+        if(PCmd->GetArray(brts, 3) == retv::Ok) {
+            Flames.SetBandBrt(brts);
+            PShell->Ok();
         }
         else PShell->BadParam();
     }
