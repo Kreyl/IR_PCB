@@ -225,22 +225,19 @@ void OnCmd(Shell_t *PShell) {
     // Handle command
     if(PCmd->NameIs("Ping")) PShell->Ok();
     else if(PCmd->NameIs("Version")) PShell->Print("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
-
     else if(PCmd->NameIs("Reboot")) Reboot();
+
+    else if(PCmd->NameIs("Start")) { Flames.Start(); PShell->Ok(); }
+    else if(PCmd->NameIs("Stop"))  { Flames.Stop(); PShell->Ok(); }
+
 
     else if(PCmd->NameIs("Npx")) {
         Color_t clr;
-        if(PCmd->GetClrRGB(&clr) == retv::Ok) {
-            NpxLeds.SetAll(clr);
-            NpxLeds.SetCurrentColors();
-            PShell->Ok();
-        }
+        if(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.SetAll(clr);
         else PShell->BadParam();
         uint32_t i=0;
         while(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.ClrBuf[i++] = clr;
         NpxLeds.SetCurrentColors();
-        if(i > 0) PShell->Ok();
-        else PShell->BadParam();
     }
 
     else if(PCmd->NameIs("SetFlameLen")) {

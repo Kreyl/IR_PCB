@@ -23,20 +23,21 @@ void OnOffTmrCallback(void *p);
 
 class Flames_t {
 private:
-    enum PhaseState_t {stIdle, stFadingOut, stFadingIn, stStopping} PhaseState;
+    enum PhaseState_t {stIdle, stFadingOut, stFadingIn, stStopping, stStopped} PhaseState;
     int32_t OnOffBrt = 0;
     VirtualTimer_t IOnOffTmr;
     void StartTimerI(uint32_t ms) { IOnOffTmr.SetI(TIME_MS2I(ms), OnOffTmrCallback, nullptr); }
     void StopTimer() { IOnOffTmr.Reset(); }
     FlameSettings_t INewSettings;
-    volatile bool INewSettingsAppeared = true, MustStop = false;
+    volatile bool INewSettingsAppeared = true;
     ColorHSV_t ClrBattery {0, 0, 0};
     void ApplyNewSettings();
 public:
     void Init();
     void FadeIn();
     void FadeOut();
-    void StopNow();
+    void Stop();
+    void Start();
     void SetNewSettings(FlameSettings_t &ASettings);
     void ShowCharge(ColorHSV_t hsv) { ClrBattery = hsv; }
     void SetBandBrt(uint32_t brts[3]);

@@ -206,19 +206,18 @@ __attribute__((noreturn))
 void Flames_t::IDraw() {
     while(true) {
         Sys::SleepMilliseconds(FRAME_PERIOD_ms);
-        NpxLeds.SetAll((Color_t){0,0,0,0}); // Clear buffer before proceeding
-
-        // Disable everything
-        if(MustStop) {
-            if(PhaseState == stStopping) {
-                NpxLeds.SetCurrentColors();
-                Sys::Lock();
-                for(Spark_t &Spark : Sparks) Spark.StopI();
-                Sys::Unlock();
-                PhaseState = stIdle;
-            }
-            else continue; // Just sleep forever
+        if(PhaseState == stStopped) continue;
+        else if(PhaseState == stStopping) {
+            NpxLeds.SetAll((Color_t){0,0,0,0});
+            NpxLeds.SetCurrentColors();
+            Sys::Lock();
+            for(Spark_t &Spark : Sparks) Spark.StopI();
+            Sys::Unlock();
+            PhaseState = stStopped;
+            continue;
         }
+
+        NpxLeds.SetAll((Color_t){0,0,0,0}); // Clear buffer before proceeding
 
         // Show charge if needed
         if(ClrBattery.V != 0) {
@@ -270,11 +269,14 @@ void Flames_t::FadeOut() {
     Sys::Unlock();
 }
 
-void Flames_t::StopNow() {
+void Flames_t::Stop() {
     StopTimer();
     PhaseState = stStopping;
-    OnOffBrt = 0;
-    MustStop = true;
+    INewSettingsAppeared = false;
+}
+void Flames_t::Start() {
+    PhaseState = stIdle;
+    INewSettingsAppeared = true;
 }
 
 void Flames_t::OnOnOffTmrTickI() {
