@@ -70,10 +70,10 @@ public:
 // Type of a Virtual Timer callback function.
 typedef void (*vtfunc_t)(void *p);
 
-class VirtualTimer_t {
+class VirtualTimer {
 private:
-    VirtualTimer_t *next; // Next timer in the list
-    VirtualTimer_t *prev; // Previous timer in the list
+    VirtualTimer *next; // Next timer in the list
+    VirtualTimer *prev; // Previous timer in the list
     systime_t delta;  // Time delta before timeout
     vtfunc_t pCallback = nullptr; // Timer callback function pointer
     void *ptr = nullptr; // Timer callback function parameter
@@ -85,16 +85,16 @@ public:
     inline bool IsArmedX() { return (pCallback != nullptr); }
     inline void ResetI()  { if(IsArmedX()) DoResetI(); }
     void Reset();
-    inline void SetI(systime_t delay, vtfunc_t ACallback, void *param) {
+    inline void SetI(systime_t delay, vtfunc_t acallback, void *param) {
         ResetI();
-        DoSetI(delay, ACallback, param);
+        DoSetI(delay, acallback, param);
     }
     void Set(systime_t delay, vtfunc_t ACallback, void *param);
 };
 
 // ==== Event Timer ====
 // Example: EvtTimer_t TmrS(TIME_S2I(1), EvtId::EverySecond, EvtTimer_t::Type::Periodic);
-class EvtTimer_t : private VirtualTimer_t {
+class EvtTimer : private VirtualTimer {
 private:
     systime_t period;
     EvtId evt_id;
@@ -102,7 +102,7 @@ private:
     friend void TmrEvtCallback(void *p);
 public:
     enum class Type {OneShot, Periodic} tmr_type;
-    EvtTimer_t(systime_t APeriod, EvtId AEvtId, Type AType) :
+    EvtTimer(systime_t APeriod, EvtId AEvtId, Type AType) :
         period(APeriod), evt_id(AEvtId), tmr_type(AType) {}
     void StartOrRestart();
     void StartOrRestart(systime_t NewPeriod);

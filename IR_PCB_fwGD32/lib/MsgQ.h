@@ -81,7 +81,7 @@ union EvtMsg_t {
 
 
 template<typename T, uint32_t sz>
-class EvtMsgQ_t {
+class EvtMsgQ {
 private:
     union {
         uint64_t __Align;
@@ -91,7 +91,7 @@ private:
     Semaphore_t full_sem;    // Full slots counter
     Semaphore_t empty_sem;   // Empty slots counter
 public:
-    EvtMsgQ_t() : __Align(0), read_ptr(IBuf), write_ptr(IBuf) {}
+    EvtMsgQ() : __Align(0), read_ptr(IBuf), write_ptr(IBuf) {}
     void Init() {
         read_ptr = IBuf;
         write_ptr = IBuf;
@@ -174,6 +174,6 @@ public:
         default: Printf("Unhandled Msg %u\r", Msg.ID); break;
     } // Switch
  */
-extern EvtMsgQ_t<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
+extern EvtMsgQ<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
 
 #endif // MSGQ_H_

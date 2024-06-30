@@ -10,7 +10,7 @@
 
 #include <inttypes.h>
 
-extern int32_t HitCnt, RoundsCnt, MagazinesCnt;
+extern int32_t hit_cnt, rounds_cnt, magazines_cnt;
 
 void AppInit();
 void SetInputs(uint32_t AIn[2]);

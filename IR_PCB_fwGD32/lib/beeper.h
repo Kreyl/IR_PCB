@@ -11,27 +11,27 @@
 #include "BaseSequencer.h"
 #include "gd_lib.h"
 
-class Beeper_t : public BaseSequencer_t<BeepChunk_t> {
+class Beeper : public BaseSequencer<BeepChunk> {
 private:
     const PinOutputPWM_t IPin;
     uint32_t CurrFreq = 0;
     void ISwitchOff() { IPin.Set(0); }
     SequencerLoopTask_t ISetup() {
-        IPin.Set(IPCurrentChunk->Volume);
-        if(IPCurrentChunk->FreqSmooth == 0) { // If smooth time is zero, set now
-            CurrFreq = IPCurrentChunk->Freq_Hz;
+        IPin.Set(pcurrent_chunk->volume);
+        if(pcurrent_chunk->freq_smooth == 0) { // If smooth time is zero, set now
+            CurrFreq = pcurrent_chunk->freq_Hz;
             IPin.SetFrequencyHz(CurrFreq);
-            IPCurrentChunk++;   // goto next
+            pcurrent_chunk++;   // goto next
         }
         else {
-            if     (CurrFreq < IPCurrentChunk->Freq_Hz) CurrFreq += 100;
-            else if(CurrFreq > IPCurrentChunk->Freq_Hz) CurrFreq -= 100;
+            if     (CurrFreq < pcurrent_chunk->freq_Hz) CurrFreq += 100;
+            else if(CurrFreq > pcurrent_chunk->freq_Hz) CurrFreq -= 100;
             IPin.SetFrequencyHz(CurrFreq);
             // Check if completed now
-            if(CurrFreq == IPCurrentChunk->Freq_Hz) IPCurrentChunk++;
+            if(CurrFreq == pcurrent_chunk->freq_Hz) pcurrent_chunk++;
             else { // Not completed
                 // Calculate time to next adjustment
-                uint32_t Delay = (IPCurrentChunk->FreqSmooth / (CurrFreq+4)) + 1;
+                uint32_t Delay = (pcurrent_chunk->freq_smooth / (CurrFreq+4)) + 1;
                 SetupDelay(Delay);
                 return sltBreak;
             } // Not completed
@@ -39,7 +39,7 @@ private:
         return sltProceed;
     }
 public:
-    Beeper_t(const PwmSetup_t APinSetup) : BaseSequencer_t(), IPin(APinSetup) {}
+    Beeper(const PwmSetup_t APinSetup) : BaseSequencer(), IPin(APinSetup) {}
     void Init() { IPin.Init(); }
     void Beep(uint32_t Freq_Hz, uint8_t Volume) {
         IPin.SetFrequencyHz(Freq_Hz);

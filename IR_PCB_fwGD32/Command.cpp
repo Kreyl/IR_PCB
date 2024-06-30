@@ -11,6 +11,7 @@
 #include "app.h"
 #include "Settings.h"
 #include "ws2812bTim.h"
+#include "led.h"
 
 typedef void (*ftVoidPShell)(Shell_t *PShell);
 extern const char* FWVersion;
@@ -33,9 +34,9 @@ static void DoVersion(Shell_t *PShell) { PShell->Print("%S %S\r", APP_NAME, FWVe
 static void DoReboot(Shell_t *PShell) { Reboot(); }
 
 #if 1 // ====================== Testing related ================================
-extern bool IsTesting, Beeped;
-extern uint32_t TstIndx;
-extern EvtTimer_t TmrTesting;
+extern bool is_testing, beeped;
+extern uint32_t tst_indx;
+extern EvtTimer tmr_testing;
 
 static const int32_t sinbuf[] = {
 0, 1389, 2736, 3999, 5142, 6128, 6928, 7517, 7878, 8000,
@@ -46,14 +47,14 @@ static const int32_t sinbuf[] = {
 
 void TestIrRxCallbackI(uint32_t Rcvd) { PrintfI("RX: 0x%X\r", Rcvd); }
 void I2SDmaDoneCbI() {
-    if(IsTesting and TstIndx == 0) {
+    if(is_testing and tst_indx == 0) {
         Codec::TransmitBuf((void*)sinbuf, SIN_SZ);
     }
 }
 
 static void DoTest(Shell_t *PShell) {
-    IsTesting = true;
-    Beeped = false;
+    is_testing = true;
+    beeped = false;
     irRcvr::SetCallback(TestIrRxCallbackI);
     // Gpios
     Gpio::SetupOut(Gpio1, Gpio::PushPull, Gpio::speed2MHz);
@@ -66,21 +67,21 @@ static void DoTest(Shell_t *PShell) {
         Codec::TransmitBuf((void*)sinbuf, SIN_SZ);
     }
     else Printf("FS setup fail\r");
-    TmrTesting.StartOrRestart();
+    tmr_testing.StartOrRestart();
 }
 #endif
 
-static void GetSta(Shell_t *PShell) { PShell->Print("Hits: %d; Rnds: %d; mgzs: %d\r", HitCnt, RoundsCnt, MagazinesCnt); }
+static void GetSta(Shell_t *PShell) { PShell->Print("Hits: %d; Rnds: %d; mgzs: %d\r", hit_cnt, rounds_cnt, magazines_cnt); }
 static void Restore(Shell_t *PShell) {
     Reset();
     PShell->Ok();
 }
 
 static void GetSettings(Shell_t *PShell) {
-    Value_t *Arr = (Value_t*)&Settings;
+    Value_t *Arr = (Value_t*)&settings;
     for(uint32_t i=0; i<SETTINGS_CNT; i++, Arr++) {
         PShell->Print("%*S = %4u; Min = %u; Max = %4u; default = %4u\r\n",
-                16, Arr->Name, Arr->v, Arr->Min, Arr->Max, Arr->Default);
+                16, Arr->Name, Arr->v, Arr->v_min, Arr->v_max, Arr->v_default);
     }
 }
 
@@ -92,7 +93,7 @@ static void Set(Shell_t *PShell) {
     // Get pairs of values
     while((((Name = PCmd->GetNextString()) != nullptr) and PCmd->GetNext(&v) == retv::Ok)) {
         Found = false;
-        Value_t *Arr = (Value_t*)&Settings;
+        Value_t *Arr = (Value_t*)&settings;
         for(uint32_t i=0; i<SETTINGS_CNT; i++, Arr++) { // Find by name
             if(kl_strcasecmp(Name, Arr->Name) == 0) {
                 if(Arr->CheckAndSetIfOk(v)) {
@@ -117,11 +118,11 @@ static void Set(Shell_t *PShell) {
 }
 
 static void SaveSettings(Shell_t *PShell) {
-    if(Settings.Save() == retv::Ok) PShell->Print("Saved\r\n");
+    if(settings.Save() == retv::Ok) PShell->Print("Saved\r\n");
     else PShell->Print("Saving fail\r\n");
 }
 static void LoadSettings(Shell_t *PShell) {
-    Settings.Load();
+    settings.Load();
     Reset();
 }
 
@@ -156,6 +157,23 @@ static void Npx(Shell_t *PShell) {
 }
 #endif
 
+//extern LedSmooth front_LEDs[FRONT_LEDS_CNT];
+extern LedSmooth side_LEDs[SIDE_LEDS_CNT];
+
+static void SetLed(Shell_t *PShell) {
+    Cmd_t *PCmd = &PShell->Cmd;
+    uint32_t v;
+    if(PCmd->GetNext(&v) == retv::Ok) {
+        side_LEDs[0].Set(v);
+        PShell->Ok();
+    }
+    else PShell->BadParam();
+}
+
+static void Get(Shell_t *PShell) {
+    PShell->Print("0x%X %u %u\r", TIM0->INTF, TIM0->CH0CV, TIM0->CH1CV);
+}
+
 // Commands
 ShellCmd_t Cmds[] = {
         {"Ping",    DoPing,    "Just to ask if anyone is there"},
@@ -170,6 +188,8 @@ ShellCmd_t Cmds[] = {
         {"SaveSettings", SaveSettings, "Save current settings to Flash"},
         {"LoadSettings", LoadSettings, "Load settings from Flash"},
         // ==== Debug ====
+        {"SetLed", SetLed, "set led PWM"},
+        {"Get", Get, "get"},
 //        {"CtrlSet", CtrlSet,   "Set two control pins to specified value, ex: 'CtrlSet 1, 0'"},
 //        {"IrTx",    IrTx,      "'IrTx Word, Pwr, BitCnt': transmit MSB bits by IR LED at specified power. Ex: 'IRTx 0xAA50 90 12"},
 //        {"NPX",     Npx,       "Set all NPX LEDs to specified RGB color, ex: 'Npx 18 255 180'"},

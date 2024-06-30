@@ -13,7 +13,7 @@
 
 #define GET_BITS(reg, mask, offset)         ((reg & (mask << offset)) >> offset)
 #define SET_BITS(reg, mask, value, offset)  reg = ((reg & (~(mask << offset))) | (value << offset))
-#define BITS_EQUAL(reg, mask, value, offset) ((reg & (mask << offset)) == (value << offset))
+#define BITS_EQUAL(reg, mask, value, offset) (((reg >> offset) & mask) == value)
 
 #define IRC48M_Hz       48000000UL
 #define IRC8M_Hz        8000000UL

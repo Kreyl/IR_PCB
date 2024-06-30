@@ -121,7 +121,7 @@ void Seed(uint32_t Seed) { next = Seed; }
 
 namespace Gpio { // ========================== GPIO ============================
 
-void SetupOut(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode_t OutMode, const Speed_t ASpeed) {
+void SetupOut(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode OutMode, const Speed ASpeed) {
     RCU->EnGpio(PGpio);
     uint32_t CtlMode = ((uint32_t)OutMode << 2) | ((uint32_t)ASpeed & 0b11UL);
     PGpio->SetCtlMode(PinN, CtlMode);
@@ -129,7 +129,7 @@ void SetupOut(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode_t OutMode,
     else PGpio->SPD &= ~(1UL << PinN);
 }
 
-void SetupInput(GPIO_TypeDef *PGpio, const uint32_t PinN, const PullUpDown_t PullUpDown) {
+void SetupInput(GPIO_TypeDef *PGpio, const uint32_t PinN, const PullUpDown PullUpDown) {
     RCU->EnGpio(PGpio);
     if(PullUpDown == PullNone) PGpio->SetCtlMode(PinN, 0b0100UL); // Floating input
     else {
@@ -144,7 +144,7 @@ void SetupAnalog(GPIO_TypeDef *PGpio, const uint32_t PinN) {
     PGpio->SetCtlMode(PinN, 0); // Clear both mode and cnf
 }
 
-void SetupAlterFunc(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode_t OutMode, const Speed_t ASpeed) {
+void SetupAlterFunc(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode OutMode, const Speed ASpeed) {
     RCU->EnGpio(PGpio);
     RCU->EnAFIO();
     uint32_t CtlMode = ((uint32_t)OutMode << 2) | 0b1000UL | ((uint32_t)ASpeed & 0b11UL);
@@ -1018,12 +1018,12 @@ void ClearPending(IRQn_Type IrqN) { NVIC->ICPR[(uint32_t)IrqN >> 5] = 1 << ((uin
 
 #if 1 // ========================== HW Timer ===================================
 void HwTim::SetInputFreqChangingPrescaler(uint32_t FreqHz) const {
-    ITmr->PSC = (Clk::GetTimInputFreq(ITmr) / FreqHz) - 1;
+    itmr->PSC = (Clk::GetTimInputFreq(itmr) / FreqHz) - 1;
 }
 
 void HwTim::SetUpdateFreqChangingPrescaler(uint32_t FreqHz) const {
     // Figure out input timer freq
-    uint32_t UpdFreqMax = Clk::GetTimInputFreq(ITmr) / (GetTopValue() + 1);
+    uint32_t UpdFreqMax = Clk::GetTimInputFreq(itmr) / (GetTopValue() + 1);
     uint32_t Psc = UpdFreqMax / FreqHz;
     if(Psc != 0) Psc--;
     SetPrescaler(Psc);
@@ -1032,7 +1032,7 @@ void HwTim::SetUpdateFreqChangingPrescaler(uint32_t FreqHz) const {
 }
 
 void HwTim::SetUpdateFreqChangingTopValue(uint32_t FreqHz) const {
-    uint32_t UpdFreqMax = Clk::GetTimInputFreq(ITmr) / (GetPrescaler() + 1);
+    uint32_t UpdFreqMax = Clk::GetTimInputFreq(itmr) / (GetPrescaler() + 1);
     uint32_t TopVal  = (UpdFreqMax / FreqHz);
     if(TopVal != 0) TopVal--;
     SetTopValue(TopVal);
@@ -1041,7 +1041,7 @@ void HwTim::SetUpdateFreqChangingTopValue(uint32_t FreqHz) const {
 }
 
 void HwTim::SetUpdateFreqChangingBoth(uint32_t FreqHz) const {
-    uint32_t Psc = (Clk::GetTimInputFreq(ITmr) / FreqHz) / 0x10000;
+    uint32_t Psc = (Clk::GetTimInputFreq(itmr) / FreqHz) / 0x10000;
     SetPrescaler(Psc);
     SetUpdateFreqChangingTopValue(FreqHz);
 }

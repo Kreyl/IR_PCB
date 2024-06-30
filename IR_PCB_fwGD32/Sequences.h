@@ -10,33 +10,9 @@
 
 #include "BaseSequencer.h"
 
-#if 0 // ======================== Simple LED blink =============================
+#if 1 // ======================== Simple LED blink =============================
 #define BLINK_DELAY_MS      180
-const BaseChunk_t lbsqOk[] = {
-        {Chunk::Setup, 1},
-        {Chunk::Wait, 720},
-        {Chunk::Setup, 0},
-        {Chunk::End}
-};
-
-const BaseChunk_t lbsqBlink3[] = {
-        {Chunk::Setup, 1},
-        {Chunk::Wait, BLINK_DELAY_MS},
-        {Chunk::Setup, 0},
-        {Chunk::Wait, BLINK_DELAY_MS},
-        {Chunk::Repeat, 3},
-        {Chunk::End}
-};
-
-const BaseChunk_t lbsqCharging[] = {
-        {Chunk::Setup, 1},
-        {Chunk::Wait, 720},
-        {Chunk::Setup, 0},
-        {Chunk::Wait, 270},
-        {Chunk::Goto, 0}
-};
-
-const BaseChunk_t lbsqChargingDone[] = {
+const BaseChunk lbsqStart[] = {
         {Chunk::Setup, 1},
         {Chunk::End}
 };
@@ -45,18 +21,18 @@ const BaseChunk_t lbsqChargingDone[] = {
 #if 1 // =========================== LED Smooth ================================
 #define LED_TOP_BRIGHTNESS  255
 
-const LedSmoothChunk_t lsqFadeIn[] = {
+const LedSmoothChunk lsqFadeIn[] = {
         {Chunk::Setup, 207, LED_TOP_BRIGHTNESS},
         {Chunk::End}
 };
 
-const LedSmoothChunk_t lsqFadeInOut[] = {
+const LedSmoothChunk lsqFadeInOut[] = {
         {Chunk::Setup, 207, LED_TOP_BRIGHTNESS},
         {Chunk::Setup, 207, 0},
         {Chunk::End}
 };
 
-const LedSmoothChunk_t lsqShot[] = {
+const LedSmoothChunk lsqShot[] = {
         {Chunk::Setup, 0, LED_TOP_BRIGHTNESS},
         {Chunk::Wait, 72},
         {Chunk::Setup, 0, 0},
@@ -65,7 +41,7 @@ const LedSmoothChunk_t lsqShot[] = {
 
 
 #define RELOADING_BLINK_DELAY   72
-const LedSmoothChunk_t lsqReloading[] = {
+const LedSmoothChunk lsqReloading[] = {
         {Chunk::Setup, 0, LED_TOP_BRIGHTNESS},
         {Chunk::Wait, RELOADING_BLINK_DELAY},
         {Chunk::Setup, 0, 0},
@@ -73,24 +49,24 @@ const LedSmoothChunk_t lsqReloading[] = {
         {Chunk::Goto, 0}
 };
 
-const LedSmoothChunk_t lsqMagazinesEnded[] = {
+const LedSmoothChunk lsqMagazinesEnded[] = {
         {Chunk::Setup, 0, LED_TOP_BRIGHTNESS},
         {Chunk::End}
 };
 
-const LedSmoothChunk_t lsqHit[] = {
+const LedSmoothChunk lsqHit[] = {
         {Chunk::Setup, 0, LED_TOP_BRIGHTNESS},
         {Chunk::Wait, 153},
         {Chunk::Setup, 0, 0},
         {Chunk::End}
 };
 
-const LedSmoothChunk_t lsqHitsEnded[] = {
+const LedSmoothChunk lsqHitsEnded[] = {
         {Chunk::Setup, 0, LED_TOP_BRIGHTNESS},
         {Chunk::End}
 };
 
-const LedSmoothChunk_t lsqUsbCmd[] = {
+const LedSmoothChunk lsqUsbCmd[] = {
         {Chunk::Setup, 0, 0},
         {Chunk::Wait, 90},
         {Chunk::Setup, 0, LED_TOP_BRIGHTNESS},
@@ -151,7 +127,7 @@ const LedSmoothChunk_t lsqUsbCmd[] = {
 #define MORSE_DASH MORSE_TONE, {Chunk::Wait, MORSE_DASH_LENGTH}, MORSE_PAUSE
 
 // We are the champions
-const BeepChunk_t bsqWeAreTheChampions[] = {
+const BeepChunk bsqWeAreTheChampions[] = {
         NOTE(Fa_3, OneHalfth),
         NOTE(Mi_3, OneEighth),
         NOTE(Fa_3, OneEighth),
@@ -165,7 +141,7 @@ const BeepChunk_t bsqWeAreTheChampions[] = {
 
 // Type, BEEP_VOLUME, freq
 
-const BeepChunk_t bsqShot[] = {
+const BeepChunk bsqShot[] = {
         {Chunk::Setup, BEEP_VOLUME_MAX, 6000, 0},
         {Chunk::Wait, 40},
         {Chunk::Setup, BEEP_VOLUME_MAX, 1000, 18000},
@@ -173,7 +149,7 @@ const BeepChunk_t bsqShot[] = {
         {Chunk::End}
 };
 
-const BeepChunk_t bsqReloading[] = {
+const BeepChunk bsqReloading[] = {
         {Chunk::Setup, BEEP_VOLUME, Si_3},   {Chunk::Wait, RELOADING_BLINK_DELAY},
         {Chunk::Setup, 0},                   {Chunk::Wait, RELOADING_BLINK_DELAY},
         {Chunk::Setup, BEEP_VOLUME, Re_D_4}, {Chunk::Wait, RELOADING_BLINK_DELAY},
@@ -183,7 +159,7 @@ const BeepChunk_t bsqReloading[] = {
         {Chunk::Goto, 0}
 };
 
-const BeepChunk_t bsqMagazReloaded[] = {
+const BeepChunk bsqMagazReloaded[] = {
         {Chunk::Setup, BEEP_VOLUME_MAX, 1950, 0},
         {Chunk::Wait, 40},
         {Chunk::Setup, BEEP_VOLUME_MAX, 2950, 120000},
@@ -191,7 +167,7 @@ const BeepChunk_t bsqMagazReloaded[] = {
         {Chunk::End}
 };
 
-const BeepChunk_t bsqMagazEnded[] = {
+const BeepChunk bsqMagazEnded[] = {
         {Chunk::Setup, BEEP_VOLUME_MAX, 2250, 0},
         {Chunk::Wait, 40},
         {Chunk::Setup, BEEP_VOLUME_MAX, 1050, 90000},
@@ -199,7 +175,7 @@ const BeepChunk_t bsqMagazEnded[] = {
         {Chunk::End}
 };
 
-const BeepChunk_t bsqHit[] = {
+const BeepChunk bsqHit[] = {
         {Chunk::Setup, BEEP_VOLUME_MAX, 100, 0},
         {Chunk::Wait, 20},
         {Chunk::Setup, BEEP_VOLUME_MAX, 2700, 1000},
@@ -210,7 +186,7 @@ const BeepChunk_t bsqHit[] = {
         {Chunk::End}
 };
 
-const BeepChunk_t bsqHitsEnded[] = {
+const BeepChunk bsqHitsEnded[] = {
         {Chunk::Setup, BEEP_VOLUME_MAX, 260, 0},
         {Chunk::Wait, 200},
         {Chunk::Setup, BEEP_VOLUME_MAX, 160, 0},
@@ -220,13 +196,13 @@ const BeepChunk_t bsqHitsEnded[] = {
         {Chunk::End}
 };
 
-const BeepChunk_t bsqBeep[] = {
+const BeepChunk bsqBeep[] = {
         {Chunk::Setup, 1, 1975},
         {Chunk::Wait, 54},
         {Chunk::Setup, 0},
         {Chunk::End}
 };
-const BeepChunk_t bsqBeepBeep[] = {
+const BeepChunk bsqBeepBeep[] = {
         {Chunk::Setup, BEEP_VOLUME, 1975},
         {Chunk::Wait, 54},
         {Chunk::Setup, 0},
@@ -239,7 +215,7 @@ const BeepChunk_t bsqBeepBeep[] = {
 
 #if 1 // ==== Extensions ====
 // Pill
-const BeepChunk_t bsqBeepPillOk[] = {
+const BeepChunk bsqBeepPillOk[] = {
         {Chunk::Setup, BEEP_VOLUME, Si_3},
         {Chunk::Wait, 180},
         {Chunk::Setup, BEEP_VOLUME, Re_D_4},
@@ -250,7 +226,7 @@ const BeepChunk_t bsqBeepPillOk[] = {
         {Chunk::End}
 };
 
-const BeepChunk_t bsqBeepPillBad[] = {
+const BeepChunk bsqBeepPillBad[] = {
         {Chunk::Setup, BEEP_VOLUME, Fa_4},
         {Chunk::Wait, 180},
         {Chunk::Setup, BEEP_VOLUME, Re_4},

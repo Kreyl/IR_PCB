@@ -147,8 +147,8 @@ static inline systime_t TimeAdd(systime_t systime, systime_t interval) {
  *          timer is often used in the code.
  */
 static struct VirtualTimersList_t {
-    VirtualTimer_t *next; /**< @brief Next timer in the delta list. */
-    VirtualTimer_t *prev; /**< @brief Last timer in the delta list. */
+    VirtualTimer *next; /**< @brief Next timer in the delta list. */
+    VirtualTimer *prev; /**< @brief Last timer in the delta list. */
     systime_t delta = -1;
     systime_t lasttime; // System time of the last tick event.
 } vtlist;
@@ -158,7 +158,7 @@ void VtDoTickI() {
     systime_t now;
     systime_t delta, nowdelta;
     // Loop through timers
-    VirtualTimer_t *vtp = vtlist.next;
+    VirtualTimer *vtp = vtlist.next;
     while(true) {
         // Get the system time as a reference
         now = Sys::GetSysTimeX();
@@ -172,13 +172,13 @@ void VtDoTickI() {
             vtlist.lasttime += vtp->delta;
             nowdelta -= vtp->delta;
 
-            vtp->next->prev = (VirtualTimer_t*)&vtlist;
+            vtp->next->prev = (VirtualTimer*)&vtlist;
             vtlist.next = vtp->next;
             vtfunc_t pCallback = vtp->pCallback;
             vtp->pCallback = nullptr;
 
             // When the list is empty, the Sys Timer alarm must be stopped
-            if(vtlist.next == (VirtualTimer_t*)&vtlist) SysTimer::StopAlarm();
+            if(vtlist.next == (VirtualTimer*)&vtlist) SysTimer::StopAlarm();
 
             // The callback is invoked outside the kernel critical zone
             Sys::UnlockFromIRQ();
@@ -190,7 +190,7 @@ void VtDoTickI() {
     } // while(true)
 
     // If the list is empty, there is nothing else to do
-    if(vtlist.next == (VirtualTimer_t*)&vtlist) return;
+    if(vtlist.next == (VirtualTimer*)&vtlist) return;
 
     // The "unprocessed nowdelta" time slice is added to "last time" and subtracted to next timer's delta
     vtlist.lasttime += nowdelta;
@@ -203,7 +203,7 @@ void VtDoTickI() {
     SysTimer::SetAlarm(TimeAdd(now, delta));
 }
 
-void VirtualTimer_t::DoSetI(systime_t delay, vtfunc_t vtfunc, void *APtr) {
+void VirtualTimer::DoSetI(systime_t delay, vtfunc_t vtfunc, void *APtr) {
     dbg.CheckClassI();
     dbg.Check((vtfunc != NULL) && (delay != TIME_IMMEDIATE), "Bad vt params");
     ptr = APtr;
@@ -217,14 +217,14 @@ void VirtualTimer_t::DoSetI(systime_t delay, vtfunc_t vtfunc, void *APtr) {
         vtlist.lasttime = now;
         vtlist.next = this;
         vtlist.prev = this;
-        next = (VirtualTimer_t*)&vtlist;
-        prev = (VirtualTimer_t*)&vtlist;
+        next = (VirtualTimer*)&vtlist;
+        prev = (VirtualTimer*)&vtlist;
         delta = delay;
         // Start the SysTimer alarm as this is the first timer in the list
         SysTimer::StartAlarm(TimeAdd(vtlist.lasttime, delay));
         return;
     }
-    VirtualTimer_t *p = vtlist.next; // Pointer to the first element in the delta list, which is non-empty
+    VirtualTimer *p = vtlist.next; // Pointer to the first element in the delta list, which is non-empty
     // Delay as delta from 'lasttime'. Note, it can overflow and the value becomes lower than 'now'
     systime_t Fdelta = TimeDiff(vtlist.lasttime, now) + delay;
     if(Fdelta < TimeDiff(vtlist.lasttime, now)) {
@@ -259,7 +259,7 @@ void VirtualTimer_t::DoSetI(systime_t delay, vtfunc_t vtfunc, void *APtr) {
     vtlist.delta = (systime_t)-1;
 }
 
-void VirtualTimer_t::DoResetI() {
+void VirtualTimer::DoResetI() {
     dbg.CheckClassI();
     dbg.Check(pCallback != NULL, "timer not set or already triggered");
     pCallback = nullptr;
@@ -274,7 +274,7 @@ void VirtualTimer_t::DoResetI() {
     }
     // Remove the first timer from the list
     vtlist.next = next;
-    vtlist.next->prev = (VirtualTimer_t*)&vtlist;
+    vtlist.next->prev = (VirtualTimer*)&vtlist;
     // If the list become empty then stop sys timer and return
     if(&vtlist == (VirtualTimersList_t*)vtlist.next) {
         SysTimer::StopAlarm();
@@ -295,42 +295,42 @@ void VirtualTimer_t::DoResetI() {
     SysTimer::SetAlarm(TimeAdd(vtlist.lasttime, delta));
 }
 
-void VirtualTimer_t::Reset() {
+void VirtualTimer::Reset() {
     Sys::Lock();
     ResetI();
     Sys::Unlock();
 }
 
-void VirtualTimer_t::Set(systime_t delay, vtfunc_t ACallback, void *param) {
+void VirtualTimer::Set(systime_t delay, vtfunc_t acallback, void *param) {
     Sys::Lock();
-    SetI(delay, ACallback, param);
+    SetI(delay, acallback, param);
     Sys::Unlock();
 }
 
 #if 1 // ==== Event Timer ====
 void TmrEvtCallback(void *p) {
     Sys::LockFromIRQ();
-    EvtTimer_t *vt = (EvtTimer_t*)p;
+    EvtTimer *vt = (EvtTimer*)p;
     EvtQMain.SendNowOrExitI(EvtMsg_t(vt->evt_id));
     if(vt->tmr_type == vt->Type::Periodic) vt->StartI();
     Sys::UnlockFromIRQ();
 }
 
 // Will be before start
-void EvtTimer_t::StartI() { SetI(period, TmrEvtCallback, this); }
+void EvtTimer::StartI() { SetI(period, TmrEvtCallback, this); }
 
-void EvtTimer_t::StartOrRestart() {
+void EvtTimer::StartOrRestart() {
     Sys::Lock();
     StartI();
     Sys::Unlock();
 }
-void EvtTimer_t::StartOrRestart(systime_t NewPeriod) {
+void EvtTimer::StartOrRestart(systime_t NewPeriod) {
     Sys::Lock();
     period = NewPeriod;
     StartI();
     Sys::Unlock();
 }
-void EvtTimer_t::StartIfNotRunning() {
+void EvtTimer::StartIfNotRunning() {
     Sys::Lock();
     if(!IsArmedX()) StartI();
     Sys::Unlock();
@@ -500,7 +500,7 @@ retv SchGoSleepTimeoutS(ThdState newstate, systime_t timeout) {
     dbg.CheckClassS();
     if(timeout == TIME_INFINITE) SchGoSleepS(newstate); // Sleep forever
     else {
-        VirtualTimer_t vt;
+        VirtualTimer vt;
         vt.DoSetI(timeout, wakeup, currp);
         SchGoSleepS(newstate);
         // Will be here after awake
@@ -649,8 +649,8 @@ void Init() {
     rlist.queue.Init();
     rlist.prio = NOPRIO;
     // Init VirtualTimers
-    vtlist.next = (VirtualTimer_t*)&vtlist;
-    vtlist.prev = (VirtualTimer_t*)&vtlist;
+    vtlist.next = (VirtualTimer*)&vtlist;
+    vtlist.prev = (VirtualTimer*)&vtlist;
     vtlist.delta = (systime_t)-1;
     vtlist.lasttime = (systime_t)0;
     // Set current flow as main thread

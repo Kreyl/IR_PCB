@@ -5,69 +5,73 @@
 #include "BaseSequencer.h"
 #include "gd_lib.h"
 
-#if 0 // ==================== LED on/off, no sequences =========================
-class LedOnOff_t {
+#if 1 // ==================== LED on/off, no sequences =========================
+class LedOnOff {
 protected:
-    PinOutput_t IChnl;
+    Pin_t ipin;
+    Gpio::OutMode output_mode;
 public:
-    LedOnOff_t(GPIO_TypeDef *APGPIO, uint16_t APin, PinOutMode_t AOutputType) :
-        IChnl(APGPIO, APin, AOutputType) {}
-    void Init() { IChnl.Init(); Off(); }
-    void On()  { IChnl.SetHi(); }
-    void Off() { IChnl.SetLo(); }
+    LedOnOff(GPIO_TypeDef *apgpio, uint16_t apin, Gpio::OutMode aoutput_mode) :
+        ipin(apgpio, apin), output_mode(aoutput_mode) {}
+    void Init() {
+        ipin.SetupOut(output_mode);
+        Off();
+    }
+    void On()  { ipin.SetHi(); }
+    void Off() { ipin.SetLo(); }
 };
 #endif
 
-#if 0 // ========================= Simple LED blinker ==========================
-class LedBlinker_t : public BaseSequencer_t<BaseChunk_t>, public LedOnOff_t {
+#if 1 // ========================= Simple LED blinker ==========================
+class LedBlinker : public BaseSequencer<BaseChunk>, public LedOnOff {
 protected:
     void ISwitchOff() { Off(); }
     SequencerLoopTask_t ISetup() {
-        IChnl.Set(IPCurrentChunk->Value);
-        IPCurrentChunk++;   // Always increase
+        ipin.Set(pcurrent_chunk->value);
+        pcurrent_chunk++;   // Always increase
         return sltProceed;  // Always proceed
     }
 public:
-    LedBlinker_t(GPIO_TypeDef *APGPIO, uint16_t APin, PinOutMode_t AOutputType) :
-        BaseSequencer_t(), LedOnOff_t(APGPIO, APin, AOutputType) {}
+    LedBlinker(GPIO_TypeDef *apgpio, uint16_t apin, Gpio::OutMode aoutput_mode) :
+        BaseSequencer(), LedOnOff(apgpio, apin, aoutput_mode) {}
 };
 #endif
 
 #if 1 // ======================== Single Led Smooth ============================
-class LedSmooth_t : public BaseSequencer_t<LedSmoothChunk_t> {
+class LedSmooth : public BaseSequencer<LedSmoothChunk> {
 protected:
     const PinOutputPWM_t IChnl;
     uint32_t ICurrentValue;
     const uint32_t PWMFreq;
     void ISwitchOff() { Set(0); }
     SequencerLoopTask_t ISetup() {
-        if(ICurrentValue != IPCurrentChunk->Brightness) {
-            if(IPCurrentChunk->Value == 0) {     // If smooth time is zero,
-                ICurrentValue = IPCurrentChunk->Brightness;
+        if(ICurrentValue != pcurrent_chunk->brightness) {
+            if(pcurrent_chunk->value == 0) {     // If smooth time is zero,
+                ICurrentValue = pcurrent_chunk->brightness;
                 SetCurrent();
-                IPCurrentChunk++;                // and goto next chunk
+                pcurrent_chunk++;                // and goto next chunk
             }
             else {
-                if     (ICurrentValue < IPCurrentChunk->Brightness) ICurrentValue++;
-                else if(ICurrentValue > IPCurrentChunk->Brightness) ICurrentValue--;
+                if     (ICurrentValue < pcurrent_chunk->brightness) ICurrentValue++;
+                else if(ICurrentValue > pcurrent_chunk->brightness) ICurrentValue--;
                 SetCurrent();
                 // Check if completed now
-                if(ICurrentValue == IPCurrentChunk->Brightness) IPCurrentChunk++;
+                if(ICurrentValue == pcurrent_chunk->brightness) pcurrent_chunk++;
                 else { // Not completed
                     // Calculate time to next adjustment
-                    uint32_t Delay = ClrCalcDelay(ICurrentValue, IPCurrentChunk->Value);
+                    uint32_t Delay = ClrCalcDelay(ICurrentValue, pcurrent_chunk->value);
                     SetupDelay(Delay);
                     return sltBreak;
                 } // Not completed
             } // if time > 256
         } // if color is different
-        else IPCurrentChunk++; // Color is the same, goto next chunk
+        else pcurrent_chunk++; // Color is the same, goto next chunk
         return sltProceed;
     }
     void SetCurrent() { IChnl.Set(ICurrentValue); }
 public:
-    LedSmooth_t(const PwmSetup_t APinSetup, const uint32_t AFreq = 0xFFFFFFFF) :
-        BaseSequencer_t(), IChnl(APinSetup), ICurrentValue(0), PWMFreq(AFreq) {}
+    LedSmooth(const PwmSetup_t APinSetup, const uint32_t AFreq = 0xFFFFFFFF) :
+        BaseSequencer(), IChnl(APinSetup), ICurrentValue(0), PWMFreq(AFreq) {}
     void Init() {
         IChnl.Init();
         IChnl.SetFrequencyHz(PWMFreq);
@@ -82,17 +86,17 @@ public:
 
 #if 0 // ============= Single Led Smooth with brightness control================
 // Set LED top value to (255*255)
-class LedSmoothWBrt_t : public LedSmooth_t {
+class LedSmoothWBrt_t : public LedSmooth {
 private:
     uint32_t CurrBrt = 0;
     void SetCurrent() {
         // CurrBrt=[0;LED_SMOOTH_MAX_BRT]; ICurrentValue=[0;255]
         uint32_t FValue = ICurrentValue * CurrBrt;
-        IChnl.Set(FValue);
+        ipin.Set(FValue);
 //        Printf("v=%u\r", FValue);
     }
 public:
-    LedSmoothWBrt_t(const PwmSetup_t APinSetup, const uint32_t AFreq = 0xFFFFFFFF) : LedSmooth_t(APinSetup, AFreq) {}
+    LedSmoothWBrt_t(const PwmSetup_t APinSetup, const uint32_t AFreq = 0xFFFFFFFF) : LedSmooth(APinSetup, AFreq) {}
     void SetBrightness(uint32_t NewBrt) {
         CurrBrt = NewBrt;
         SetCurrent();
@@ -106,7 +110,7 @@ public:
 
 #if 0 // ==================== RGB blinker (no smooth switch) ===================
 #define LED_RGB_BLINKER
-class LedRgbBlinker_t : public BaseSequencer_t<LedRGBChunk_t> {
+class LedRgbBlinker_t : public BaseSequencer<LedRGBChunk_t> {
 protected:
     PinOutputPushPull_t R, G, B;
     void ISwitchOff() { SetColor(clBlack); }
@@ -117,7 +121,7 @@ protected:
     }
 public:
     LedRgbBlinker_t(const PinOutputPushPull_t ARed, const PinOutputPushPull_t AGreen, const PinOutputPushPull_t ABlue) :
-        BaseSequencer_t(), R(ARed), G(AGreen), B(ABlue) {}
+        BaseSequencer(), R(ARed), G(AGreen), B(ABlue) {}
     void Init() {
         R.Init();
         G.Init();
@@ -133,7 +137,7 @@ public:
 #endif
 
 #if 0 // =========================== LedRGB Parent =============================
-class LedRGBParent_t : public BaseSequencer_t<LedRGBChunk_t> {
+class LedRGBParent_t : public BaseSequencer<LedRGBChunk_t> {
 protected:
     const PinOutputPWM_t  R, G, B;
     const uint32_t PWMFreq;
@@ -171,7 +175,7 @@ public:
             const PwmSetup_t AGreen,
             const PwmSetup_t ABlue,
             const uint32_t APWMFreq) :
-        BaseSequencer_t(), R(ARed), G(AGreen), B(ABlue), PWMFreq(APWMFreq) {}
+        BaseSequencer(), R(ARed), G(AGreen), B(ABlue), PWMFreq(APWMFreq) {}
     void Init() {
         R.Init();
         R.SetFrequencyHz(PWMFreq);
@@ -249,7 +253,7 @@ public:
 #endif
 
 #if 0 // ============================ LedHSV ===================================
-class LedHSV_t : public BaseSequencer_t<LedHSVChunk_t> {
+class LedHSV_t : public BaseSequencer<LedHSVChunk_t> {
 protected:
     const PinOutputPWM_t  R, G, B;
     const uint32_t PWMFreq;
@@ -287,7 +291,7 @@ public:
             const PwmSetup_t AGreen,
             const PwmSetup_t ABlue,
             const uint32_t APWMFreq = 0xFFFFFFFF) :
-        BaseSequencer_t(), R(ARed), G(AGreen), B(ABlue), PWMFreq(APWMFreq) {}
+        BaseSequencer(), R(ARed), G(AGreen), B(ABlue), PWMFreq(APWMFreq) {}
     void Init() {
         R.Init();
         R.SetFrequencyHz(PWMFreq);
