@@ -61,7 +61,7 @@ public:
     void IRQDmaTxHandler();
 };
 
-class CmdUart_t : public BaseUart_t, public Shell_t {
+class CmdUart_t : public BaseUart_t, public Shell {
 private:
     retv IPutChar(char c) { return IPutByte(c); }
     void IStartTransmissionIfNotYet() { BaseUart_t::IStartTransmissionIfNotYet(); }

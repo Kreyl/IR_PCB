@@ -14,6 +14,7 @@
 #include "Settings.h"
 #include "kl_fs_utils.h"
 #include "app.h"
+#include "ir_pkt.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
@@ -21,14 +22,14 @@ const char* FWVersion = XSTRINGIFY(BUILD_TIME);
 EvtMsgQ<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
 static const UartParams_t CmdUartParams(115200, CMD_UART_PARAMS);
 CmdUart_t Uart{CmdUartParams};
-extern void OnCmd(Shell_t *PShell); // See Command.cpp
+extern void OnCmd(Shell *PShell); // See Command.cpp
 
 LedBlinker sys_LED{LUMOS_PIN};
 LedSmooth side_LEDs[SIDE_LEDS_CNT] = { {LED_PWM1}, {LED_PWM2}, {LED_PWM3}, {LED_PWM4} };
 LedSmooth front_LEDs[FRONT_LEDS_CNT] = { {LED_FRONT1}, {LED_FRONT2} };
 
-static const NpxParams NParams{NPX_PARAMS, NPX_DMA, 17, NpxParams::ClrType::RGB};
-Neopixels_t NpxLeds{&NParams};
+static const NpxParams nparams{NPX_PARAMS, NPX_DMA, 17, NpxParams::ClrType::RGB};
+Neopixels_t NpxLeds{&nparams};
 
 Beeper beeper {BEEPER_PIN};
 
@@ -154,11 +155,11 @@ void main(void) {
         switch(msg.ID) {
             case EvtId::UartCheckTime:
                 Watchdog::Reload();
-                while(Uart.TryParseRxBuff() == retv::Ok) OnCmd((Shell_t*)&Uart);
+                while(Uart.TryParseRxBuff() == retv::Ok) OnCmd((Shell*)&Uart);
                 break;
 
             case EvtId::UsbCdcDataRcvd:
-                while(UsbMsdCdc.TryParseRxBuff() == retv::Ok) OnCmd((Shell_t*)&UsbMsdCdc);
+                while(UsbMsdCdc.TryParseRxBuff() == retv::Ok) OnCmd((Shell*)&UsbMsdCdc);
                 break;
 
             case EvtId::TestingTime:

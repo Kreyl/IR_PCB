@@ -405,7 +405,7 @@ void DisableInDebug();
 #endif
 
 #if 1 // =========================== I2C =======================================
-class Shell_t;
+class Shell;
 class Thread_t;
 
 class i2c_t {
@@ -439,7 +439,7 @@ public:
     void Resume();
     void PutBusLow();
 
-    void ScanBus(Shell_t *PShell);
+    void ScanBus(Shell *PShell);
     retv CheckBusAndResume();
     retv CheckAddress(uint32_t Addr);
     retv Write    (uint8_t Addr, uint8_t *WPtr,  uint32_t WLength, uint32_t Timeout_ms = 999);

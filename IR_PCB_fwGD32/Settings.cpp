@@ -6,77 +6,75 @@
 Settings settings;
 
 void Settings::Load() {
-    Value_t *Arr = (Value_t*)this;
-    for(uint32_t i=0; i<SETTINGS_CNT; i++) {
+    for(ValueBase* const pval : values_arr) {
         int32_t v;
-        if(ini::Read(SETTINGS_FILENAME, Arr[i].Section, Arr[i].Name, &v) != retv::Ok or Arr[i].CheckAndSetIfOk(v) == false) {
+        if(ini::Read(SETTINGS_FILENAME, pval->section, pval->name, &v) != retv::Ok or
+                pval->CheckAndSetIfOk(v) != retv::Ok) {
             SetAllToDefault();
-            Printf("Default settings loaded\r\n");
+            Printf("Bad %S %S. Default settings loaded\r\n", pval->section, pval->name);
             return;
         }
-//        else Printf("%S %S: 0x%04X\r", Arr[i].Section, Arr[i].Name, v);
     }
     Printf("Settings loaded\r\n");
 }
 
-void SaveValueWithMinMax(Value_t &Value) {
-    f_printf(&CommonFile, "# Min=%D, Max=%D\r\n", Value.v_min, Value.v_max);
-    f_printf(&CommonFile, "%S = %D\r\n", Value.Name, Value.v);
+void SaveValueWithMinMax(ValueMinMaxDef &value) {
+    f_printf(&common_file, "# Min=%D, Max=%D\r\n", value.v_min, value.v_max);
+    f_printf(&common_file, "%S = %D\r\n", value.name, value.v);
 }
 
-void SaveValueWithMinMaxInfDefault(Value_t &Value) {
-    f_printf(&CommonFile, "# Min=%D, Max=%D, Infininty=%D, Default=%D\r\n", Value.v_min, Value.v_max, Value.v_max+1, Value.v_default);
-    f_printf(&CommonFile, "%S = %D\r\n", Value.Name, Value.v);
+void SaveValueWithMinMaxInfDefault(ValueMinMaxDef &value) {
+    f_printf(&common_file, "# Min=%D, Max=%D, Infininty=%D, Default=%D\r\n", value.v_min, value.v_max, value.v_max+1, value.v_default);
+    f_printf(&common_file, "%S = %D\r\n", value.name, value.v);
 }
 
-void SaveValueWithCommentMinMaxInfDefault(Value_t &Value, const char* Comment) {
-    f_printf(&CommonFile, "# %S\r\n", Comment);
-    f_printf(&CommonFile, "# Min=%D, Max=%D, Infininty=%D, Default=%D\r\n", Value.v_min, Value.v_max, Value.v_max+1, Value.v_default);
-    f_printf(&CommonFile, "%S = %D\r\n\r\n", Value.Name, Value.v);
+void SaveValueWithCommentMinMaxInfDefault(ValueMinMaxDef &value, const char* comment) {
+    f_printf(&common_file, "# %S\r\n", comment);
+    f_printf(&common_file, "# Min=%D, Max=%D, Infininty=%D, Default=%D\r\n", value.v_min, value.v_max, value.v_max+1, value.v_default);
+    f_printf(&common_file, "%S = %D\r\n\r\n", value.name, value.v);
 }
 
-void SaveValueWithCommentMinMaxDefault(Value_t &Value, const char* Comment) {
-    f_printf(&CommonFile, "# %S\r\n", Comment);
-    f_printf(&CommonFile, "# Min=%D, Max=%D, Default=%D\r\n", Value.v_min, Value.v_max, Value.v_default);
-    f_printf(&CommonFile, "%S = %D\r\n\r\n", Value.Name, Value.v);
+void SaveValueWithCommentMinMaxDefault(ValueMinMaxDef &value, const char* comment) {
+    f_printf(&common_file, "# %S\r\n", comment);
+    f_printf(&common_file, "# Min=%D, Max=%D, Default=%D\r\n", value.v_min, value.v_max, value.v_default);
+    f_printf(&common_file, "%S = %D\r\n\r\n", value.name, value.v);
 }
 
-void SaveValueWithComment(Value_t &Value, const char* Comment) {
-    f_printf(&CommonFile, "# %S\r\n", Comment);
-    f_printf(&CommonFile, "%S = %D\r\n\r\n", Value.Name, Value.v);
+void SaveValueWithComment(ValueMinMaxDef &value, const char* comment) {
+    f_printf(&common_file, "# %S\r\n", comment);
+    f_printf(&common_file, "%S = %D\r\n\r\n", value.name, value.v);
 }
 
 
 retv Settings::Save() {
-    if(TryOpenFileRewrite(SETTINGS_FILENAME, &CommonFile) != retv::Ok) return retv::Fail;
+    if(TryOpenFileRewrite(SETTINGS_FILENAME, &common_file) != retv::Ok) return retv::Fail;
     // Description
-    f_printf(&CommonFile, "# IR PCB v3.2 Settings.ini\r\n\r\n");
+    f_printf(&common_file, "# IR PCB v3.2 Settings.ini\r\n\r\n");
     // IDs
-    f_printf(&CommonFile, "[IDs]\r\n");
+    f_printf(&common_file, "[IDs]\r\n");
     SaveValueWithMinMax(player_id);
     SaveValueWithMinMax(team_id);
     // Counts
-    f_printf(&CommonFile, "\r\n[Counts]\r\n");
+    f_printf(&common_file, "\r\n[Counts]\r\n");
     SaveValueWithMinMaxInfDefault(hit_cnt);
     SaveValueWithMinMaxInfDefault(rounds_in_magaz);
     SaveValueWithMinMaxInfDefault(magazines_cnt);
     // Delays
-    f_printf(&CommonFile, "\r\n[Delays]\r\n");
+    f_printf(&common_file, "\r\n[Delays]\r\n");
     SaveValueWithCommentMinMaxInfDefault(shots_period_ms, "Interval between shots in burst fire, ms");
     SaveValueWithCommentMinMaxInfDefault(magaz_reload_delay, "Interval between autoreloading of magazines, s");
     SaveValueWithCommentMinMaxInfDefault(min_delay_btw_hits, "Minimum delay between hits loss, s (when 0, it is possible to loose all within a second)");
     SaveValueWithCommentMinMaxInfDefault(pulse_len_hit_ms, "Duration of side LEDs blink in case of loss a hit");
     // IRTX
-    f_printf(&CommonFile, "\r\n[IRTX]\r\n");
+    f_printf(&common_file, "\r\n[IRTX]\r\n");
     SaveValueWithCommentMinMaxDefault(ir_tx_pwr,  "Power of IR LED impulse");
     SaveValueWithCommentMinMaxDefault(ir_tx_freq, "Carrier frequency of IR LED");
-    f_printf(&CommonFile, "# PktType to transmit: SHOT is 0x0000, RESET is 0x8305\r\n");
-    f_printf(&CommonFile, "%S = 0x%04X\r\n\r\n", pkt_type.Name, pkt_type.v);
-    CloseFile(&CommonFile);
+    f_printf(&common_file, "# PktType to transmit: SHOT is 0x0000, RESET is 0x8305\r\n");
+    f_printf(&common_file, "%S = 0x%04X\r\n\r\n", pkt_type.name, pkt_type.v);
+    // Special case: damage
+    f_printf(&common_file, "# Hits Damage in 'Shot' pkt. Unusable for other pkt types.\r\n"
+            "Possible values: 1,2,4,5,7,10,15,17,20,25,30,35,40,50,75,100\r\n");
+    f_printf(&common_file, "%S = 0x%04X\r\n\r\n", shot_damage.name, shot_damage.v);
+    CloseFile(&common_file);
     return retv::Ok;
-}
-
-void Settings::SetAllToDefault() {
-    Value_t *Arr = (Value_t*)this;
-    for(uint32_t i=0; i<SETTINGS_CNT; i++) Arr[i].v = Arr[i].v_default;
 }

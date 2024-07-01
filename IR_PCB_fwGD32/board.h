@@ -61,7 +61,7 @@
 #define INPUT_PWM           PA8, Gpio::PullDown, TIM0
 #define INPUT_PWM_TMR_IRQ   TIMER0_Channel_IRQn
 #define INPUT_PWM_TMR_IRQ_HNDLR TIMER0_Channel_IRQHandler
-#define INPUT_PWM_CHECK_PERIOD_ms   27 // It is timeout, too. After this period of pulse absense there will be event of Duty=0
+#define INPUT_PWM_CHECK_PERIOD_ms       27 // It is timeout, too. After this period of pulse absense there will be event of Duty=0
 #define PWM_DUTY_SINGLE_FIRE_percent    33L
 #define PWM_DUTY_BURST_FIRE_percent     66L
 #define PWM_DUTY_DEVIATION_percent      9L // PWM is considered unchanged if the change is less than this value
@@ -71,7 +71,6 @@
 #define UART_RX_PIN     PA3
 
 // Green LED
-//#define LUMOS_PIN       { PA10, TIM0, 2, invNotInverted, Gpio::PushPull, 255 }
 #define LUMOS_PIN       PA10, Gpio::PushPull
 
 // Front LEDs
@@ -80,8 +79,7 @@
 #define FRONT_LEDS_CNT  2
 
 // Side LEDs
-//#define LED_PWM1        { PA6, TIM2, 0, invInverted, Gpio::PushPull, 255 }
-#define LED_PWM1        { PA6, TIM2, 0, invNotInverted, Gpio::PushPull, 255 }
+#define LED_PWM1        { PA6, TIM2, 0, invInverted, Gpio::PushPull, 255 }
 #define LED_PWM2        { PA7, TIM2, 1, invInverted, Gpio::PushPull, 255 }
 #define LED_PWM3        { PB0, TIM2, 2, invInverted, Gpio::PushPull, 255 }
 #define LED_PWM4        { PB1, TIM2, 3, invInverted, Gpio::PushPull, 255 }

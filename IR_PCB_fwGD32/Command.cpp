@@ -13,7 +13,7 @@
 #include "ws2812bTim.h"
 #include "led.h"
 
-typedef void (*ftVoidPShell)(Shell_t *PShell);
+typedef void (*ftVoidPShell)(Shell *pshell);
 extern const char* FWVersion;
 __attribute__((unused))
 extern Neopixels_t NpxLeds;
@@ -29,9 +29,9 @@ public:
 };
 
 // Dispatchers
-static void DoPing(Shell_t *PShell) { PShell->Ok(); }
-static void DoVersion(Shell_t *PShell) { PShell->Print("%S %S\r", APP_NAME, FWVersion); }
-static void DoReboot(Shell_t *PShell) { Reboot(); }
+static void DoPing(Shell *pshell) { pshell->Ok(); }
+static void DoVersion(Shell *pshell) { pshell->Print("%S %S\r", APP_NAME, FWVersion); }
+static void DoReboot(Shell *pshell) { Reboot(); }
 
 #if 1 // ====================== Testing related ================================
 extern bool is_testing, beeped;
@@ -52,7 +52,7 @@ void I2SDmaDoneCbI() {
     }
 }
 
-static void DoTest(Shell_t *PShell) {
+static void DoTest(Shell *pshell) {
     is_testing = true;
     beeped = false;
     irRcvr::SetCallback(TestIrRxCallbackI);
@@ -71,84 +71,79 @@ static void DoTest(Shell_t *PShell) {
 }
 #endif
 
-static void GetSta(Shell_t *PShell) { PShell->Print("Hits: %d; Rnds: %d; mgzs: %d\r", hit_cnt, rounds_cnt, magazines_cnt); }
-static void Restore(Shell_t *PShell) {
+static void GetSta(Shell *pshell) { pshell->Print("Hits: %d; Rnds: %d; mgzs: %d\r", hit_cnt, rounds_cnt, magazines_cnt); }
+static void Restore(Shell *pshell) {
     Reset();
-    PShell->Ok();
+    pshell->Ok();
 }
 
-static void GetSettings(Shell_t *PShell) {
-    Value_t *Arr = (Value_t*)&settings;
-    for(uint32_t i=0; i<SETTINGS_CNT; i++, Arr++) {
-        PShell->Print("%*S = %4u; Min = %u; Max = %4u; default = %4u\r\n",
-                16, Arr->Name, Arr->v, Arr->v_min, Arr->v_max, Arr->v_default);
-    }
+static void GetSettings(Shell *pshell) {
+    for(ValueBase* const pval : settings.values_arr) pval->Print(pshell);
 }
 
-static void Set(Shell_t *PShell) {
-    Cmd_t *PCmd = &PShell->Cmd;
-    const char* Name;
+static void Set(Shell *pshell) {
+    Cmd_t *pcmd = &pshell->Cmd;
+    const char* name;
     uint32_t v, N = 0;
-    bool Found;
+    bool found;
     // Get pairs of values
-    while((((Name = PCmd->GetNextString()) != nullptr) and PCmd->GetNext(&v) == retv::Ok)) {
-        Found = false;
-        Value_t *Arr = (Value_t*)&settings;
-        for(uint32_t i=0; i<SETTINGS_CNT; i++, Arr++) { // Find by name
-            if(kl_strcasecmp(Name, Arr->Name) == 0) {
-                if(Arr->CheckAndSetIfOk(v)) {
-                    PShell->Print("%S = %u\r\n", Name, v);
+    while((((name = pcmd->GetNextString()) != nullptr) and pcmd->GetNext(&v) == retv::Ok)) {
+        found = false;
+        for(ValueBase* const pval : settings.values_arr) {
+            if(kl_strcasecmp(name, pval->name) == 0) {
+                if(pval->CheckAndSetIfOk(v) == retv::Ok) {
+                    pshell->Print("%S = %u\r\n", name, v);
                     N++;
-                    Found = true;
+                    found = true;
                     break;
                 }
                 else {
-                    PShell->Print("%S BadValue: %u\r\n", Name, v);
+                    pshell->Print("%S BadValue: %u\r\n", name, v);
                     return;
                 }
             } // if
         } // for
-        if(!Found) {
-            PShell->Print("BadName: %S\r\n", Name);
+        if(!found) {
+            pshell->Print("BadName: %S\r\n", name);
             break;
         }
     } // while
-    PShell->Print("Set %u values\r\n", N);
+    pshell->Print("Set %u values\r\n", N);
     Reset();
 }
 
-static void SaveSettings(Shell_t *PShell) {
-    if(settings.Save() == retv::Ok) PShell->Print("Saved\r\n");
-    else PShell->Print("Saving fail\r\n");
+static void SaveSettings(Shell *pshell) {
+    if(settings.Save() == retv::Ok) pshell->Print("Saved\r\n");
+    else pshell->Print("Saving fail\r\n");
 }
-static void LoadSettings(Shell_t *PShell) {
+static void LoadSettings(Shell *pshell) {
     settings.Load();
     Reset();
 }
 
 
 #if 0 // ==== Debug ====
-static void CtrlSet(Shell_t *PShell) {
+static void CtrlSet(Shell *pshell) {
     uint32_t In[2] = { 0, 0, };
-    if(PShell->Cmd.GetParams<uint32_t>(2, &In[0], &In[1]) == retv::Ok) {
+    if(pshell->Cmd.GetParams<uint32_t>(2, &In[0], &In[1]) == retv::Ok) {
         SetInputs(In);
-        PShell->Ok();
+        pshell->Ok();
     }
-    else PShell->BadParam();
+    else pshell->BadParam();
 }
 
-static void IrTx(Shell_t *PShell) {
-    Cmd_t *PCmd = &PShell->Cmd;
+static void IrTx(Shell *pshell) {
+    Cmd_t *PCmd = &pshell->Cmd;
     uint32_t Word, Pwr, BitCnt;
-    if(PCmd->GetNext(&Word) != retv::Ok) { PShell->BadParam(); return; }
-    if(PCmd->GetNext(&BitCnt) != retv::Ok) { PShell->BadParam(); return; }
-    if(PCmd->GetNext(&Pwr) != retv::Ok) { PShell->BadParam(); return; }
+    if(PCmd->GetNext(&Word) != retv::Ok) { pshell->BadParam(); return; }
+    if(PCmd->GetNext(&BitCnt) != retv::Ok) { pshell->BadParam(); return; }
+    if(PCmd->GetNext(&Pwr) != retv::Ok) { pshell->BadParam(); return; }
     irLed::TransmitWord(Word, BitCnt, Pwr, nullptr);
-    PShell->Ok();
+    pshell->Ok();
 }
 
-static void Npx(Shell_t *PShell) {
-    Cmd_t *PCmd = &PShell->Cmd;
+static void Npx(Shell *pshell) {
+    Cmd_t *PCmd = &pshell->Cmd;
     Color_t clr;
     if(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.SetAll(clr);
 //        uint32_t i=0;
@@ -160,22 +155,22 @@ static void Npx(Shell_t *PShell) {
 //extern LedSmooth front_LEDs[FRONT_LEDS_CNT];
 extern LedSmooth side_LEDs[SIDE_LEDS_CNT];
 
-static void SetLed(Shell_t *PShell) {
-    Cmd_t *PCmd = &PShell->Cmd;
+static void SetLed(Shell *pshell) {
+    Cmd_t *PCmd = &pshell->Cmd;
     uint32_t v;
     if(PCmd->GetNext(&v) == retv::Ok) {
         side_LEDs[0].Set(v);
-        PShell->Ok();
+        pshell->Ok();
     }
-    else PShell->BadParam();
+    else pshell->BadParam();
 }
 
-static void Get(Shell_t *PShell) {
-    PShell->Print("0x%X %u %u\r", TIM0->INTF, TIM0->CH0CV, TIM0->CH1CV);
+static void Get(Shell *pshell) {
+    pshell->Print("0x%X %u %u\r", TIM0->INTF, TIM0->CH0CV, TIM0->CH1CV);
 }
 
 // Commands
-ShellCmd_t Cmds[] = {
+static const ShellCmd_t cmds[] = {
         {"Ping",    DoPing,    "Just to ask if anyone is there"},
         {"Version", DoVersion, "Show firmware version"},
         {"Test",    DoTest,    "Start hardware testing"},
@@ -196,22 +191,22 @@ ShellCmd_t Cmds[] = {
 };
 
 // Processing
-void OnCmd(Shell_t *PShell) {
-    Cmd_t *PCmd = &PShell->Cmd;
+void OnCmd(Shell *pshell) {
+    Cmd_t *PCmd = &pshell->Cmd;
     // Show help if needed
     if(PCmd->NameIs("Help")) {
-        PShell->Print("Commands available:\r\n");
-        for(auto &SCmd : Cmds) PShell->Print("%S: %S\r\n", SCmd.Name, SCmd.Help);
+        pshell->Print("Commands available:\r\n");
+        for(auto &SCmd : cmds) pshell->Print("%S: %S\r\n", SCmd.Name, SCmd.Help);
     }
     else {
-        for(auto &SCmd : Cmds) {
+        for(auto &SCmd : cmds) {
             if(PCmd->NameIs(SCmd.Name)) {
-                if(SCmd.Dispatcher == nullptr) PShell->Print("NoDispatsher\r\n");
-                else SCmd.Dispatcher(PShell);
+                if(SCmd.Dispatcher == nullptr) pshell->Print("NoDispatsher\r\n");
+                else SCmd.Dispatcher(pshell);
                 return;
             }
         }
-        PShell->CmdUnknown();
+        pshell->CmdUnknown();
     }
 }
 

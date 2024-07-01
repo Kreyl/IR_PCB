@@ -9,9 +9,9 @@
 #define MAX_NAME_LEN        128UL
 
 // Variables
-extern FILINFO FileInfo;
+extern FILINFO file_info;
 extern DIR Dir;
-extern FIL CommonFile;
+extern FIL common_file;
 
 retv TryOpenFileRead(const char *Filename, FIL *PFile);
 retv TryOpenFileRewrite(const char *Filename, FIL *PFile);
@@ -99,20 +99,20 @@ public:
         uint8_t Rslt = f_opendir(&Dir, DirName);
         if(Rslt != FR_OK) return retv::Fail;
         while(true) {
-            Rslt = f_readdir(&Dir, &FileInfo);
+            Rslt = f_readdir(&Dir, &file_info);
             if(Rslt != FR_OK) return retv::Fail;
-            if((FileInfo.fname[0] == 0)
+            if((file_info.fname[0] == 0)
 #if _USE_LFN
-                    and (FileInfo.altname[0] == 0)
+                    and (file_info.altname[0] == 0)
 #endif
             ) return retv::Fail;  // somehow no files left
             else { // Filename ok, check if not dir
-                if(!(FileInfo.fattrib & AM_DIR)) {
+                if(!(file_info.fattrib & AM_DIR)) {
                     // Check if wav or mp3
 #if _USE_LFN
-                    char *FName = (FileInfo.fname[0] == 0)? FileInfo.altname : FileInfo.fname;
+                    char *FName = (file_info.fname[0] == 0)? file_info.altname : file_info.fname;
 #else
-                    char *FName = FileInfo.fname;
+                    char *FName = file_info.fname;
 #endif
                     uint32_t Len = strlen(FName);
                     if(Len > 4) {

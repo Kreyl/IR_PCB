@@ -48,7 +48,7 @@ void PrintfC(const char *format, ...) {
 } // extern C
 
 
-class PrintToBuf_t : public PrintfHelper_t {
+class PrintToBuf_t : public PrintfHelper {
 public:
     char *S;
     retv IPutChar(char c) {
@@ -76,7 +76,7 @@ static const long power10Table[FLOAT_PRECISION] = {
 };
 #endif
 
-void PrintfHelper_t::IVsPrintf(const char *format, va_list args) {
+void PrintfHelper::IVsPrintf(const char *format, va_list args) {
     const char *fmt = format;
     int width = 0, precision;
     char c, filler;
@@ -192,7 +192,7 @@ void PrintfHelper_t::IVsPrintf(const char *format, va_list args) {
     IStartTransmissionIfNotYet();
 }
 
-retv PrintfHelper_t::IPutUint(uint32_t n, uint32_t base, uint32_t width, char filler) {
+retv PrintfHelper::IPutUint(uint32_t n, uint32_t base, uint32_t width, char filler) {
     char digits[10];
     uint32_t len = 0;
     // Place digits to buffer

@@ -10,7 +10,7 @@
 #define MSD_TIMEOUT_MS   2700
 #define MSD_DATABUF_SZ   4096
 
-class UsbMsdCdc_t : public Shell_t {
+class UsbMsdCdc_t : public Shell {
 private:
     void IStartTransmissionIfNotYet(); // Required for printf implementation
     retv IPutChar(char c);             // Required for printf implementation

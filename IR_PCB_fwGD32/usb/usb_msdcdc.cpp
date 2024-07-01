@@ -610,7 +610,7 @@ StatusOr<AddrLen_t> PrepareAddrAndLen() {
         SenseData.SenseKey = SCSI_SENSE_KEY_ILLEGAL_REQUEST;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
         SenseData.AdditionalSenseQualifier = SCSI_ASENSEQ_NO_QUALIFIER;
-        r.Rslt = retv::Fail;
+        r.rslt = retv::Fail;
     }
     // Check cases 4, 5: (Hi != Dn); and 3, 11, 13: (Hn, Ho != Do)
     if(CmdBlock.DataTransferLen != r->Len * MsdMem::BlockSz) {
@@ -618,7 +618,7 @@ StatusOr<AddrLen_t> PrepareAddrAndLen() {
         SenseData.SenseKey = SCSI_SENSE_KEY_ILLEGAL_REQUEST;
         SenseData.AdditionalSenseCode = SCSI_ASENSE_INVALID_COMMAND;
         SenseData.AdditionalSenseQualifier = SCSI_ASENSEQ_NO_QUALIFIER;
-        r.Rslt = retv::Fail;
+        r.rslt = retv::Fail;
     }
     return r; // Ok by default
 }

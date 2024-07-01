@@ -9,71 +9,97 @@
 #define SETTINGS_H_
 
 #include "types.h"
+#include "ir_pkt.h"
 
 #define SETTINGS_FILENAME   "Settings.ini"
 
-class Value_t {
+class ValueBase {
 public:
     int32_t v;
-    const int32_t v_default, v_min, v_max;
-    const char* const Section;
-    const char* const Name;
-    bool IsInfinity() { return v == (v_max + 1L); }
-    void SetToDefault() { v = v_default; }
-    bool CheckAndSetIfOk(int32_t AValue) {
-        if(AValue < v_min or AValue > (v_max + 1L)) return false;
-        v = AValue;
-        return true;
-    }
-    Value_t(int32_t ADefault, int32_t AMin, int32_t AMax, const char* ASection, const char* AName) :
-        v(ADefault), v_default(ADefault), v_min(AMin), v_max(AMax), Section(ASection), Name(AName) {}
+    const int32_t v_default;
+    const char* const section;
+    const char* const name;
     operator uint32_t() const { return v; }
+    void SetToDefault() { v = v_default; }
+    virtual retv CheckAndSetIfOk(int32_t) = 0;
+    virtual void Print(Shell*) = 0;
+    static const uint32_t kValueNameSz = 16;
+    ValueBase(int32_t adefault, const char* asection, const char* aname):
+        v(adefault), v_default(adefault), section(asection), name(aname) {}
+};
+
+class ValueMinMaxDef : public ValueBase {
+public:
+    const int32_t v_min, v_max;
+    bool IsInfinity() { return v == (v_max + 1L); }
+    retv CheckAndSetIfOk(int32_t avalue) {
+        if(avalue < v_min or avalue > (v_max + 1L)) return retv::BadValue;
+        v = avalue;
+        return retv::Ok;
+    }
+    void Print(Shell *pshell) {
+        pshell->Print("%*S = %4u; default = %4u; Min = %u; Max = %4u\r\n",
+                kValueNameSz, name, v, v_default, v_min, v_max);
+    }
+    ValueMinMaxDef(int32_t adefault, int32_t amin, int32_t amax,
+            const char* asection, const char* aname) :
+                ValueBase(adefault, asection, aname),
+                v_min(amin), v_max(amax) {}
+
+};
+
+class ValueDamage : public ValueBase {
+public:
+    int32_t bits;
+    ValueDamage(const char* asection, const char* aname) :
+        ValueBase(1, asection, aname), bits(0) {} // 0 means 1 hit
+    retv CheckAndSetIfOk(int32_t avalue) {
+        StatusOrI32 r = Damage_HitsToId(avalue);
+        if(r.Ok()) {
+            v = avalue;
+            bits = r.v;
+            return retv::Ok;
+        }
+        else return retv::BadValue;
+    }
+    void Print(Shell *pshell) {
+        pshell->Print("%*S = %4u; default = %4u\r\n", kValueNameSz, name, v, v_default);
+    }
 };
 
 class Settings {
 public:
+    // IDs
+    ValueMinMaxDef player_id { 0, 0, 127, "IDs", "PlayerID" };
+    ValueMinMaxDef team_id   { 0, 0,  3,  "IDs", "TeamID" };
+    // Counts
+    ValueMinMaxDef hit_cnt          { 4, 1, 254, "Counts", "HitCnt" };
+    ValueMinMaxDef rounds_in_magaz  { 9, 1, 254, "Counts", "RoundsInMagazine" };
+    ValueMinMaxDef magazines_cnt    { 4, 1, 254, "Counts", "MagazinesCnt" };
+    // Delays
+    ValueMinMaxDef shots_period_ms    { 252, 0, 9999, "Delays", "ShotsPeriod_ms" };
+    ValueMinMaxDef magaz_reload_delay {   4, 0,   60, "Delays", "MagazReloadDelay" };
+    ValueMinMaxDef min_delay_btw_hits {   0, 0,   60, "Delays", "MinDelayBetwHits" };
+    ValueMinMaxDef pulse_len_hit_ms   { 100, 1, 9999, "Delays", "PulseLenHit_ms" };
+    // TX
+    ValueMinMaxDef ir_tx_pwr   {    90,     1,    255, "IRTX", "TXPwr" };
+    ValueMinMaxDef ir_tx_freq  { 56000, 30000,  56000, "IRTX", "TXFreq" };
+    ValueMinMaxDef pkt_type    {     0,     0, 0xFFFF, "IRTX", "PktType" };
+    ValueDamage    shot_damage { "IRTX", "Damage" };
+
+    // Array of value pointers
+    static constexpr uint32_t kValuesCnt = 13;
+    ValueBase* const values_arr[kValuesCnt] = {
+            &player_id, &team_id,
+            &hit_cnt, &rounds_in_magaz, &magazines_cnt,
+            &shots_period_ms, &magaz_reload_delay, &min_delay_btw_hits, &pulse_len_hit_ms,
+            &ir_tx_pwr, &ir_tx_freq, &pkt_type, &shot_damage,
+    };
+
     void Load();
     retv Save();
-    void SetAllToDefault();
-
-#if 0 // ==== DEBUG ====
-    // IDs
-    Value_t player_id { 2, 0, 127, "IDs", "PlayerID" };
-    Value_t team_id   { 1, 0,  3,  "IDs", "TeamID" };
-    // Counts
-    Value_t hit_cnt           { 2, 1, 254, "Counts", "HitCnt" };
-    Value_t rounds_in_magaz { 9, 1, 254, "Counts", "RoundsInMagazine" };
-    Value_t magazines_cnt     { 4, 1, 254, "Counts", "MagazinesCnt" };
-    // Delays
-    Value_t shots_period_ms   { 1000, 0, 9999, "Delays", "ShotsPeriod_ms" };
-    Value_t magaz_reload_delay {   4, 0,   60, "Delays", "MagazReloadDelay" };
-    Value_t min_delay_btw_hits {   0, 0,   60, "Delays", "MinDelayBetwHits" };
-    Value_t pulse_len_hit_ms   { 100, 1, 9999, "Delays", "PulseLenHit_ms" };
-    // TX
-    Value_t ir_tx_pwr   {   200,     1,    255, "IRTX", "TXPwr" };
-    Value_t ir_tx_freq  { 56000, 30000,  56000, "IRTX", "TXFreq" };
-    Value_t pkt_type {     0,     0, 0xFFFF, "IRTX", "PktType" };
-#else
-    // IDs
-    Value_t player_id { 0, 0, 127, "IDs", "PlayerID" };
-    Value_t team_id   { 0, 0,  3,  "IDs", "TeamID" };
-    // Counts
-    Value_t hit_cnt          { 4, 1, 254, "Counts", "HitCnt" };
-    Value_t rounds_in_magaz  { 9, 1, 254, "Counts", "RoundsInMagazine" };
-    Value_t magazines_cnt    { 4, 1, 254, "Counts", "MagazinesCnt" };
-    // Delays
-    Value_t shots_period_ms    { 252, 0, 9999, "Delays", "ShotsPeriod_ms" };
-    Value_t magaz_reload_delay {   4, 0,   60, "Delays", "MagazReloadDelay" };
-    Value_t min_delay_btw_hits {   0, 0,   60, "Delays", "MinDelayBetwHits" };
-    Value_t pulse_len_hit_ms   { 100, 1, 9999, "Delays", "PulseLenHit_ms" };
-    // TX
-    Value_t ir_tx_pwr   {    90,     1,    255, "IRTX", "TXPwr" };
-    Value_t ir_tx_freq  { 56000, 30000,  56000, "IRTX", "TXFreq" };
-    Value_t pkt_type    {     0,     0, 0xFFFF, "IRTX", "PktType" };
-#endif
+    void SetAllToDefault() { for(ValueBase* const pval : values_arr) pval->SetToDefault(); }
 };
-
-#define SETTINGS_CNT    (sizeof(Settings) / sizeof(Value_t))
 
 extern Settings settings;
 

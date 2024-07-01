@@ -311,7 +311,7 @@ public:
 };
 
 // Parent class for everything that prints
-class PrintfHelper_t {
+class PrintfHelper {
 private:
     retv IPutUint(uint32_t n, uint32_t base, uint32_t width, char filler);
 protected:
@@ -332,7 +332,7 @@ public:
     }
 };
 
-class Shell_t : public PrintfHelper_t {
+class Shell : public PrintfHelper {
 public:
 	Cmd_t Cmd;
     void Ok()  { Print("Ok\r\n"); }

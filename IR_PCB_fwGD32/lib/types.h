@@ -51,11 +51,11 @@ if(r.Ok()) Printf("%d %d %d\r", r->CO2, r->Temp, r->RH);
 
 template <typename T>
 struct StatusOr {
-    StatusOr() : Rslt(retv::Ok) {}
-    StatusOr(retv InitVal) : Rslt(InitVal) {}
-    retv Rslt;
+    StatusOr() : rslt(retv::Ok) {}
+    StatusOr(retv InitVal) : rslt(InitVal) {}
+    retv rslt;
     T v;
-    bool Ok() { return Rslt == retv::Ok; }
+    bool Ok() { return rslt == retv::Ok; }
     T* operator ->() { return &v; }
     T& operator *() { return v; }
 };
@@ -63,6 +63,7 @@ struct StatusOr {
 using StatusOrU8  = StatusOr<uint8_t>;
 using StatusOrU16 = StatusOr<uint16_t>;
 using StatusOrU32 = StatusOr<uint32_t>;
+using StatusOrI32 = StatusOr<int32_t>;
 using StatusOrPChar = StatusOr<char*>;
 
 // ==== Functional types ====

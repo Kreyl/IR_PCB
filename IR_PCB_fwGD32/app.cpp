@@ -74,7 +74,7 @@ public:
     void IOnTmrDone() { SetLo(); }
 };
 
-void PulserCallback(void *p) { ((PulserPin*)p)->IOnTmrDone(); }
+void PulserCallback(void *p) { static_cast<PulserPin*>(p)->IOnTmrDone(); }
 
 PulserPin output_hits_ended {Output_HitsEnded};
 
@@ -219,10 +219,10 @@ bool DoBurstFire() {
 #endif
 
 #if 1 // =========================== Indication ================================
-//extern LedSmooth side_LEDs[SIDE_LEDS_CNT];
+extern LedSmooth side_LEDs[SIDE_LEDS_CNT];
 extern LedSmooth front_LEDs[FRONT_LEDS_CNT];
 
-#define SIDE_LEDS_ENABLED   FALSE
+#define SIDE_LEDS_ENABLED   TRUE
 
 namespace Indication {
 
@@ -292,7 +292,7 @@ void MagazinesEnded() {
     Printf("#MagazinesEnded\r\n");
 }
 
-void Hit(uint32_t HitFrom) {
+void Hit(uint32_t hit_from, int32_t damage) {
     Sys::Lock();
 //    OutPulseOnHit.PulseI(settings.pulse_len_hit_ms);
     beeper.StartOrRestartI(bsqHit);
@@ -326,7 +326,7 @@ void Hit(uint32_t HitFrom) {
             break;
     }
     Sys::Unlock();
-    Printf("#Hit from %d; %d left\r\n", HitFrom, hit_cnt);
+    Printf("#Hit from %d; damage %d; %d left\r\n", hit_from, damage, hit_cnt);
 }
 
 void HitsEnded() {
@@ -355,34 +355,37 @@ void Reset(bool quiet) {
 #endif
 
 #if 1 // ========================= Reception processing ========================
-systime_t PrevHitTime = 0;
+static systime_t prev_hit_time_st = 0;
 
-void IrRxCallbackI(uint32_t Rcvd) { evt_q_app.SendNowOrExitI(AppMsg(AppEvt::IrRx, Rcvd)); }
+void IrRxCallbackI(uint32_t rcvd) { evt_q_app.SendNowOrExitI(AppMsg(AppEvt::IrRx, rcvd)); }
 
-void ProcessRxPkt(IRPkt_t RxPkt) {
-//    RxPkt.Print();
+void ProcessRxPkt(IRPkt rx_pkt) {
+//    rx_pkt.Print();
     // Reset
-    if(RxPkt.W16 == PKT_RESET) evt_q_app.SendNowOrExit(AppEvt::Reset);
+    if(rx_pkt.word16 == PKT_RESET) evt_q_app.SendNowOrExit(AppEvt::Reset);
     // Shot incoming
-    else if(RxPkt.Zero == 0) {
+    else if(rx_pkt.zero == 0) {
         if(hit_cnt <= 0) return; // Nothing to do when no hits left
         // Ignore friendly fire (and pkt from self, too)
-        if(RxPkt.TeamID == settings.team_id) return; //
+        if(rx_pkt.team_id == settings.team_id) return;
         // Ignore if not enough time passed since last hit
-        if(Sys::TimeElapsedSince(PrevHitTime) < TIME_S2I(settings.min_delay_btw_hits)) return;
+        if(Sys::TimeElapsedSince(prev_hit_time_st) < TIME_S2I(settings.min_delay_btw_hits)) return;
         // Hit occured, decrement if not infinity
-        if(!settings.hit_cnt.IsInfinity()) hit_cnt--;
-        Indication::Hit(RxPkt.PlayerID);
-        if(hit_cnt > 0) PrevHitTime = Sys::GetSysTimeX();
+        int32_t damage = rx_pkt.GetDamageHits();
+        if(!settings.hit_cnt.IsInfinity()) {
+            hit_cnt = (damage < hit_cnt)? (hit_cnt - damage) : 0;
+        }
+        Indication::Hit(rx_pkt.player_id, damage);
+        if(hit_cnt > 0) prev_hit_time_st = Sys::GetSysTimeX();
         else Indication::HitsEnded();
     } // if zero
 }
 #endif
 
 #if 1 // =============================== Firing ================================
-VirtualTimer FireTmr;
-IRPkt_t PktTx;
-systime_t FireStart;
+VirtualTimer fire_tmr;
+IRPkt pkt_tx;
+systime_t fire_start_time_st;
 
 // ==== Delay subsystem ====
 void TmrCallback(void *p) {
@@ -393,12 +396,12 @@ void TmrCallback(void *p) {
 
 void StartDelay(int32_t ADelay_s, AppEvt AEvt) {
     if(ADelay_s <= 0) evt_q_app.SendNowOrExit(AEvt); // Do it immediately
-    else FireTmr.Set(TIME_S2I(ADelay_s), TmrCallback, (void*)((uint32_t)AEvt));
+    else fire_tmr.Set(TIME_S2I(ADelay_s), TmrCallback, (void*)((uint32_t)AEvt));
 }
 
 void StartDelay_ms(int32_t ADelay_ms, AppEvt AEvt) {
     if(ADelay_ms <= 0) evt_q_app.SendNowOrExit(AEvt); // Do it immediately
-    else FireTmr.Set(TIME_MS2I(ADelay_ms), TmrCallback, (void*)((uint32_t)AEvt));
+    else fire_tmr.Set(TIME_MS2I(ADelay_ms), TmrCallback, (void*)((uint32_t)AEvt));
 }
 
 void OnIrTxEndI() { evt_q_app.SendNowOrExitI(AppEvt::EndOfIrTx); }
@@ -410,18 +413,18 @@ void Fire() {
     if(!settings.rounds_in_magaz.IsInfinity()) rounds_cnt--;
     // Prepare pkt
     if(settings.pkt_type == PKT_SHOT) {
-        PktTx.W16 = 0;
-        PktTx.PlayerID = settings.player_id;
-        PktTx.TeamID  = settings.team_id;
-        PktTx.DamageID = 0; // Which means 1 hit
-        irLed::TransmitWord(PktTx.W16, 14, settings.ir_tx_pwr, OnIrTxEndI);
+        pkt_tx.word16 = 0;
+        pkt_tx.player_id = settings.player_id;
+        pkt_tx.team_id  = settings.team_id;
+        pkt_tx.damage_id = 0; // Which means 1 hit // XXX
+        irLed::TransmitWord(pkt_tx.word16, 14, settings.ir_tx_pwr, OnIrTxEndI);
     }
     else {
-        PktTx.W16 = (uint16_t)settings.pkt_type;
-        irLed::TransmitWord(PktTx.W16, 16, settings.ir_tx_pwr, OnIrTxEndI);
+        pkt_tx.word16 = (uint16_t)settings.pkt_type;
+        irLed::TransmitWord(pkt_tx.word16, 16, settings.ir_tx_pwr, OnIrTxEndI);
     }
 //    PktTx.Print();
-    FireStart = Sys::GetSysTimeX();
+    fire_start_time_st = Sys::GetSysTimeX();
     Indication::Shot();
 }
 #endif
@@ -430,15 +433,15 @@ void Reset(bool quiet) {
     Sys::Lock();
     irLed::ResetI();
     output_hits_ended.ResetI();
-//    OutPulseOnHit.ResetI();
+//    OutPulseOnHit.ResetI();  // Removed to implement PWM input
     input_burst_fire.CleanIrqFlag();
     input_single_fire.CleanIrqFlag();
     IsFiring = false;
     rounds_cnt = settings.rounds_in_magaz;
     magazines_cnt = settings.magazines_cnt;
-    FireTmr.ResetI();
+    fire_tmr.ResetI();
     hit_cnt = settings.hit_cnt;
-    PrevHitTime = Sys::GetSysTimeX();
+    prev_hit_time_st = Sys::GetSysTimeX();
     // IR tx
     irLed::SetCarrierFreq(settings.ir_tx_freq);
     Sys::Unlock();
@@ -456,7 +459,7 @@ static void AppThread() {
         }
         // Will be here when new Evt occur and if not in testing mode
         if(Msg.evt == AppEvt::Reset) Reset();
-        else if(Msg.evt == AppEvt::IrRx) ProcessRxPkt(IRPkt_t(Msg.data16));
+        else if(Msg.evt == AppEvt::IrRx) ProcessRxPkt(IRPkt(Msg.data16));
         else if(hit_cnt > 0) switch(Msg.evt) { // Do nothing if no hits left
             case AppEvt::StartFire:
                 if(!IsFiring and rounds_cnt > 0) Fire();
@@ -468,7 +471,7 @@ static void AppThread() {
                 break;
 
             case AppEvt::EndOfIrTx: // Tx of several same pkts just ended
-                StartDelay_ms(settings.shots_period_ms - TIME_I2MS(Sys::TimeElapsedSince(FireStart)), AppEvt::EndOfDelayBetweenShots);
+                StartDelay_ms(settings.shots_period_ms - TIME_I2MS(Sys::TimeElapsedSince(fire_start_time_st)), AppEvt::EndOfDelayBetweenShots);
                 break;
 
             case AppEvt::EndOfDelayBetweenShots:
@@ -506,7 +509,7 @@ void AppInit() {
     irRcvr::Init(IrRxCallbackI);
     // Control pins init
     output_hits_ended.Init();
-//    OutPulseOnHit.Init();
+//    OutPulseOnHit.Init(); // Removed to implement PWM input
     input_burst_fire.Init();
     input_single_fire.Init();
     input_pwm.Init();
