@@ -361,24 +361,26 @@ void IrRxCallbackI(uint32_t rcvd) { evt_q_app.SendNowOrExitI(AppMsg(AppEvt::IrRx
 
 void ProcessRxPkt(IRPkt rx_pkt) {
 //    rx_pkt.Print();
+
+
     // Reset
-    if(rx_pkt.word16 == PKT_RESET) evt_q_app.SendNowOrExit(AppEvt::Reset);
-    // Shot incoming
-    else if(rx_pkt.zero == 0) {
-        if(hit_cnt <= 0) return; // Nothing to do when no hits left
-        // Ignore friendly fire (and pkt from self, too)
-        if(rx_pkt.team_id == settings.team_id) return;
-        // Ignore if not enough time passed since last hit
-        if(Sys::TimeElapsedSince(prev_hit_time_st) < TIME_S2I(settings.min_delay_btw_hits)) return;
-        // Hit occured, decrement if not infinity
-        int32_t damage = rx_pkt.GetDamageHits();
-        if(!settings.hit_cnt.IsInfinity()) {
-            hit_cnt = (damage < hit_cnt)? (hit_cnt - damage) : 0;
-        }
-        Indication::Hit(rx_pkt.player_id, damage);
-        if(hit_cnt > 0) prev_hit_time_st = Sys::GetSysTimeX();
-        else Indication::HitsEnded();
-    } // if zero
+//    if(rx_pkt.word16 == PKT_RESET) evt_q_app.SendNowOrExit(AppEvt::Reset);
+//    // Shot incoming
+//    else if(rx_pkt.zero == 0) {
+//        if(hit_cnt <= 0) return; // Nothing to do when no hits left
+//        // Ignore friendly fire (and pkt from self, too)
+//        if(rx_pkt.team_id == settings.team_id) return;
+//        // Ignore if not enough time passed since last hit
+//        if(Sys::TimeElapsedSince(prev_hit_time_st) < TIME_S2I(settings.min_delay_btw_hits)) return;
+//        // Hit occured, decrement if not infinity
+//        int32_t damage = rx_pkt.GetDamageHits();
+//        if(!settings.hit_cnt.IsInfinity()) {
+//            hit_cnt = (damage < hit_cnt)? (hit_cnt - damage) : 0;
+//        }
+//        Indication::Hit(rx_pkt.player_id, damage);
+//        if(hit_cnt > 0) prev_hit_time_st = Sys::GetSysTimeX();
+//        else Indication::HitsEnded();
+//    } // if zero
 }
 #endif
 
@@ -412,18 +414,25 @@ void Fire() {
     IsFiring = true;
     if(!settings.rounds_in_magaz.IsInfinity()) rounds_cnt--;
     // Prepare pkt
-    if(settings.pkt_type == PKT_SHOT) {
-        pkt_tx.word16 = 0;
-        pkt_tx.player_id = settings.player_id;
-        pkt_tx.team_id  = settings.team_id;
-        pkt_tx.damage_id = 0; // Which means 1 hit // XXX
-        irLed::TransmitWord(pkt_tx.word16, 14, settings.ir_tx_pwr, OnIrTxEndI);
-    }
-    else {
-        pkt_tx.word16 = (uint16_t)settings.pkt_type;
-        irLed::TransmitWord(pkt_tx.word16, 16, settings.ir_tx_pwr, OnIrTxEndI);
-    }
+    uint32_t bits_to_transmit = 16;
+    pkt_tx.word16 = static_cast<uint16_t>(settings.pkt_type);
+    switch(settings.pkt_type) { // Modify pkt if needed
+        case static_cast<uint16_t>(PktType::Shot):
+            pkt_tx.word16 = 0;
+            pkt_tx.player_id = settings.player_id;
+            pkt_tx.team_id  = settings.team_id;
+            pkt_tx.damage_id = settings.tx_damage.bits;
+            bits_to_transmit = 14;
+            break;
+
+        case static_cast<uint16_t>(PktType::AddHealth):
+        case static_cast<uint16_t>(PktType::AddCartridges):
+            pkt_tx.bytes[1] = settings.tx_amount;
+            break;
+        default: break; // some special pkt type, do not modify
+    } // switch
 //    PktTx.Print();
+    irLed::TransmitWord(pkt_tx.word16, bits_to_transmit, settings.ir_tx_pwr, OnIrTxEndI);
     fire_start_time_st = Sys::GetSysTimeX();
     Indication::Shot();
 }

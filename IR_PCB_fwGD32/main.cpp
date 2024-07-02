@@ -97,7 +97,7 @@ static inline void InitClk() {
 }
 
 void main(void) {
-//    Watchdog::InitAndStart(999);
+    Watchdog::InitAndStart(999);
     InitClk();
     // ==== Disable JTAG ====
     RCU->EnAFIO();

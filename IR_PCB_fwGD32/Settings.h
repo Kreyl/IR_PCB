@@ -63,7 +63,8 @@ public:
         else return retv::BadValue;
     }
     void Print(Shell *pshell) {
-        pshell->Print("%*S = %4u; default = %4u\r\n", kValueNameSz, name, v, v_default);
+        pshell->Print("%*S = %4u; default = %4u; Possible values: 1,2,4,5,7,10,15,17,20,25,30,35,40,50,75,100\r\n",
+                kValueNameSz, name, v, v_default);
     }
 };
 
@@ -82,18 +83,19 @@ public:
     ValueMinMaxDef min_delay_btw_hits {   0, 0,   60, "Delays", "MinDelayBetwHits" };
     ValueMinMaxDef pulse_len_hit_ms   { 100, 1, 9999, "Delays", "PulseLenHit_ms" };
     // TX
-    ValueMinMaxDef ir_tx_pwr   {    90,     1,    255, "IRTX", "TXPwr" };
-    ValueMinMaxDef ir_tx_freq  { 56000, 30000,  56000, "IRTX", "TXFreq" };
-    ValueMinMaxDef pkt_type    {     0,     0, 0xFFFF, "IRTX", "PktType" };
-    ValueDamage    shot_damage { "IRTX", "Damage" };
+    ValueMinMaxDef ir_tx_pwr  {    90,     1,    255, "IRTX", "TXPwr" };
+    ValueMinMaxDef ir_tx_freq { 56000, 30000,  56000, "IRTX", "TXFreq" };
+    ValueMinMaxDef pkt_type   {     0,     0, 0xFFFF, "IRTX", "PktType" };
+    ValueDamage    tx_damage  { "IRTX", "TXDamage" };
+    ValueMinMaxDef tx_amount  {     1,     1,    100, "IRTX", "Amount" };
 
     // Array of value pointers
-    static constexpr uint32_t kValuesCnt = 13;
+    static constexpr uint32_t kValuesCnt = 14;
     ValueBase* const values_arr[kValuesCnt] = {
             &player_id, &team_id,
             &hit_cnt, &rounds_in_magaz, &magazines_cnt,
             &shots_period_ms, &magaz_reload_delay, &min_delay_btw_hits, &pulse_len_hit_ms,
-            &ir_tx_pwr, &ir_tx_freq, &pkt_type, &shot_damage,
+            &ir_tx_pwr, &ir_tx_freq, &pkt_type, &tx_damage, &tx_amount,
     };
 
     void Load();
