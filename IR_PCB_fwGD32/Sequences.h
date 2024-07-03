@@ -196,6 +196,18 @@ const BeepChunk bsqHitsEnded[] = {
         {Chunk::End}
 };
 
+const BeepChunk bsqHitsAdded[] = { // XXX
+        {Chunk::Setup, BEEP_VOLUME, Fa_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
+        {Chunk::Setup, BEEP_VOLUME, Mi_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
+        {Chunk::Setup, BEEP_VOLUME, Fa_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
+        {Chunk::Setup, BEEP_VOLUME, Mi_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
+        {Chunk::Setup, BEEP_VOLUME, Do_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
+        {Chunk::Setup, BEEP_VOLUME, Do_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
+        {Chunk::Setup, BEEP_VOLUME, La_2, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
+        {Chunk::Setup, BEEP_VOLUME, Re_3, 0}, {Chunk::Wait, OneHalfth},
+        {Chunk::End}
+};
+
 const BeepChunk bsqBeep[] = {
         {Chunk::Setup, 1, 1975},
         {Chunk::Wait, 54},

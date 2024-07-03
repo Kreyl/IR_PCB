@@ -222,8 +222,6 @@ bool DoBurstFire() {
 extern LedSmooth side_LEDs[SIDE_LEDS_CNT];
 extern LedSmooth front_LEDs[FRONT_LEDS_CNT];
 
-#define SIDE_LEDS_ENABLED   TRUE
-
 namespace Indication {
 
 enum class IndiState { Idle, Reloading, MagazinesEnded, HitsEnded };
@@ -241,7 +239,6 @@ void RoundsEnded() {
     if(beeper.GetCurrentSequence() == bsqHit) beeper.SetNextSequenceI(bsqReloading);
     else beeper.StartOrRestartI(bsqReloading);
     // Leds
-#if SIDE_LEDS_ENABLED
     if(side_LEDs[3].GetCurrentSequence() == lsqHit) side_LEDs[3].SetNextSequenceI(lsqReloading);
     else {
         side_LEDs[0].StopI();
@@ -249,7 +246,6 @@ void RoundsEnded() {
         side_LEDs[2].StopI();
         side_LEDs[3].StartOrRestartI(lsqReloading);
     }
-#endif
     state = IndiState::Reloading;
     Sys::Unlock();
     Printf("#RoundsEnded\r\n");
@@ -261,11 +257,9 @@ void MagazineReloaded() {
     if(beeper.GetCurrentSequence() == bsqHit) beeper.SetNextSequenceI(bsqMagazReloaded);
     else beeper.StartOrRestartI(bsqMagazReloaded);
     // Leds
-#if SIDE_LEDS_ENABLED
     if(side_LEDs[3].GetCurrentSequence() != lsqHit) {
         for(auto& Led : side_LEDs) Led.StopI();
     }
-#endif
     state = IndiState::Idle;
     Sys::Unlock();
     Printf("#MagazineReloaded\r\n");
@@ -277,7 +271,6 @@ void MagazinesEnded() {
     if(beeper.GetCurrentSequence() == bsqHit) beeper.SetNextSequenceI(bsqMagazEnded);
     else beeper.StartOrRestartI(bsqMagazEnded);
     // Leds
-#if SIDE_LEDS_ENABLED
     if(side_LEDs[3].GetCurrentSequence() == lsqHit)
         side_LEDs[3].SetNextSequenceI(lsqMagazinesEnded);
     else {
@@ -286,7 +279,6 @@ void MagazinesEnded() {
         side_LEDs[2].StopI();
         side_LEDs[3].StartOrRestartI(lsqMagazinesEnded);
     }
-#endif
     state = IndiState::MagazinesEnded;
     Sys::Unlock();
     Printf("#MagazinesEnded\r\n");
@@ -296,33 +288,23 @@ void Hit(uint32_t hit_from, int32_t damage) {
     Sys::Lock();
 //    OutPulseOnHit.PulseI(settings.pulse_len_hit_ms);
     beeper.StartOrRestartI(bsqHit);
-#if SIDE_LEDS_ENABLED
     for(auto& Led : side_LEDs) Led.StartOrRestartI(lsqHit);
-#endif
     switch(state) {
         case IndiState::Idle:
             beeper.SetNextSequenceI(nullptr);
-#if SIDE_LEDS_ENABLED
             side_LEDs[3].SetNextSequenceI(nullptr);
-#endif
             break;
         case IndiState::HitsEnded:
             beeper.SetNextSequenceI(bsqHitsEnded);
-#if SIDE_LEDS_ENABLED
             side_LEDs[3].SetNextSequenceI(lsqHitsEnded);
-#endif
             break;
         case IndiState::Reloading:
             beeper.SetNextSequenceI(bsqReloading);
-#if SIDE_LEDS_ENABLED
             side_LEDs[3].SetNextSequenceI(lsqReloading);
-#endif
             break;
         case IndiState::MagazinesEnded:
             beeper.SetNextSequenceI(bsqMagazEnded);
-#if SIDE_LEDS_ENABLED
             side_LEDs[3].SetNextSequenceI(lsqMagazinesEnded);
-#endif
             break;
     }
     Sys::Unlock();
@@ -335,11 +317,25 @@ void HitsEnded() {
     if(beeper.GetCurrentSequence() == bsqHit) beeper.SetNextSequenceI(bsqHitsEnded);
     else beeper.StartOrRestartI(bsqHitsEnded);
     output_hits_ended.SetHi();
-#if SIDE_LEDS_ENABLED
     for(auto& Led : side_LEDs) Led.StartOrRestartI(lsqHitsEnded);
-#endif
     Sys::Unlock();
     Printf("#Hits Ended\r\n");
+}
+
+void HitsAdded(int32_t added_hits_number) {
+    Sys::Lock();
+    beeper.StartOrRestartI(bsqHitsAdded);
+    for(auto& Led : side_LEDs) Led.StartOrRestartI(lsqHit);
+    Sys::Unlock();
+    Printf("#Hits Added: %u; Hits cnt: %d\r\n", added_hits_number, hit_cnt);
+}
+
+void RoundsAdded(int32_t magazines_to_add, int32_t rounds_left_to_add) {
+    Sys::Lock();
+    beeper.StartOrRestartI(bsqMagazReloaded);
+    Sys::Unlock();
+    Printf("#Magazines Added: %u; magazines cnt: %d\r\n", magazines_to_add, magazines_cnt);
+    Printf("#Rounds Added: %u; rounds cnt: %d\r\n", rounds_left_to_add, rounds_cnt);
 }
 
 void Reset(bool quiet) {
@@ -361,26 +357,50 @@ void IrRxCallbackI(uint32_t rcvd) { evt_q_app.SendNowOrExitI(AppMsg(AppEvt::IrRx
 
 void ProcessRxPkt(IRPkt rx_pkt) {
 //    rx_pkt.Print();
-
-
+    // Shot incoming
+    if(rx_pkt.zero == 0) {
+        if(hit_cnt <= 0) return; // Nothing to do when no hits left
+        // Ignore friendly fire (and pkt from self, too)
+        if(rx_pkt.team_id == settings.team_id) return;
+        // Ignore if not enough time passed since last hit
+        if(Sys::TimeElapsedSince(prev_hit_time_st) < TIME_S2I(settings.min_delay_btw_hits)) return;
+        // Hit occured, decrement if not infinity
+        int32_t damage = rx_pkt.GetDamageHits();
+        if(!settings.hit_cnt.IsInfinity()) {
+            hit_cnt = (damage < hit_cnt)? (hit_cnt - damage) : 0;
+        }
+        Indication::Hit(rx_pkt.player_id, damage);
+        if(hit_cnt > 0) prev_hit_time_st = Sys::GetSysTimeX();
+        else Indication::HitsEnded();
+    } // if zero
     // Reset
-//    if(rx_pkt.word16 == PKT_RESET) evt_q_app.SendNowOrExit(AppEvt::Reset);
-//    // Shot incoming
-//    else if(rx_pkt.zero == 0) {
-//        if(hit_cnt <= 0) return; // Nothing to do when no hits left
-//        // Ignore friendly fire (and pkt from self, too)
-//        if(rx_pkt.team_id == settings.team_id) return;
-//        // Ignore if not enough time passed since last hit
-//        if(Sys::TimeElapsedSince(prev_hit_time_st) < TIME_S2I(settings.min_delay_btw_hits)) return;
-//        // Hit occured, decrement if not infinity
-//        int32_t damage = rx_pkt.GetDamageHits();
-//        if(!settings.hit_cnt.IsInfinity()) {
-//            hit_cnt = (damage < hit_cnt)? (hit_cnt - damage) : 0;
-//        }
-//        Indication::Hit(rx_pkt.player_id, damage);
-//        if(hit_cnt > 0) prev_hit_time_st = Sys::GetSysTimeX();
-//        else Indication::HitsEnded();
-//    } // if zero
+    else if(rx_pkt.word16 == static_cast<uint16_t>(PktType::NewGame))
+        evt_q_app.SendNowOrExit(AppEvt::Reset);
+    else {
+        uint16_t pkt_type = rx_pkt.word16 & 0xFF00U; // Zero second byte
+        uint16_t pkt_value = rx_pkt.bytes[1];
+        if(pkt_type == static_cast<uint16_t>(PktType::AddHealth)) {
+            Sys::Lock();
+            output_hits_ended.ResetI();
+            hit_cnt = (pkt_value > settings.hit_cnt)? settings.hit_cnt : pkt_value;
+            prev_hit_time_st = Sys::GetSysTimeX();
+            Sys::Unlock();
+            Indication::HitsAdded(pkt_value);
+        }
+        else if(pkt_type == static_cast<uint16_t>(PktType::AddCartridges)) {
+            int32_t magazines_to_add = pkt_value / settings.rounds_in_magaz;
+            int32_t rounds_left_to_add = pkt_value - (settings.rounds_in_magaz * magazines_to_add);
+            Sys::Lock();
+            magazines_cnt += magazines_to_add;
+            if(magazines_cnt > settings.magazines_cnt) magazines_cnt = settings.magazines_cnt;
+            rounds_cnt += rounds_left_to_add;
+            // Check if current magazine is overflown
+            if(rounds_cnt > settings.rounds_in_magaz) rounds_cnt = settings.rounds_in_magaz;
+            prev_hit_time_st = Sys::GetSysTimeX();
+            Sys::Unlock();
+            Indication::RoundsAdded(magazines_to_add, rounds_left_to_add);
+        }
+    }
 }
 #endif
 

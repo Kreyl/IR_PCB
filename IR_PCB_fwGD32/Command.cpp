@@ -78,7 +78,7 @@ static void Restore(Shell *pshell) {
 }
 
 static void GetSettings(Shell *pshell) {
-    for(ValueBase* const pval : settings.values_arr) pval->Print(pshell);
+    for(ValueBase* const pval : settings.values_arr) pval->PrintOnGet(pshell);
 }
 
 static void Set(Shell *pshell) {
@@ -92,13 +92,13 @@ static void Set(Shell *pshell) {
         for(ValueBase* const pval : settings.values_arr) {
             if(kl_strcasecmp(name, pval->name) == 0) {
                 if(pval->CheckAndSetIfOk(v) == retv::Ok) {
-                    pshell->Print("%S = %u\r\n", name, v);
+                    pval->PrintOnNew(pshell);
                     N++;
                     found = true;
                     break;
                 }
                 else {
-                    pshell->Print("%S BadValue: %u\r\n", name, v);
+                    pval->PrintOnBad(pshell, v);
                     return;
                 }
             } // if
