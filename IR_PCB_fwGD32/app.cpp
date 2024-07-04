@@ -356,7 +356,7 @@ static systime_t prev_hit_time_st = 0;
 void IrRxCallbackI(uint32_t rcvd) { evt_q_app.SendNowOrExitI(AppMsg(AppEvt::IrRx, rcvd)); }
 
 void ProcessRxPkt(IRPkt rx_pkt) {
-//    rx_pkt.Print();
+    rx_pkt.Print("PktRx");
     // Shot incoming
     if(rx_pkt.zero == 0) {
         if(hit_cnt <= 0) return; // Nothing to do when no hits left
@@ -451,7 +451,7 @@ void Fire() {
             break;
         default: break; // some special pkt type, do not modify
     } // switch
-//    PktTx.Print();
+    pkt_tx.Print("PktTx");
     irLed::TransmitWord(pkt_tx.word16, bits_to_transmit, settings.ir_tx_pwr, OnIrTxEndI);
     fire_start_time_st = Sys::GetSysTimeX();
     Indication::Shot();

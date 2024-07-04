@@ -36,10 +36,14 @@ union IRPkt {
     IRPkt() : word16(0) {}
     IRPkt(uint16_t AW16) : word16(AW16) {}
 
-    void PrintI() { PrintfI("Pkt: Word %04X; PlayerID %u; TeamID %u; DamageID %d\r", word16, player_id, team_id, damage_id); }
-    void Print() {
+    void PrintI(const char* S) {
+        if(zero == 0) PrintfI("%S W16=%04X; pl_id %u; tm_id %u; dmg %u\r\n",
+                S, word16, player_id, team_id, damage_id);
+        else PrintfI("%S word %04X\r\n", S, word16);
+    }
+    void Print(const char* S) {
         Sys::Lock();
-        PrintI();
+        PrintI(S);
         Sys::Unlock();
     }
 
