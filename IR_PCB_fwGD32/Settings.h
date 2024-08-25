@@ -109,7 +109,9 @@ public:
     ValueMinMaxDef magaz_reload_delay {   4, 0,   60, "Delays", "MagazReloadDelay" };
     ValueMinMaxDef min_delay_btw_hits {   0, 0,   60, "Delays", "MinDelayBetwHits" };
     ValueMinMaxDef pulse_len_hit_ms   { 100, 1, 9999, "Delays", "PulseLenHit_ms" };
-    // TX
+    // IR RX
+    ValueMinMaxDef ir_rx_deviation { 150, 1, 600, "IRRX", "Deviation" };
+    // IR TX
     ValueMinMaxDef ir_tx_pwr  {     90,     1,    255, "IRTX", "TXPwr" };
     ValueMinMaxDef ir_tx_freq {  56000, 30000,  56000, "IRTX", "TXFreq" };
     ValuePktType   pkt_type   { 0x0000,                "IRTX", "PktType" };
@@ -117,11 +119,12 @@ public:
     ValueMinMaxDef tx_amount  {      1,     1,    100, "IRTX", "Amount" };
 
     // Array of value pointers
-    static constexpr uint32_t kValuesCnt = 14;
+    static constexpr uint32_t kValuesCnt = 15;
     ValueBase* const values_arr[kValuesCnt] = {
             &player_id, &team_id,
             &hit_cnt, &rounds_in_magaz, &magazines_cnt,
             &shots_period_ms, &magaz_reload_delay, &min_delay_btw_hits, &pulse_len_hit_ms,
+            &ir_rx_deviation,
             &ir_tx_pwr, &ir_tx_freq, &pkt_type, &tx_damage, &tx_amount,
     };
 

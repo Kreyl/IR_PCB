@@ -60,6 +60,9 @@ retv Settings::Save() {
     SaveValueWithCommentMinMaxInfDefault(magaz_reload_delay, "Interval between autoreloading of magazines, s");
     SaveValueWithCommentMinMaxInfDefault(min_delay_btw_hits, "Minimum delay between hits loss, s (when 0, it is possible to loose all within a second)");
     SaveValueWithCommentMinMaxInfDefault(pulse_len_hit_ms, "Duration of side LEDs blink in case of loss a hit");
+    // IR RX
+    f_printf(&common_file, "\r\n[IRRX]\r\n");
+    SaveValueWithCommentMinMaxDefault(ir_rx_deviation, "Deviation of received pulse length, us. Larger is more tolerant");
     // IRTX
     f_printf(&common_file, "\r\n[IRTX]\r\n");
     SaveValueWithCommentMinMaxDefault(ir_tx_pwr,  "Power of IR LED impulse");

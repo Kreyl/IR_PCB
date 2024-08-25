@@ -14,11 +14,13 @@
 #define IR_RX_ENABLED   TRUE
 
 // Delays, uS
-#define IR_HEADER_uS        2400UL
-#define IR_SPACE_uS         600UL
-#define IR_ZERO_uS          600UL
-#define IR_ONE_uS           1200UL
-#define IR_PAUSE_AFTER_uS   2400UL
+namespace kIr {
+inline const uint32_t Header_us = 2400UL;
+inline const uint32_t Space_us = 600UL;
+inline const uint32_t Zero_us = 600UL;
+inline const uint32_t One_us = 1200UL;
+inline const uint32_t PauseAfter_us = 2400UL;
+} // namespace
 
 #if IR_TX_ENABLED // ========================== IR TX ==========================
 #define IR_MAX_PWR          255     // Top DAC value
@@ -32,8 +34,6 @@ namespace irLed {
 #endif
 
 #if IR_RX_ENABLED // ========================== IR RX ==========================
-#define IR_RX_POLLING_PERIOD_MS     90
-#define IR_DEVIATION_uS             150
 #define IR_RX_PKT_TIMEOUT_MS        4
 
 namespace irRcvr {

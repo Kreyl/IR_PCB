@@ -7,6 +7,7 @@
 
 #include "ir.h"
 #include "gd_uart.h"
+#include "Settings.h"
 
 #if IR_TX_ENABLED // ========================== IR TX ==========================
 namespace irLed {
@@ -82,11 +83,11 @@ void SetCarrierFreq(uint32_t CarrierFreqHz) {
     uint32_t SamplingFreqHz = CarrierFreqHz * 2;
     SamplingTmr.SetUpdateFreqChangingTopValue(SamplingFreqHz);
     // Every SamplePair contains 4 actual samples
-    NSamples.Header = (((IR_HEADER_uS * CarrierFreqHz) + 1999999L) / 2000000L);
-    NSamples.Space  = (((IR_SPACE_uS  * CarrierFreqHz) + 1999999L) / 2000000L);
-    NSamples.Zero   = (((IR_ZERO_uS   * CarrierFreqHz) + 1999999L) / 2000000L);
-    NSamples.One    = (((IR_ONE_uS    * CarrierFreqHz) + 1999999L) / 2000000L);
-    NSamples.Pause  = (((IR_PAUSE_AFTER_uS * CarrierFreqHz) + 1999999UL) / 2000000UL);
+    NSamples.Header = (((kIr::Header_us * CarrierFreqHz) + 1999999L) / 2000000L);
+    NSamples.Space  = (((kIr::Space_us  * CarrierFreqHz) + 1999999L) / 2000000L);
+    NSamples.Zero   = (((kIr::Zero_us   * CarrierFreqHz) + 1999999L) / 2000000L);
+    NSamples.One    = (((kIr::One_us    * CarrierFreqHz) + 1999999L) / 2000000L);
+    NSamples.Pause  = (((kIr::PauseAfter_us * CarrierFreqHz) + 1999999UL) / 2000000UL);
     // Check if buf sz is enough
     uint32_t N = NSamples.Header + NSamples.Space + (NSamples.One + NSamples.Space) * IR_BIT_CNT_MAX + NSamples.Pause;
     if(N > DAC_BUF_SZ) Printf("IR TX DAC Buf Sz too small: %d < %d\r\n", DAC_BUF_SZ, N);
@@ -178,7 +179,7 @@ static systime_t RxStartTime = 0;
 
 static inline void ProcessDurationI(uint32_t Dur) {
 //    PrintfI("%d\r", Dur);
-    if(IS_LIKE(Dur, IR_HEADER_uS, IR_DEVIATION_uS)) { // Header rcvd
+    if(IS_LIKE(Dur, kIr::Header_us, settings.ir_rx_deviation)) { // Header rcvd
         IBitCnt = 16;
         StopRemainder = 0;
         IRxData = 0;
@@ -188,8 +189,8 @@ static inline void ProcessDurationI(uint32_t Dur) {
     else if(IBitCnt != -1) {
         if(Sys::TimeElapsedSince(RxStartTime) < TIME_MS2I(IR_RX_PKT_TIMEOUT_MS)) {
             uint32_t bit;
-            if     (IS_LIKE(Dur, IR_ZERO_uS, IR_DEVIATION_uS)) bit = 0UL;
-            else if(IS_LIKE(Dur, IR_ONE_uS,  IR_DEVIATION_uS)) bit = 1UL;
+            if     (IS_LIKE(Dur, kIr::Zero_us, settings.ir_rx_deviation)) bit = 0UL;
+            else if(IS_LIKE(Dur, kIr::One_us,  settings.ir_rx_deviation)) bit = 1UL;
             else { IBitCnt = -1; return; } // Bad duration
             // Find out expected bit cnt
             if(IBitCnt == 16 and bit == 0) StopRemainder = 2; // if first bit is 0, 14 bits are expected
