@@ -79,7 +79,7 @@
 
 // Neopixel LEDs
 #define NPX_PARAMS      PA0, TIM4, 0
-#define FLAME_LEN_MAX   9 // LEDs by one side
+#define FLAME_LEN_MAX   15 // LEDs by one side
 #define NPX_BAND_CNT    3
 #define NPX_LED_CNT_MAX (FLAME_LEN_MAX * 3) // Three LED bands
 

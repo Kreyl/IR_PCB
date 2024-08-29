@@ -240,6 +240,32 @@ void OnCmd(Shell_t *PShell) {
         NpxLeds.SetCurrentColors();
     }
 
+    else if(PCmd->NameIs("Npx3")) {
+        Color_t clr;
+        if(PCmd->GetClrRGB(&clr) == retv::Ok) {
+            for(int i=0; i<9; i++) NpxLeds.ClrBuf[i] = clr;
+        }
+        if(PCmd->GetClrRGB(&clr) == retv::Ok) {
+            for(int i=9; i<18; i++) NpxLeds.ClrBuf[i] = clr;
+        }
+        if(PCmd->GetClrRGB(&clr) == retv::Ok) {
+            for(int i=18; i<27; i++) NpxLeds.ClrBuf[i] = clr;
+        }
+        NpxLeds.SetCurrentColors();
+        PShell->Ok();
+    }
+
+    else if(PCmd->NameIs("NpxIndx")) {
+        int32_t indx;
+        Color_t clr;
+        if(PCmd->GetNextI32(&indx) == retv::Ok and PCmd->GetClrRGB(&clr) == retv::Ok) {
+            if(indx < 0 or indx >= NpxLeds.ClrBuf.size()) { PShell->BadParam(); return; }
+            NpxLeds.ClrBuf[indx] = clr;
+        }
+        NpxLeds.SetCurrentColors();
+        PShell->Ok();
+    }
+
     else if(PCmd->NameIs("SetFlameLen")) {
         uint32_t flen;
         if(PCmd->GetNext(&flen) == retv::Ok and flen <= FLAME_LEN_MAX) {
