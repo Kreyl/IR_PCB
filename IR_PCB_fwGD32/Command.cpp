@@ -57,10 +57,10 @@ static void DoTest(Shell *pshell) {
     beeped = false;
     irRcvr::SetCallback(TestIrRxCallbackI);
     // Gpios
-    Gpio::SetupOut(Gpio1, Gpio::PushPull, Gpio::speed2MHz);
-    Gpio::SetupOut(Gpio2, Gpio::PushPull, Gpio::speed2MHz);
-    Gpio::SetupOut(Gpio3, Gpio::PushPull, Gpio::speed2MHz);
-    Gpio::SetupOut(Gpio4, Gpio::PushPull, Gpio::speed2MHz);
+    gpio::SetupOut(Gpio1, gpio::PushPull, gpio::speed2MHz);
+    gpio::SetupOut(Gpio2, gpio::PushPull, gpio::speed2MHz);
+    gpio::SetupOut(Gpio3, gpio::PushPull, gpio::speed2MHz);
+    gpio::SetupOut(Gpio4, gpio::PushPull, gpio::speed2MHz);
     // Audio codec
     if(Codec::SetupSampleRate(48000) == retv::Ok) {
         Codec::I2SDmaDoneCbI = I2SDmaDoneCbI;
@@ -121,6 +121,26 @@ static void LoadSettings(Shell *pshell) {
     Reset();
 }
 
+static void IrTx(Shell *pshell) {
+    Cmd_t *pcmd = &pshell->Cmd;
+    int32_t pwr, bit_indx = 16; // Fill word starting from MSB
+    uint16_t word = 0;
+    if(pcmd->GetNext(&pwr) != retv::Ok) { pshell->BadParam(); return; }
+    char *S;
+    while((S = pcmd->GetNextString()) != nullptr and bit_indx > 0) {
+        while(*S != '\0') {
+            bit_indx--;
+            if(*S++ != '0') word |= (1U << bit_indx); // !0 means 1
+            if(bit_indx == 0) break; // it was the last bit
+        }
+    }
+    uint32_t bit_cnt = 16 - bit_indx;
+    if(bit_cnt == 0) { pshell->BadParam(); return; }
+    Printf("Word16: 0x%X; bit number: %u\r", word, bit_cnt);
+    irLed::TransmitWord(word, bit_cnt, pwr, nullptr);
+    pshell->Ok();
+}
+
 
 #if 0 // ==== Debug ====
 static void CtrlSet(Shell *pshell) {
@@ -130,16 +150,6 @@ static void CtrlSet(Shell *pshell) {
         pshell->Ok();
     }
     else pshell->BadParam();
-}
-
-static void IrTx(Shell *pshell) {
-    Cmd_t *PCmd = &pshell->Cmd;
-    uint32_t Word, Pwr, BitCnt;
-    if(PCmd->GetNext(&Word) != retv::Ok) { pshell->BadParam(); return; }
-    if(PCmd->GetNext(&BitCnt) != retv::Ok) { pshell->BadParam(); return; }
-    if(PCmd->GetNext(&Pwr) != retv::Ok) { pshell->BadParam(); return; }
-    irLed::TransmitWord(Word, BitCnt, Pwr, nullptr);
-    pshell->Ok();
 }
 
 static void Npx(Shell *pshell) {
@@ -153,21 +163,21 @@ static void Npx(Shell *pshell) {
 #endif
 
 //extern LedSmooth front_LEDs[FRONT_LEDS_CNT];
-extern LedSmooth side_LEDs[SIDE_LEDS_CNT];
+//extern LedSmooth side_LEDs[SIDE_LEDS_CNT];
 
-static void SetLed(Shell *pshell) {
-    Cmd_t *PCmd = &pshell->Cmd;
-    uint32_t v;
-    if(PCmd->GetNext(&v) == retv::Ok) {
-        side_LEDs[0].Set(v);
-        pshell->Ok();
-    }
-    else pshell->BadParam();
-}
+//static void SetLed(Shell *pshell) {
+//    Cmd_t *PCmd = &pshell->Cmd;
+//    uint32_t v;
+//    if(PCmd->GetNext(&v) == retv::Ok) {
+//        side_LEDs[0].Set(v);
+//        pshell->Ok();
+//    }
+//    else pshell->BadParam();
+//}
 
-static void Get(Shell *pshell) {
-    pshell->Print("0x%X %u %u\r", TIM0->INTF, TIM0->CH0CV, TIM0->CH1CV);
-}
+//static void Get(Shell *pshell) {
+//    pshell->Print("0x%X %u %u\r", TIM0->INTF, TIM0->CH0CV, TIM0->CH1CV);
+//}
 
 // Commands
 static const ShellCmd_t cmds[] = {
@@ -182,11 +192,12 @@ static const ShellCmd_t cmds[] = {
         {"Set", Set, "Set one or more value of settings, ex: 'Set HitCnt 18, TeamID 7'. This will not save to Flash!"},
         {"SaveSettings", SaveSettings, "Save current settings to Flash"},
         {"LoadSettings", LoadSettings, "Load settings from Flash"},
+        // ==== Research ====
+        {"IrTx", IrTx,"'IrTx Pwr, bits': transmit bits (up to 16) via IR LED at specified power. Divide bits into pieces for convenience. Ex: 'IRTx 90, 1100 0101 11 1001"},
         // ==== Debug ====
-        {"SetLed", SetLed, "set led PWM"},
-        {"Get", Get, "get"},
+//        {"SetLed", SetLed, "set led PWM"},
+//        {"Get", Get, "get"},
 //        {"CtrlSet", CtrlSet,   "Set two control pins to specified value, ex: 'CtrlSet 1, 0'"},
-//        {"IrTx",    IrTx,      "'IrTx Word, Pwr, BitCnt': transmit MSB bits by IR LED at specified power. Ex: 'IRTx 0xAA50 90 12"},
 //        {"NPX",     Npx,       "Set all NPX LEDs to specified RGB color, ex: 'Npx 18 255 180'"},
 };
 
@@ -195,7 +206,7 @@ void OnCmd(Shell *pshell) {
     Cmd_t *PCmd = &pshell->Cmd;
     // Show help if needed
     if(PCmd->NameIs("Help")) {
-        pshell->Print("Commands available:\r\n");
+        pshell->Print("==== Commands available ====\r\n");
         for(auto &SCmd : cmds) pshell->Print("%S: %S\r\n", SCmd.Name, SCmd.Help);
     }
     else {

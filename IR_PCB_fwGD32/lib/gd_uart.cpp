@@ -74,12 +74,12 @@ void BaseUart_t::Init() {
     OnClkChange();  // Setup baudrate
 
     // ==== TX ====
-    Gpio::SetupAlterFunc(Params->PGpioTx, Params->PinTx, Gpio::PushPull, Gpio::speed50MHz);
+    gpio::SetupAlterFunc(Params->PGpioTx, Params->PinTx, gpio::PushPull, gpio::speed50MHz);
     DmaTx.Init(&Params->Uart->DATA, UART_DMA_TX_MODE);
     ITxDmaIsIdle = true;
 
     // ==== RX ====
-    Gpio::SetupInput(Params->PGpioRx, Params->PinRx, Gpio::PullUp);
+    gpio::SetupInput(Params->PGpioRx, Params->PinRx, gpio::PullUp);
     DmaRx.Init(&Params->Uart->DATA, IRxBuf, UART_DMA_RX_MODE, UART_RXBUF_SZ);
     DmaRx.Enable();
 

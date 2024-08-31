@@ -56,11 +56,11 @@ ftVoidVoid I2SDmaDoneCbI = nullptr;
 
 void Init() {
     // === GPIOs ===
-    Gpio::SetupAlterFunc(AU_LRCK, Gpio::PushPull); // Left/Right (Frame sync) clock output
-    Gpio::SetupAlterFunc(AU_BCLK, Gpio::PushPull); // Bit clock output
-    Gpio::SetupAlterFunc(AU_SDIN, Gpio::PushPull); // SAI_A is Master Transmitter
-    Gpio::SetupOut(AU_SDMODE, Gpio::PushPull);
-    Gpio::SetHi(AU_SDMODE); // Enable device, use Left channel
+    gpio::SetupAlterFunc(AU_LRCK, gpio::PushPull); // Left/Right (Frame sync) clock output
+    gpio::SetupAlterFunc(AU_BCLK, gpio::PushPull); // Bit clock output
+    gpio::SetupAlterFunc(AU_SDIN, gpio::PushPull); // SAI_A is Master Transmitter
+    gpio::SetupOut(AU_SDMODE, gpio::PushPull);
+    gpio::SetHi(AU_SDMODE); // Enable device, use Left channel
     Sys::SleepMilliseconds(18);
     // === Clock ===
     RCU->EnSpi(AU_SPI);

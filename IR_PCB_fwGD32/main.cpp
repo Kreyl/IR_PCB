@@ -180,10 +180,10 @@ void main(void) {
                     // Front LEDs
                     front_LEDs[tst_indx & 0x01].StartOrRestart(lsqFadeInOut);
                     // Gpios
-                    Gpio::Set(Gpio1, tst_indx == 0);
-                    Gpio::Set(Gpio2, tst_indx == 1);
-                    Gpio::Set(Gpio3, tst_indx == 2);
-                    Gpio::Set(Gpio4, tst_indx == 3);
+                    gpio::Set(Gpio1, tst_indx == 0);
+                    gpio::Set(Gpio2, tst_indx == 1);
+                    gpio::Set(Gpio3, tst_indx == 2);
+                    gpio::Set(Gpio4, tst_indx == 3);
                     // Buzzer
                     if(tst_indx == 0 and !beeped) {
                         beeper.StartOrRestart(bsqBeepBeep);

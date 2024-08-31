@@ -54,11 +54,11 @@
 // Usage by app
 //#define Output_PulseOnHit
 #define Output_HitsEnded    Gpio3
-#define Input_BurstFire     Gpio2, Gpio::PullDown
-#define Input_SingleFire    Gpio1, Gpio::PullDown
-#define INPUT_DEADTIME_ms   36
+#define Input_BurstFire     Gpio2, gpio::PullDown
+#define Input_SingleFire    Gpio1, gpio::PullDown
+#define INPUT_DEADTTIME_ms  36
 // PWM Input
-#define INPUT_PWM           PA8, Gpio::PullDown, TIM0
+#define INPUT_PWM           PA8, gpio::PullDown, TIM0
 #define INPUT_PWM_TMR_IRQ   TIMER0_Channel_IRQn
 #define INPUT_PWM_TMR_IRQ_HNDLR TIMER0_Channel_IRQHandler
 #define INPUT_PWM_CHECK_PERIOD_ms       27 // It is timeout, too. After this period of pulse absense there will be event of Duty=0
@@ -71,18 +71,18 @@
 #define UART_RX_PIN     PA3
 
 // Green LED
-#define LUMOS_PIN       PA10, Gpio::PushPull
+#define LUMOS_PIN       PA10, gpio::PushPull
 
 // Front LEDs
-#define LED_FRONT1      { PB8, TIM3, 2, invNotInverted, Gpio::PushPull, 255 }
-#define LED_FRONT2      { PB9, TIM3, 3, invNotInverted, Gpio::PushPull, 255 }
+#define LED_FRONT1      { PB8, TIM3, 2, invNotInverted, gpio::PushPull, 255 }
+#define LED_FRONT2      { PB9, TIM3, 3, invNotInverted, gpio::PushPull, 255 }
 #define FRONT_LEDS_CNT  2
 
 // Side LEDs
-#define LED_PWM1        { PA6, TIM2, 0, invInverted, Gpio::PushPull, 255 }
-#define LED_PWM2        { PA7, TIM2, 1, invInverted, Gpio::PushPull, 255 }
-#define LED_PWM3        { PB0, TIM2, 2, invInverted, Gpio::PushPull, 255 }
-#define LED_PWM4        { PB1, TIM2, 3, invInverted, Gpio::PushPull, 255 }
+#define LED_PWM1        { PA6, TIM2, 0, invInverted, gpio::PushPull, 255 }
+#define LED_PWM2        { PA7, TIM2, 1, invInverted, gpio::PushPull, 255 }
+#define LED_PWM3        { PB0, TIM2, 2, invInverted, gpio::PushPull, 255 }
+#define LED_PWM4        { PB1, TIM2, 3, invInverted, gpio::PushPull, 255 }
 #define SIDE_LEDS_CNT   4
 
 // Neopixel LEDs
@@ -90,7 +90,7 @@
 
 // Beeper
 #define BEEPER_TOP      22 // 22 < 255: needed to increase frequency
-#define BEEPER_PIN      { PB14, TIM11, 0, invInverted, Gpio::PushPull, BEEPER_TOP }
+#define BEEPER_PIN      { PB14, TIM11, 0, invInverted, gpio::PushPull, BEEPER_TOP }
 
 // IR LED
 #define IR_LED          PA4 // DAC

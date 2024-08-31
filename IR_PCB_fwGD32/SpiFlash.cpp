@@ -32,13 +32,13 @@ SpiFlash_t::SpiFlash_t(SPI_TypeDef *pspi) : spi(pspi),
 
 void SpiFlash_t::Init() {
     // Init GPIO
-    Nss.SetupOut(Gpio::PushPull, Gpio::speed50MHz);
+    Nss.SetupOut(gpio::PushPull, gpio::speed50MHz);
     Nss.SetHi();
-    Gpio::SetupAlterFunc(FLASH_SCK,  Gpio::PushPull, Gpio::speed50MHz);
-    Gpio::SetupAlterFunc(FLASH_MISO, Gpio::PushPull, Gpio::speed50MHz);
-    Gpio::SetupAlterFunc(FLASH_MOSI, Gpio::PushPull, Gpio::speed50MHz);
-    Gpio::SetupAlterFunc(FLASH_IO2,  Gpio::PushPull, Gpio::speed50MHz);
-    Gpio::SetupAlterFunc(FLASH_IO3,  Gpio::PushPull, Gpio::speed50MHz);
+    gpio::SetupAlterFunc(FLASH_SCK,  gpio::PushPull, gpio::speed50MHz);
+    gpio::SetupAlterFunc(FLASH_MISO, gpio::PushPull, gpio::speed50MHz);
+    gpio::SetupAlterFunc(FLASH_MOSI, gpio::PushPull, gpio::speed50MHz);
+    gpio::SetupAlterFunc(FLASH_IO2,  gpio::PushPull, gpio::speed50MHz);
+    gpio::SetupAlterFunc(FLASH_IO3,  gpio::PushPull, gpio::speed50MHz);
     // ==== SPI ====    MSB first, master, ClkLowIdle, FirstEdge, BitNum = 8
     spi.Setup(BitOrder::MSB, Spi_t::cpol::IdleLow, Spi_t::cpha::FirstEdge, SPIFLASH_CLK_FREQ_Hz);
 //    spi.Setup(BitOrder::MSB, Spi_t::cpol::IdleLow, Spi_t::cpha::FirstEdge, 1000000);

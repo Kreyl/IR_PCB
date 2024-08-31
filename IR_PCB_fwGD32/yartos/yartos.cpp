@@ -8,7 +8,6 @@
 #include "yartos.h"
 #include "core_cm4.h"
 #include "board.h"
-#include "gd_lib.h"
 #include "shell.h"
 #include "MsgQ.h"
 

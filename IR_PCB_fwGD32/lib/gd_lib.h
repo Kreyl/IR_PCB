@@ -15,6 +15,7 @@
 #include "board.h"
 #include "kl_buf.h"
 #include <vector>
+#include "yartos.h"
 
 #if 1 // ============================ General ==================================
 // ==== Build time ====
@@ -33,7 +34,11 @@ public:
 #define MIN_(a, b)   ( ((a)<(b))? (a) : (b) )
 #define MAX_(a, b)   ( ((a)>(b))? (a) : (b) )
 #define ABS(a)      ( ((a) < 0)? -(a) : (a) )
-#define IS_LIKE(v, precise, deviation)  (((precise - deviation) < v) and (v < (precise + deviation)))
+
+template<typename T>
+static inline T IsLike(T v, T precise, T deviation) {
+    return ((precise - deviation) < v) and (v < (precise + deviation));
+}
 
 // IRQ priorities
 #define IRQ_PRIO_LOW            15  // Minimum
@@ -223,7 +228,7 @@ static inline void GetMcuSerialNum(uint32_t Ser[3]) {
     Ser[2] = *(volatile uint32_t *)(0x1FFFF7F0);
 }
 
-namespace Gpio { // ========================== GPIO ============================
+namespace gpio { // ========================== GPIO ============================
 
 enum PullUpDown { PullNone = 0b00, PullUp = 0b01, PullDown = 0b10 };
 enum OutMode    { PushPull = 0, OpenDrain = 1 };
@@ -272,12 +277,30 @@ public:
     uint32_t pin_n;
     Pin_t() : pgpio(nullptr), pin_n(0) {}
     Pin_t(GPIO_TypeDef *APGpio, uint32_t APinN) : pgpio(APGpio), pin_n(APinN) {}
-    inline void SetHi() { Gpio::SetHi(pgpio, pin_n); }
-    inline void SetLo() { Gpio::SetLo(pgpio, pin_n); }
-    inline void Set(uint32_t lvl) { Gpio::Set(pgpio, pin_n, lvl); }
-    void SetupOut(const Gpio::OutMode OutMode, const Gpio::Speed ASpeed = Gpio::speed10MHz) {
-        Gpio::SetupOut(pgpio, pin_n, OutMode, ASpeed);
+    inline void SetHi() { gpio::SetHi(pgpio, pin_n); }
+    inline void SetLo() { gpio::SetLo(pgpio, pin_n); }
+    inline void Set(uint32_t lvl) { gpio::Set(pgpio, pin_n, lvl); }
+    void SetupOut(const gpio::OutMode OutMode, const gpio::Speed ASpeed = gpio::speed10MHz) {
+        gpio::SetupOut(pgpio, pin_n, OutMode, ASpeed);
     }
+};
+
+void PulserCallback(void *p);
+
+//class VirtualTimer;
+
+class PulserPin: private Pin_t {
+private:
+    VirtualTimer itmr;
+    friend void PulserCallback(void *p);
+    void IOnTmrDone() { SetLo(); }
+public:
+    PulserPin(GPIO_TypeDef *APGPIO, uint16_t APin) : Pin_t(APGPIO, APin) {}
+    void Init() { Pin_t::SetupOut(gpio::PushPull); }
+    void PulseI(uint32_t Dur);
+    void ResetI();
+    void SetHi() { Pin_t::SetHi(); }
+    void SetLo() { Pin_t::SetLo(); }
 };
 
 // ==== PWM output ====
@@ -292,11 +315,11 @@ struct PwmSetup_t {
     TIM_TypeDef *PTimer;
     uint32_t TimerChnl;
     Inverted_t Inverted;
-    Gpio::OutMode OutputType;
+    gpio::OutMode OutputType;
     uint32_t TopValue;
     PwmSetup_t(GPIO_TypeDef *APGpio, uint16_t APin,
             TIM_TypeDef *APTimer, uint32_t ATimerChnl,
-            Inverted_t AInverted, Gpio::OutMode AOutputType,
+            Inverted_t AInverted, gpio::OutMode AOutputType,
             uint32_t ATopValue) : PGpio(APGpio), Pin(APin), PTimer(APTimer),
                     TimerChnl(ATimerChnl), Inverted(AInverted), OutputType(AOutputType),
                     TopValue(ATopValue) {}
@@ -331,8 +354,8 @@ class PinIrq {
 public:
     GPIO_TypeDef *pgpio;
     uint16_t pin_n;
-    Gpio::PullUpDown pull_up_down;
-    PinIrq(GPIO_TypeDef *APGpio, uint16_t APinN, Gpio::PullUpDown APullUpDown, ftVoidVoid PIrqHandler) :
+    gpio::PullUpDown pull_up_down;
+    PinIrq(GPIO_TypeDef *APGpio, uint16_t APinN, gpio::PullUpDown APullUpDown, ftVoidVoid PIrqHandler) :
         pgpio(APGpio), pin_n(APinN), pull_up_down(APullUpDown) {
 #if INDIVIDUAL_EXTI_IRQ_REQUIRED
         ExtiIrqHandler[APinN] = PIrqHandler;
@@ -343,7 +366,7 @@ public:
 #endif // INDIVIDUAL_EXTI_IRQ_REQUIRED
     }
 
-    bool IsHi() const { return Gpio::IsHi(pgpio, pin_n); }
+    bool IsHi() const { return gpio::IsHi(pgpio, pin_n); }
 
     void SetTriggerType(ExtiTrigType_t ATriggerType) const {
         uint32_t IrqMsk = 1 << pin_n;
@@ -366,7 +389,7 @@ public:
     // ttRising, ttFalling, ttRisingFalling
     void Init(ExtiTrigType_t ATriggerType) const {
         // Init pin as input
-        Gpio::SetupInput(pgpio, pin_n, pull_up_down);
+        gpio::SetupInput(pgpio, pin_n, pull_up_down);
         // Connect EXTI line to the pin of the port
         uint32_t Indx   = pin_n / 4;            // Indx of EXTICR register
         uint32_t Offset = (pin_n & 0x03UL) * 4; // Offset in EXTICR register
@@ -390,6 +413,7 @@ public:
     bool IsIrqPending() const { return EXTI->PD & (1 << pin_n); }
     void GenerateIrq()  const { EXTI->SWIEV = (1 << pin_n); }
 };
+
 #endif // EXTI
 
 #if 1 // ============================== Watchdog ===============================

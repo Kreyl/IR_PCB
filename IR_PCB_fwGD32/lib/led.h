@@ -9,9 +9,9 @@
 class LedOnOff {
 protected:
     Pin_t ipin;
-    Gpio::OutMode output_mode;
+    gpio::OutMode output_mode;
 public:
-    LedOnOff(GPIO_TypeDef *apgpio, uint16_t apin, Gpio::OutMode aoutput_mode) :
+    LedOnOff(GPIO_TypeDef *apgpio, uint16_t apin, gpio::OutMode aoutput_mode) :
         ipin(apgpio, apin), output_mode(aoutput_mode) {}
     void Init() {
         ipin.SetupOut(output_mode);
@@ -32,7 +32,7 @@ protected:
         return sltProceed;  // Always proceed
     }
 public:
-    LedBlinker(GPIO_TypeDef *apgpio, uint16_t apin, Gpio::OutMode aoutput_mode) :
+    LedBlinker(GPIO_TypeDef *apgpio, uint16_t apin, gpio::OutMode aoutput_mode) :
         BaseSequencer(), LedOnOff(apgpio, apin, aoutput_mode) {}
 };
 #endif

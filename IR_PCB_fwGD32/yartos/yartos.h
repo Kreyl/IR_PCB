@@ -4,7 +4,6 @@
 #include "yartos_cfg.h"
 #include <inttypes.h>
 #include <stddef.h>
-#include "gd_lib.h"
 #include "gd32e11x_kl.h"
 #include "EvtMsgIDs.h"
 

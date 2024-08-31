@@ -23,7 +23,7 @@ Neopixels_t::Neopixels_t(const NpxParams *APParams) :
     DmaTx(APParams->DmaChnlTx, NpxDmaDone, this) {}
 
 void Neopixels_t::Init() {
-    Gpio::SetupAlterFunc(Params->PGpio, Params->Pin, Gpio::PushPull, Gpio::speed50MHz);
+    gpio::SetupAlterFunc(Params->PGpio, Params->Pin, gpio::PushPull, gpio::speed50MHz);
     Tim.Init();
     Tim.SetTopValue(TIM_TOP_ticks);
 //    Tim.SetInputFreqChangingPrescaler(2500000);

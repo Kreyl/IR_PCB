@@ -119,7 +119,7 @@ void Seed(uint32_t Seed) { next = Seed; }
 
 } // namespace
 
-namespace Gpio { // ========================== GPIO ============================
+namespace gpio { // ========================== GPIO ============================
 
 void SetupOut(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode OutMode, const Speed ASpeed) {
     RCU->EnGpio(PGpio);
@@ -154,6 +154,18 @@ void SetupAlterFunc(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode OutM
 }
 
 } // namespace Gpio
+
+void PulserCallback(void *p) { static_cast<PulserPin*>(p)->IOnTmrDone(); }
+void PulserPin::PulseI(uint32_t Dur) {
+    itmr.ResetI();
+    SetHi();
+    if(Dur == 0) SetLo();
+    else itmr.SetI(TIME_MS2I(Dur), PulserCallback, (void*)this);
+}
+void PulserPin::ResetI() {
+    itmr.ResetI();
+    SetLo();
+}
 
 #if 1 // =========================== External IRQ ==============================
 // IRQ handlers
@@ -313,14 +325,14 @@ void i2c_t::Standby() {
         Nvic::DisableVector(I2C1_ER_IRQn);
     }
     // Disable GPIOs
-    Gpio::SetupAnalog(PGpioScl, PinScl);
-    Gpio::SetupAnalog(PGpioSda, PinSda);
+    gpio::SetupAnalog(PGpioScl, PinScl);
+    gpio::SetupAnalog(PGpioSda, PinSda);
 }
 
 void i2c_t::Resume() {
     // GPIO
-    Gpio::SetupAlterFunc(PGpioScl, PinScl, Gpio::OpenDrain, Gpio::speed50MHz);
-    Gpio::SetupAlterFunc(PGpioSda, PinSda, Gpio::OpenDrain, Gpio::speed50MHz);
+    gpio::SetupAlterFunc(PGpioScl, PinScl, gpio::OpenDrain, gpio::speed50MHz);
+    gpio::SetupAlterFunc(PGpioSda, PinSda, gpio::OpenDrain, gpio::speed50MHz);
 #if I2C_USE_SEMAPHORE
     chBSemObjectInit(&BSemaphore, NOT_TAKEN);
 #endif
@@ -706,7 +718,7 @@ void Init(const Params& Setup) {
     ADC0->SetSequenceLength(Setup.Channels.size());
     uint32_t SeqIndx = 0;    // First sequence item is 0
     for(auto& Chnl : Setup.Channels) {
-        if(Chnl.GPIO != nullptr) Gpio::SetupAnalog(Chnl.GPIO, Chnl.Pin);
+        if(Chnl.GPIO != nullptr) gpio::SetupAnalog(Chnl.GPIO, Chnl.Pin);
         ADC0->SetChannelSampleTime(Chnl.ChannelN, Setup.SampleTime);
         ADC0->SetSequenceItem(SeqIndx++, Chnl.ChannelN);
     }
@@ -1050,7 +1062,7 @@ void HwTim::SetUpdateFreqChangingBoth(uint32_t FreqHz) const {
 // PWM
 void PinOutputPWM_t::Init() const {
     // GPIO
-    Gpio::SetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType);
+    gpio::SetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType);
     // Timer
     RCU->EnTimer(ISetup.PTimer);
     ISetup.PTimer->CCHP = 0xC000;

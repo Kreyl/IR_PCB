@@ -19,15 +19,34 @@ public:
     const int32_t v_default;
     const char* const section;
     const char* const name;
-    operator int32_t() const { return v; }
+    const char* const comment;
+    int32_t operator *() const { return v; }
     void SetToDefault() { v = v_default; }
     virtual retv CheckAndSetIfOk(int32_t) = 0;
     virtual void PrintOnGet(Shell*) = 0;
     virtual void PrintOnNew(Shell *pshell) = 0;
     virtual void PrintOnBad(Shell *pshell, int32_t bad_value) = 0;
     static const uint32_t kValueNameSz = 16;
-    ValueBase(int32_t adefault, const char* asection, const char* aname):
-        v(adefault), v_default(adefault), section(asection), name(aname) {}
+    ValueBase(int32_t adefault, const char* asection, const char* aname, const char *acomment):
+        v(adefault), v_default(adefault), section(asection), name(aname), comment(acomment) {}
+};
+
+// 0 is disabled, >0 is enabled
+class ValueEnable : public ValueBase {
+public:
+    bool IsEnabled() { return v != 0; }
+    retv CheckAndSetIfOk(int32_t avalue) {
+        if(avalue >= 0) {
+            v = avalue;
+            return retv::Ok;
+        }
+        else return retv::BadValue;
+    }
+    void PrintOnGet(Shell *pshell) { pshell->Print("%*S = %4d; default = %4d; %S\r\n", kValueNameSz, name, v, v_default, comment); }
+    void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d\r\n", name, v); }
+    void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: %d\r\n", name, bad_value); }
+    ValueEnable(int32_t adefault, const char* asection, const char* aname, const char *acomment) :
+                ValueBase(adefault, asection, aname, acomment) {}
 };
 
 class ValueMinMaxDef : public ValueBase {
@@ -40,15 +59,15 @@ public:
         return retv::Ok;
     }
     void PrintOnGet(Shell *pshell) {
-        pshell->Print("%*S = %4d; default = %4d; Min = %d; Max = %4d\r\n",
-                kValueNameSz, name, v, v_default, v_min, v_max);
+        pshell->Print("%*S = %4d; default = %4d; Min = %d; Max = %4d; %S\r\n",
+                kValueNameSz, name, v, v_default, v_min, v_max, comment);
     }
     void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d\r\n", name, v); }
     void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: %d\r\n", name, bad_value); }
 
     ValueMinMaxDef(int32_t adefault, int32_t amin, int32_t amax,
-            const char* asection, const char* aname) :
-                ValueBase(adefault, asection, aname),
+            const char* asection, const char* aname, const char *acomment) :
+                ValueBase(adefault, asection, aname, acomment),
                 v_min(amin), v_max(amax) {}
 
 };
@@ -56,7 +75,7 @@ public:
 class ValuePktType : public ValueBase {
 public:
     ValuePktType(int32_t adefault, const char* asection, const char* aname) :
-        ValueBase(adefault, asection, aname) {} // 0 means Shot
+        ValueBase(adefault, asection, aname, "") {} // 0 means Shot
     retv CheckAndSetIfOk(int32_t avalue) {
         if(avalue < 0 or avalue > 0xFFFF) return retv::BadValue;
         v = avalue;
@@ -76,8 +95,8 @@ public:
 class ValueDamage : public ValueBase {
 public:
     int32_t bits;
-    ValueDamage(const char* asection, const char* aname) :
-        ValueBase(1, asection, aname), bits(0) {} // 0 means 1 hit
+    ValueDamage(const char* asection, const char* aname, const char *acomment) :
+        ValueBase(1, asection, aname, acomment), bits(0) {} // 0 means 1 hit
     retv CheckAndSetIfOk(int32_t avalue) {
         StatusOrI32 r = Damage_HitsToId(avalue);
         if(r.Ok()) {
@@ -88,8 +107,8 @@ public:
         else return retv::BadValue;
     }
     void PrintOnGet(Shell *pshell) {
-        pshell->Print("%*S = %4u; default = %4u; Possible values: 1,2,4,5,7,10,15,17,20,25,30,35,40,50,75,100\r\n",
-                kValueNameSz, name, v, v_default);
+        pshell->Print("%*S = %4u; default = %4u; Possible values: 1,2,4,5,7,10,15,17,20,25,30,35,40,50,75,100; %S\r\n",
+                kValueNameSz, name, v, v_default, comment);
     }
     void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d\r\n", name, v); }
     void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: %d\r\n", name, bad_value); }
@@ -98,32 +117,35 @@ public:
 class Settings {
 public:
     // IDs
-    ValueMinMaxDef player_id { 0, 0, 127, "IDs", "PlayerID" };
-    ValueMinMaxDef team_id   { 0, 0,  3,  "IDs", "TeamID" };
+    ValueMinMaxDef player_id { 0, 0, 127, "IDs", "PlayerID", "Player ID, must be unique" };
+    ValueMinMaxDef team_id   { 0, 0,  3,  "IDs", "TeamID", "Team ID, must be unique" };
     // Counts
-    ValueMinMaxDef hit_cnt          { 4, 1, 254, "Counts", "HitCnt" };
-    ValueMinMaxDef rounds_in_magaz  { 9, 1, 254, "Counts", "RoundsInMagazine" };
-    ValueMinMaxDef magazines_cnt    { 4, 1, 254, "Counts", "MagazinesCnt" };
+    ValueMinMaxDef hit_cnt          { 4, 1, 254, "Counts", "HitCnt", "Number of hits, can be unlimited" };
+    ValueMinMaxDef rounds_in_magaz  { 9, 1, 254, "Counts", "RoundsInMagazine", "Number of rounds in a single magazine, can be unlimited" };
+    ValueMinMaxDef magazines_cnt    { 4, 1, 254, "Counts", "MagazinesCnt", "Number of magazines, can be unlimited" };
     // Delays
-    ValueMinMaxDef shots_period_ms    { 252, 0, 9999, "Delays", "ShotsPeriod_ms" };
-    ValueMinMaxDef magaz_reload_delay {   4, 0,   60, "Delays", "MagazReloadDelay" };
-    ValueMinMaxDef min_delay_btw_hits {   0, 0,   60, "Delays", "MinDelayBetwHits" };
-    ValueMinMaxDef pulse_len_hit_ms   { 100, 1, 9999, "Delays", "PulseLenHit_ms" };
+    ValueMinMaxDef shots_period_ms    { 252, 0, 9999, "Delays", "ShotsPeriod_ms", "Minimum delay between shots, ms" };
+    ValueMinMaxDef magaz_reload_delay_s {   4, 0,   60, "Delays", "MagazReloadDelay", "Time needed to reload the magazine, s" };
+    ValueMinMaxDef min_delay_btw_hits_s {   0, 0,   60, "Delays", "MinDelayBetwHits", "Time between two consecutive hits, s: more frequent hits are ignored" };
+//    ValueMinMaxDef pulse_len_hit_ms   { 100, 1, 9999, "Delays", "PulseLenHit_ms", "Pulse duration on gpio pin when hit, ms" };
     // IR RX
-    ValueMinMaxDef ir_rx_deviation { 150, 1, 600, "IRRX", "Deviation" };
+    ValueMinMaxDef ir_rx_deviation { 150, 1, 600, "IRRX", "Deviation", "Tolerance to received IR pulse duration deviation, us" };
     // IR TX
-    ValueMinMaxDef ir_tx_pwr  {     90,     1,    255, "IRTX", "TXPwr" };
-    ValueMinMaxDef ir_tx_freq {  56000, 30000,  56000, "IRTX", "TXFreq" };
+    ValueMinMaxDef ir_tx_pwr  {     90,     1,    255, "IRTX", "TXPwr", "Power of IR output" };
+    ValueMinMaxDef ir_tx_freq {  56000, 30000,  56000, "IRTX", "TXFreq", "IR transmission modulation frequency, Hz" };
     ValuePktType   pkt_type   { 0x0000,                "IRTX", "PktType" };
-    ValueDamage    tx_damage  {                        "IRTX", "TXDamage" };
-    ValueMinMaxDef tx_amount  {      1,     1,    100, "IRTX", "Amount" };
+    ValueDamage    tx_damage  {                        "IRTX", "TXDamage", "Damage caused by a single shot" };
+    ValueMinMaxDef tx_amount  {      1,     1,    100, "IRTX", "Amount", "Number of things to be added by special packets: AddHealth, AddRounds, etc." };
+    // Research
+    ValueEnable print_rx_pkt {0, "Research", "print_rx_pkt", "Print received IR packet when enabled" };
+
 
     // Array of value pointers
     static constexpr uint32_t kValuesCnt = 15;
     ValueBase* const values_arr[kValuesCnt] = {
             &player_id, &team_id,
             &hit_cnt, &rounds_in_magaz, &magazines_cnt,
-            &shots_period_ms, &magaz_reload_delay, &min_delay_btw_hits, &pulse_len_hit_ms,
+            &shots_period_ms, &magaz_reload_delay_s, &min_delay_btw_hits_s, //&pulse_len_hit_ms,
             &ir_rx_deviation,
             &ir_tx_pwr, &ir_tx_freq, &pkt_type, &tx_damage, &tx_amount,
     };

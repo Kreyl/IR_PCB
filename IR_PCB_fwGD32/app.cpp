@@ -48,44 +48,17 @@ static EvtMsgQ<AppMsg, 9> evt_q_app;
 #endif
 
 #if 1 // ============================== Controls ===============================
-// ==== Outputs ====
-void PulserCallback(void *p);
-
-class PulserPin: private Pin_t {
-private:
-    VirtualTimer itmr;
-public:
-    PulserPin(GPIO_TypeDef *APGPIO, uint16_t APin) : Pin_t(APGPIO, APin) {}
-    void Init() { Pin_t::SetupOut(Gpio::PushPull); }
-    void PulseI(uint32_t Dur) {
-        itmr.ResetI();
-        SetHi();
-        if(Dur == 0) SetLo();
-        else itmr.SetI(TIME_MS2I(Dur), PulserCallback, (void*)this);
-    }
-    void ResetI() {
-        itmr.ResetI();
-        SetLo();
-    }
-    void SetHi() { Pin_t::SetHi(); }
-    void SetLo() { Pin_t::SetLo(); }
-
-    // Inner use
-    void IOnTmrDone() { SetLo(); }
-};
-
-void PulserCallback(void *p) { static_cast<PulserPin*>(p)->IOnTmrDone(); }
-
-PulserPin output_hits_ended {Output_HitsEnded};
+// Outputs
+Pin_t output_hits_ended {Output_HitsEnded};
 
 // ==== Inputs ====
-void InputPinIrqHandlerI(); // Common handler for both inputs
-void InputTmrCallback(void *p) { __NOP(); }
+void InputPinIrqHandlerI();
 
-class InputPin : public PinIrq {
+class InputPinIrqTimed : public PinIrq {
+private:
+    systime_t start_time_st = 0;
 public:
-    VirtualTimer itmr;
-    InputPin(GPIO_TypeDef *apgpio, uint16_t apin_n, Gpio::PullUpDown apull_up_down) :
+    InputPinIrqTimed(GPIO_TypeDef *apgpio, uint16_t apin_n, gpio::PullUpDown apull_up_down):
         PinIrq(apgpio, apin_n, apull_up_down, InputPinIrqHandlerI) {}
     void Init() {
         PinIrq::Init(ttRising);
@@ -93,16 +66,16 @@ public:
         EnableIrq(IRQ_PRIO_LOW);
     }
     bool CheckIfProcess() {
-        if(itmr.IsArmedX()) return false; // Not enough time passed
+        if(Sys::TimeElapsedSince(start_time_st) < TIME_MS2I(INPUT_DEADTTIME_ms)) return false; // Not enough time passed
         else {
-            itmr.SetI(TIME_MS2I(INPUT_DEADTIME_ms), InputTmrCallback, nullptr);
+            start_time_st = Sys::GetSysTimeX();
             return true;
         }
     }
 };
 
-InputPin input_single_fire{Input_SingleFire};
-InputPin input_burst_fire {Input_BurstFire};
+InputPinIrqTimed input_single_fire{Input_SingleFire};
+InputPinIrqTimed input_burst_fire {Input_BurstFire};
 
 void InputPinIrqHandlerI() {
     uint32_t flags = EXTI->PD;
@@ -136,7 +109,7 @@ class PwmInputPin : private HwTim {
 private:
     GPIO_TypeDef *pgpio;
     uint16_t pin_n;
-    Gpio::PullUpDown pull_up_down;
+    gpio::PullUpDown pull_up_down;
     VirtualTimer vtmr;
     friend void PwmInputTimCallback(void *p);
 
@@ -172,12 +145,12 @@ private:
 public:
     volatile int32_t pwm_duty=0;
 
-    PwmInputPin(GPIO_TypeDef *apgpio, uint16_t apin_n, Gpio::PullUpDown apull_up_down,
+    PwmInputPin(GPIO_TypeDef *apgpio, uint16_t apin_n, gpio::PullUpDown apull_up_down,
             TIM_TypeDef *aptimer) : HwTim(aptimer),
                 pgpio(apgpio), pin_n(apin_n), pull_up_down(apull_up_down) {}
 
     void Init() {
-        Gpio::SetupInput(pgpio, pin_n, pull_up_down);
+        gpio::SetupInput(pgpio, pin_n, pull_up_down);
         HwTim::Init();
         HwTim::SetTopValue(0xFFFF); // Maximum
         // === Input0 === on the rising edge, perform a capture and restart
@@ -316,7 +289,7 @@ void HitsEnded() {
     // Beeper
     if(beeper.GetCurrentSequence() == bsqHit) beeper.SetNextSequenceI(bsqHitsEnded);
     else beeper.StartOrRestartI(bsqHitsEnded);
-    output_hits_ended.SetHi();
+    output_hits_ended.SetLo();
     for(auto& Led : side_LEDs) Led.StartOrRestartI(lsqHitsEnded);
     Sys::Unlock();
     Printf("#Hits Ended\r\n");
@@ -361,9 +334,9 @@ void ProcessRxPkt(IRPkt rx_pkt) {
     if(rx_pkt.zero == 0) {
         if(hit_cnt <= 0) return; // Nothing to do when no hits left
         // Ignore friendly fire (and pkt from self, too)
-        if(rx_pkt.team_id == settings.team_id) return;
+        if(rx_pkt.team_id == *settings.team_id) return;
         // Ignore if not enough time passed since last hit
-        if(Sys::TimeElapsedSince(prev_hit_time_st) < TIME_S2I(settings.min_delay_btw_hits)) return;
+        if(Sys::TimeElapsedSince(prev_hit_time_st) < TIME_S2I(*settings.min_delay_btw_hits_s)) return;
         // Hit occured, decrement if not infinity
         int32_t damage = rx_pkt.GetDamageHits();
         if(!settings.hit_cnt.IsInfinity()) {
@@ -381,21 +354,21 @@ void ProcessRxPkt(IRPkt rx_pkt) {
         uint16_t pkt_value = rx_pkt.bytes[1];
         if(pkt_type == static_cast<uint16_t>(PktType::AddHealth)) {
             Sys::Lock();
-            output_hits_ended.ResetI();
-            hit_cnt = (pkt_value > settings.hit_cnt)? settings.hit_cnt : pkt_value;
+            output_hits_ended.SetHi();
+            hit_cnt = (pkt_value > *settings.hit_cnt)? *settings.hit_cnt : pkt_value;
             prev_hit_time_st = Sys::GetSysTimeX();
             Sys::Unlock();
             Indication::HitsAdded(pkt_value);
         }
         else if(pkt_type == static_cast<uint16_t>(PktType::AddCartridges)) {
-            int32_t magazines_to_add = pkt_value / settings.rounds_in_magaz;
-            int32_t rounds_left_to_add = pkt_value - (settings.rounds_in_magaz * magazines_to_add);
+            int32_t magazines_to_add = pkt_value / *settings.rounds_in_magaz;
+            int32_t rounds_left_to_add = pkt_value - (*settings.rounds_in_magaz * magazines_to_add);
             Sys::Lock();
             magazines_cnt += magazines_to_add;
-            if(magazines_cnt > settings.magazines_cnt) magazines_cnt = settings.magazines_cnt;
+            if(magazines_cnt > *settings.magazines_cnt) magazines_cnt = *settings.magazines_cnt;
             rounds_cnt += rounds_left_to_add;
             // Check if current magazine is overflown
-            if(rounds_cnt > settings.rounds_in_magaz) rounds_cnt = settings.rounds_in_magaz;
+            if(rounds_cnt > *settings.rounds_in_magaz) rounds_cnt = *settings.rounds_in_magaz;
             prev_hit_time_st = Sys::GetSysTimeX();
             Sys::Unlock();
             Indication::RoundsAdded(magazines_to_add, rounds_left_to_add);
@@ -416,14 +389,14 @@ void TmrCallback(void *p) {
     Sys::UnlockFromIRQ();
 }
 
-void StartDelay(int32_t ADelay_s, AppEvt AEvt) {
-    if(ADelay_s <= 0) evt_q_app.SendNowOrExit(AEvt); // Do it immediately
-    else fire_tmr.Set(TIME_S2I(ADelay_s), TmrCallback, (void*)((uint32_t)AEvt));
+void StartDelay_s(int32_t delay_s, AppEvt aevt) {
+    if(delay_s <= 0) evt_q_app.SendNowOrExit(aevt); // Do it immediately
+    else fire_tmr.Set(TIME_S2I(delay_s), TmrCallback, (void*)((uint32_t)aevt));
 }
 
-void StartDelay_ms(int32_t ADelay_ms, AppEvt AEvt) {
-    if(ADelay_ms <= 0) evt_q_app.SendNowOrExit(AEvt); // Do it immediately
-    else fire_tmr.Set(TIME_MS2I(ADelay_ms), TmrCallback, (void*)((uint32_t)AEvt));
+void StartDelay_ms(int32_t delay_ms, AppEvt aevt) {
+    if(delay_ms <= 0) evt_q_app.SendNowOrExit(aevt); // Do it immediately
+    else fire_tmr.Set(TIME_MS2I(delay_ms), TmrCallback, (void*)((uint32_t)aevt));
 }
 
 void OnIrTxEndI() { evt_q_app.SendNowOrExitI(AppEvt::EndOfIrTx); }
@@ -435,24 +408,24 @@ void Fire() {
     if(!settings.rounds_in_magaz.IsInfinity()) rounds_cnt--;
     // Prepare pkt
     uint32_t bits_to_transmit = 16;
-    pkt_tx.word16 = static_cast<uint16_t>(settings.pkt_type);
-    switch(settings.pkt_type) { // Modify pkt if needed
+    pkt_tx.word16 = static_cast<uint16_t>(*settings.pkt_type);
+    switch(*settings.pkt_type) { // Modify pkt if needed
         case static_cast<uint16_t>(PktType::Shot):
             pkt_tx.word16 = 0;
-            pkt_tx.player_id = settings.player_id;
-            pkt_tx.team_id  = settings.team_id;
+            pkt_tx.player_id = *settings.player_id;
+            pkt_tx.team_id  = *settings.team_id;
             pkt_tx.damage_id = settings.tx_damage.bits;
             bits_to_transmit = 14;
             break;
 
         case static_cast<uint16_t>(PktType::AddHealth):
         case static_cast<uint16_t>(PktType::AddCartridges):
-            pkt_tx.bytes[1] = settings.tx_amount;
+            pkt_tx.bytes[1] = *settings.tx_amount;
             break;
         default: break; // some special pkt type, do not modify
     } // switch
     pkt_tx.Print("PktTx");
-    irLed::TransmitWord(pkt_tx.word16, bits_to_transmit, settings.ir_tx_pwr, OnIrTxEndI);
+    irLed::TransmitWord(pkt_tx.word16, bits_to_transmit, *settings.ir_tx_pwr, OnIrTxEndI);
     fire_start_time_st = Sys::GetSysTimeX();
     Indication::Shot();
 }
@@ -461,18 +434,18 @@ void Fire() {
 void Reset(bool quiet) {
     Sys::Lock();
     irLed::ResetI();
-    output_hits_ended.ResetI();
+    output_hits_ended.SetHi();
 //    OutPulseOnHit.ResetI();  // Removed to implement PWM input
     input_burst_fire.CleanIrqFlag();
     input_single_fire.CleanIrqFlag();
     IsFiring = false;
-    rounds_cnt = settings.rounds_in_magaz;
-    magazines_cnt = settings.magazines_cnt;
+    rounds_cnt = *settings.rounds_in_magaz;
+    magazines_cnt = *settings.magazines_cnt;
     fire_tmr.ResetI();
-    hit_cnt = settings.hit_cnt;
+    hit_cnt = *settings.hit_cnt;
     prev_hit_time_st = Sys::GetSysTimeX();
     // IR tx
-    irLed::SetCarrierFreq(settings.ir_tx_freq);
+    irLed::SetCarrierFreq(*settings.ir_tx_freq);
     Sys::Unlock();
     Indication::Reset(quiet);
 }
@@ -500,7 +473,7 @@ static void AppThread() {
                 break;
 
             case AppEvt::EndOfIrTx: // Tx of several same pkts just ended
-                StartDelay_ms(settings.shots_period_ms - TIME_I2MS(Sys::TimeElapsedSince(fire_start_time_st)), AppEvt::EndOfDelayBetweenShots);
+                StartDelay_ms(*settings.shots_period_ms - TIME_I2MS(Sys::TimeElapsedSince(fire_start_time_st)), AppEvt::EndOfDelayBetweenShots);
                 break;
 
             case AppEvt::EndOfDelayBetweenShots:
@@ -512,7 +485,7 @@ static void AppThread() {
                     if(magazines_cnt > 1) { // Reload if possible (more than 0 magazines left)
                         if(!settings.magazines_cnt.IsInfinity()) magazines_cnt--;
                         Indication::RoundsEnded();
-                        StartDelay(settings.magaz_reload_delay, AppEvt::MagazineReloadDone);
+                        StartDelay_s(*settings.magaz_reload_delay_s, AppEvt::MagazineReloadDone);
                     }
                     else {
                         magazines_cnt = 0; // To avoid situation with 1 magaz with 0 rounds
@@ -523,7 +496,7 @@ static void AppThread() {
 
             case AppEvt::MagazineReloadDone:
                 Indication::MagazineReloaded();
-                rounds_cnt = settings.rounds_in_magaz;
+                rounds_cnt = *settings.rounds_in_magaz;
                 if(DoBurstFire()) Fire();
                 break;
 
@@ -537,7 +510,7 @@ void AppInit() {
     irLed::Init();
     irRcvr::Init(IrRxCallbackI);
     // Control pins init
-    output_hits_ended.Init();
+    output_hits_ended.SetupOut(gpio::OutMode::PushPull);
 //    OutPulseOnHit.Init(); // Removed to implement PWM input
     input_burst_fire.Init();
     input_single_fire.Init();

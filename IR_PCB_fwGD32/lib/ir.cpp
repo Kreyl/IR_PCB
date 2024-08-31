@@ -65,7 +65,7 @@ void Init() {
     // Once the DAC channel is enabled, the corresponding GPIO pin is automatically
     // connected to the DAC converter. In order to avoid parasitic consumption,
     // the GPIO pin should be configured in analog.
-    Gpio::SetupAnalog(IR_LED);
+    gpio::SetupAnalog(IR_LED);
     // ==== DAC ====
     RCU->EnDAC();
     DAC->SetTrigger0(DAC_TypeDef::Trigger::Tim6TRGO);
@@ -149,7 +149,7 @@ HwTim TmrRx{TMR_IR_RX};
 
 void Init(ftVoidU32 CallbackI) {
     ICallbackI = CallbackI;
-    Gpio::SetupInput(IR_RX_DATA_PIN, Gpio::PullUp);
+    gpio::SetupInput(IR_RX_DATA_PIN, gpio::PullUp);
     TmrRx.Init();
     TmrRx.SetTopValue(0xFFFF); // Maximum
     TmrRx.SetInputFreqChangingPrescaler(1000000);  // Input Freq: 1 MHz => one tick = 1 uS
@@ -179,7 +179,7 @@ static systime_t RxStartTime = 0;
 
 static inline void ProcessDurationI(uint32_t Dur) {
 //    PrintfI("%d\r", Dur);
-    if(IS_LIKE(Dur, kIr::Header_us, settings.ir_rx_deviation)) { // Header rcvd
+    if(IsLike<uint32_t>(Dur, kIr::Header_us, *settings.ir_rx_deviation)) { // Header rcvd
         IBitCnt = 16;
         StopRemainder = 0;
         IRxData = 0;
@@ -189,8 +189,8 @@ static inline void ProcessDurationI(uint32_t Dur) {
     else if(IBitCnt != -1) {
         if(Sys::TimeElapsedSince(RxStartTime) < TIME_MS2I(IR_RX_PKT_TIMEOUT_MS)) {
             uint32_t bit;
-            if     (IS_LIKE(Dur, kIr::Zero_us, settings.ir_rx_deviation)) bit = 0UL;
-            else if(IS_LIKE(Dur, kIr::One_us,  settings.ir_rx_deviation)) bit = 1UL;
+            if     (IsLike<uint32_t>(Dur, kIr::Zero_us, *settings.ir_rx_deviation)) bit = 0UL;
+            else if(IsLike<uint32_t>(Dur, kIr::One_us,  *settings.ir_rx_deviation)) bit = 1UL;
             else { IBitCnt = -1; return; } // Bad duration
             // Find out expected bit cnt
             if(IBitCnt == 16 and bit == 0) StopRemainder = 2; // if first bit is 0, 14 bits are expected
