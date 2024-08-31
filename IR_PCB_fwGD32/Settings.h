@@ -10,6 +10,7 @@
 
 #include "types.h"
 #include "ir_pkt.h"
+#include <vector>
 
 #define SETTINGS_FILENAME   "Settings.ini"
 
@@ -37,7 +38,7 @@ public:
     bool IsEnabled() { return v != 0; }
     retv CheckAndSetIfOk(int32_t avalue) {
         if(avalue >= 0) {
-            v = avalue;
+            v = avalue == 0? 0 : 1;
             return retv::Ok;
         }
         else return retv::BadValue;
@@ -119,6 +120,7 @@ public:
     // IDs
     ValueMinMaxDef player_id { 0, 0, 127, "IDs", "PlayerID", "Player ID, must be unique" };
     ValueMinMaxDef team_id   { 0, 0,  3,  "IDs", "TeamID", "Team ID, must be unique" };
+    ValueMinMaxDef super_damage_id { 70, 0, 127, "IDs", "SuperDamageID", "A shot from him completely removes all hits" };
     // Counts
     ValueMinMaxDef hit_cnt          { 4, 1, 254, "Counts", "HitCnt", "Number of hits, can be unlimited" };
     ValueMinMaxDef rounds_in_magaz  { 9, 1, 254, "Counts", "RoundsInMagazine", "Number of rounds in a single magazine, can be unlimited" };
@@ -127,9 +129,8 @@ public:
     ValueMinMaxDef shots_period_ms    { 252, 0, 9999, "Delays", "ShotsPeriod_ms", "Minimum delay between shots, ms" };
     ValueMinMaxDef magaz_reload_delay_s {   4, 0,   60, "Delays", "MagazReloadDelay", "Time needed to reload the magazine, s" };
     ValueMinMaxDef min_delay_btw_hits_s {   0, 0,   60, "Delays", "MinDelayBetwHits", "Time between two consecutive hits, s: more frequent hits are ignored" };
-//    ValueMinMaxDef pulse_len_hit_ms   { 100, 1, 9999, "Delays", "PulseLenHit_ms", "Pulse duration on gpio pin when hit, ms" };
     // IR RX
-    ValueMinMaxDef ir_rx_deviation { 150, 1, 600, "IRRX", "Deviation", "Tolerance to received IR pulse duration deviation, us" };
+    ValueMinMaxDef ir_rx_deviation { 150, 1, 600, "IRRX", "Deviation", "Tolerance to received IR pulse duration variation, us" };
     // IR TX
     ValueMinMaxDef ir_tx_pwr  {     90,     1,    255, "IRTX", "TXPwr", "Power of IR output" };
     ValueMinMaxDef ir_tx_freq {  56000, 30000,  56000, "IRTX", "TXFreq", "IR transmission modulation frequency, Hz" };
@@ -137,17 +138,17 @@ public:
     ValueDamage    tx_damage  {                        "IRTX", "TXDamage", "Damage caused by a single shot" };
     ValueMinMaxDef tx_amount  {      1,     1,    100, "IRTX", "Amount", "Number of things to be added by special packets: AddHealth, AddRounds, etc." };
     // Research
-    ValueEnable print_rx_pkt {0, "Research", "print_rx_pkt", "Print received IR packet when enabled" };
-
+//    ValueEnable print_rx_pkt {1, "Research", "PrintRxPkt", "Print received IR packet when enabled; 1 is enabled, 0 is disabled" };
+    ValueEnable transmit_what_rcvd {0, "Research", "TransmitWhatRcvd", "Transmit last received pkt when firing; 1 is enabled, 0 is disabled" };
 
     // Array of value pointers
-    static constexpr uint32_t kValuesCnt = 15;
-    ValueBase* const values_arr[kValuesCnt] = {
-            &player_id, &team_id,
+    std::vector<ValueBase*> values_arr = {
+            &player_id, &team_id, &super_damage_id,
             &hit_cnt, &rounds_in_magaz, &magazines_cnt,
-            &shots_period_ms, &magaz_reload_delay_s, &min_delay_btw_hits_s, //&pulse_len_hit_ms,
+            &shots_period_ms, &magaz_reload_delay_s, &min_delay_btw_hits_s,
             &ir_rx_deviation,
             &ir_tx_pwr, &ir_tx_freq, &pkt_type, &tx_damage, &tx_amount,
+            /*&print_rx_pkt,*/ &transmit_what_rcvd
     };
 
     void Load();

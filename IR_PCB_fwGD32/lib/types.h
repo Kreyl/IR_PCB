@@ -71,8 +71,9 @@ typedef void (*ftVoidVoid)(void);
 typedef retv (*ftRetvVoid_t)(void);
 typedef void (*ftVoidU8)(uint8_t);
 typedef void (*ftVoidU32)(uint32_t);
-typedef void (*ftVoidPVoid)(void*p);
-typedef void (*ftVoidPVoidW32)(void*p, uint32_t W32);
+typedef void (*ftVoidPVoid)(void*);
+typedef void (*ftVoidPVoidW32)(void*, uint32_t);
+typedef void (*ftVoidU8U16)(uint8_t, uint16_t);
 
 enum Inverted_t {invNotInverted, invInverted};
 enum class BitOrder {MSB, LSB};

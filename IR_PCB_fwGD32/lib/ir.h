@@ -19,7 +19,8 @@ inline const uint32_t Header_us = 2400UL;
 inline const uint32_t Space_us = 600UL;
 inline const uint32_t Zero_us = 600UL;
 inline const uint32_t One_us = 1200UL;
-inline const uint32_t PauseAfter_us = 2400UL;
+inline const uint32_t PauseAfter_us = 2400UL; // Pause after pkt transmission
+inline const uint32_t InterBitTimeot_us = 900UL; // For reception: after rising edge, wait falling one for this time. Ideally, pause is 600us - so let's give it a 300us chance
 } // namespace
 
 #if IR_TX_ENABLED // ========================== IR TX ==========================
@@ -27,17 +28,15 @@ inline const uint32_t PauseAfter_us = 2400UL;
 
 namespace irLed {
     void Init();
-    void SetCarrierFreq(uint32_t CarrierFreqHz);
+    void SetCarrierFreq(uint32_t carrier_freq_Hz);
     void TransmitWord(uint16_t wData, int32_t BitCnt, uint8_t Power, ftVoidVoid CallbackI);
     void ResetI();
 } // namespace
 #endif
 
 #if IR_RX_ENABLED // ========================== IR RX ==========================
-#define IR_RX_PKT_TIMEOUT_MS        4
-
 namespace irRcvr {
-    void Init(ftVoidU32 CallbackI);
-    void SetCallback(ftVoidU32 CallbackI);
+    void Init();
+    extern ftVoidU8U16 callbackI;
 } // namespace
 #endif

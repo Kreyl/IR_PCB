@@ -2,13 +2,13 @@
 #include "shell.h"
 #include "yartos.h"
 
-extern CmdUart_t Uart;
+extern CmdUart_t dbg_uart;
 
 void Printf(const char *format, ...) {
     va_list args;
     va_start(args, format);
     Sys::Lock();
-    Uart.IVsPrintf(format, args);
+    dbg_uart.IVsPrintf(format, args);
     Sys::Unlock();
     va_end(args);
 }
@@ -25,24 +25,24 @@ void Printf(CmdUart_t &AUart, const char *format, ...) {
 void PrintfI(const char *format, ...) {
     va_list args;
     va_start(args, format);
-    Uart.IVsPrintf(format, args);
+    dbg_uart.IVsPrintf(format, args);
     va_end(args);
 }
 
 void PrintfNow(const char *S) {
-    Uart.StopTx();
-    Uart.PrintfNow(S);
+    dbg_uart.StopTx();
+    dbg_uart.PrintfNow(S);
 }
 
 void PrintfEOL() {
-    Uart.PrintEOL();
+    dbg_uart.PrintEOL();
 }
 
 extern "C" {
 void PrintfC(const char *format, ...) {
     va_list args;
     va_start(args, format);
-    Uart.IVsPrintf(format, args);
+    dbg_uart.IVsPrintf(format, args);
     va_end(args);
 }
 } // extern C

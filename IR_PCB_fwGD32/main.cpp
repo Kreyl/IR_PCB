@@ -21,7 +21,7 @@
 const char* FWVersion = XSTRINGIFY(BUILD_TIME);
 EvtMsgQ<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
 static const UartParams_t CmdUartParams(115200, CMD_UART_PARAMS);
-CmdUart_t Uart{CmdUartParams};
+CmdUart_t dbg_uart{CmdUartParams};
 extern void OnCmd(Shell *PShell); // See Command.cpp
 
 LedBlinker sys_LED{LUMOS_PIN};
@@ -104,7 +104,7 @@ void main(void) {
     AFIO->DisableJtagDP(); // Disable JTAG, leaving SWD. Otherwise PB3 & PB4 are occupied by JTDO & JTRST
 
     // ==== UART, RTOS & Event queue ====
-    Uart.Init();
+    dbg_uart.Init();
     Sys::Init();
     EvtQMain.Init();
     Printf("\r%S %S\r\n", APP_NAME, FWVersion);
@@ -136,12 +136,13 @@ void main(void) {
     if(f_mount(&FlashFS, "", 0) != FR_OK) Printf("FS error\r\n");
 
     // ==== USB ====
-    UsbMsdCdc.Init();
-    UsbMsdCdc.Connect();
+    usb_msd_cdc.Init();
+    usb_msd_cdc.Connect();
 
     // ==== IR ==== TX LED SetFreq is called within App Reset, which is called within AppInit
     irLed::Init();
-    irRcvr::Init(IrRxCallbackI);
+    irRcvr::Init();
+    irRcvr::callbackI = IrRxCallbackI;
 
     // ==== App ====
     settings.Load();
@@ -155,11 +156,11 @@ void main(void) {
         switch(msg.ID) {
             case EvtId::UartCheckTime:
                 Watchdog::Reload();
-                while(Uart.TryParseRxBuff() == retv::Ok) OnCmd((Shell*)&Uart);
+                while(dbg_uart.TryParseRxBuff() == retv::Ok) OnCmd((Shell*)&dbg_uart);
                 break;
 
             case EvtId::UsbCdcDataRcvd:
-                while(UsbMsdCdc.TryParseRxBuff() == retv::Ok) OnCmd((Shell*)&UsbMsdCdc);
+                while(usb_msd_cdc.TryParseRxBuff() == retv::Ok) OnCmd((Shell*)&usb_msd_cdc);
                 break;
 
             case EvtId::TestingTime:

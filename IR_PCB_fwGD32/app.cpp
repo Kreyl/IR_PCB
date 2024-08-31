@@ -15,13 +15,18 @@
 #include "led.h"
 #include "beeper.h"
 #include "Sequences.h"
+#include "usb_msdcdc.h"
+#include "gd_uart.h"
 
 int32_t hit_cnt, rounds_cnt, magazines_cnt;
 extern Beeper beeper;
 extern bool is_testing;
+extern CmdUart_t dbg_uart;
+extern UsbMsdCdc usb_msd_cdc;
+static bool burst_from_cmd = false;
 
 #if 1 // ========================== Message queue ==============================
-enum class AppEvt : uint16_t {
+enum class AppEvt : uint8_t {
     Reset,
     StartFire, EndOfIrTx, EndOfDelayBetweenShots, MagazineReloadDone,
     IrRx,
@@ -32,6 +37,7 @@ union AppMsg {
     uint32_t dword;
     struct {
         uint16_t data16;
+        uint8_t data8;
         AppEvt evt;
     } __attribute__((__packed__));
 
@@ -40,8 +46,9 @@ union AppMsg {
         return *this;
     }
     AppMsg() : dword(0) {}
-    AppMsg(AppEvt aevt) : data16(0), evt(aevt) {}
-    AppMsg(AppEvt aevt, uint16_t data) : data16(data), evt(aevt) {}
+    AppMsg(AppEvt aevt) : data16(0), data8(0), evt(aevt) {}
+    AppMsg(AppEvt aevt, uint16_t adata16) : data16(adata16), evt(aevt) {}
+    AppMsg(AppEvt aevt, uint8_t adata8, uint16_t adata16) : data16(adata16), data8(adata8), evt(aevt) {}
 } __attribute__((__packed__));
 
 static EvtMsgQ<AppMsg, 9> evt_q_app;
@@ -186,6 +193,7 @@ void SetInputs(uint32_t ainputs[2]) {
 
 bool DoBurstFire() {
     return (input_pwm.pwm_duty >= PWM_DUTY_BURST_FIRE_percent) or
+            burst_from_cmd or
             input_burst_fire.IsHi() or
             iinputs[0] == 1;
 }
@@ -197,13 +205,22 @@ extern LedSmooth front_LEDs[FRONT_LEDS_CNT];
 
 namespace Indication {
 
+void PrintEverywhere(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    dbg_uart.IVsPrintf(format, args);
+    va_start(args, format);
+    usb_msd_cdc.IVsPrintf(format, args);
+    va_end(args);
+}
+
 enum class IndiState { Idle, Reloading, MagazinesEnded, HitsEnded };
 static IndiState state = IndiState::Idle;
 
 void Shot() {
     beeper.StartOrRestart(bsqShot);
     for(auto& led : front_LEDs) led.StartOrRestart(lsqShot);
-    Printf("#Shot; %d/%d left\r\n", rounds_cnt, magazines_cnt);
+    PrintEverywhere("#Shot; %d/%d left\r\n", rounds_cnt, magazines_cnt);
 }
 
 void RoundsEnded() {
@@ -221,7 +238,7 @@ void RoundsEnded() {
     }
     state = IndiState::Reloading;
     Sys::Unlock();
-    Printf("#RoundsEnded\r\n");
+    PrintEverywhere("#RoundsEnded\r\n");
 }
 
 void MagazineReloaded() {
@@ -235,7 +252,7 @@ void MagazineReloaded() {
     }
     state = IndiState::Idle;
     Sys::Unlock();
-    Printf("#MagazineReloaded\r\n");
+    PrintEverywhere("#MagazineReloaded\r\n");
 }
 
 void MagazinesEnded() {
@@ -254,7 +271,7 @@ void MagazinesEnded() {
     }
     state = IndiState::MagazinesEnded;
     Sys::Unlock();
-    Printf("#MagazinesEnded\r\n");
+    PrintEverywhere("#MagazinesEnded\r\n");
 }
 
 void Hit(uint32_t hit_from, int32_t damage) {
@@ -281,7 +298,14 @@ void Hit(uint32_t hit_from, int32_t damage) {
             break;
     }
     Sys::Unlock();
-    Printf("#Hit from %d; damage %d; %d left\r\n", hit_from, damage, hit_cnt);
+    PrintEverywhere("#Hit from %d; damage %d; %d left\r\n", hit_from, damage, hit_cnt);
+}
+
+void IrPktReceived() { // Special case, when no hits indication required
+    Sys::Lock();
+    beeper.StartOrRestartI(bsqIrPktRcvd);
+    for(auto& Led : side_LEDs) Led.StartOrRestartI(lsqHit);
+    Sys::Unlock();
 }
 
 void HitsEnded() {
@@ -292,7 +316,7 @@ void HitsEnded() {
     output_hits_ended.SetLo();
     for(auto& Led : side_LEDs) Led.StartOrRestartI(lsqHitsEnded);
     Sys::Unlock();
-    Printf("#Hits Ended\r\n");
+    PrintEverywhere("#Hits Ended\r\n");
 }
 
 void HitsAdded(int32_t added_hits_number) {
@@ -300,24 +324,22 @@ void HitsAdded(int32_t added_hits_number) {
     beeper.StartOrRestartI(bsqHitsAdded);
     for(auto& Led : side_LEDs) Led.StartOrRestartI(lsqHit);
     Sys::Unlock();
-    Printf("#Hits Added: %u; Hits cnt: %d\r\n", added_hits_number, hit_cnt);
+    PrintEverywhere("#Hits Added: %u; Hits cnt: %d\r\n", added_hits_number, hit_cnt);
 }
 
 void RoundsAdded(int32_t magazines_to_add, int32_t rounds_left_to_add) {
     Sys::Lock();
     beeper.StartOrRestartI(bsqMagazReloaded);
     Sys::Unlock();
-    Printf("#Magazines Added: %u; magazines cnt: %d\r\n", magazines_to_add, magazines_cnt);
-    Printf("#Rounds Added: %u; rounds cnt: %d\r\n", rounds_left_to_add, rounds_cnt);
+    PrintEverywhere("#Magazines Added: %u; magazines cnt: %d\r\n", magazines_to_add, magazines_cnt);
+    PrintEverywhere("#Rounds Added: %u; rounds cnt: %d\r\n", rounds_left_to_add, rounds_cnt);
 }
 
 void Reset(bool quiet) {
     state = IndiState::Idle;
     for(auto& Led : front_LEDs) Led.Stop();
-#if SIDE_LEDS_ENABLED
     for(auto& Led : side_LEDs)  Led.Stop();
-#endif
-    if(!quiet) Printf("#Reset\r\n");
+    if(!quiet) PrintEverywhere("#Reset\r\n");
 }
 
 } // namespace
@@ -325,55 +347,74 @@ void Reset(bool quiet) {
 
 #if 1 // ========================= Reception processing ========================
 static systime_t prev_hit_time_st = 0;
+static IRPkt last_rcvd_pkt;
 
-void IrRxCallbackI(uint32_t rcvd) { evt_q_app.SendNowOrExitI(AppMsg(AppEvt::IrRx, rcvd)); }
+void IrRxCallbackI(uint8_t bit_cnt, uint16_t rcvd) { evt_q_app.SendNowOrExitI(AppMsg(AppEvt::IrRx, bit_cnt, rcvd)); }
 
 void ProcessRxPkt(IRPkt rx_pkt) {
-    rx_pkt.Print("PktRx");
+    rx_pkt.Print((Shell*)&dbg_uart, "PktRx");
+    rx_pkt.Print((Shell*)&usb_msd_cdc, "PktRx");
+
+    if(settings.transmit_what_rcvd.IsEnabled()) {
+        last_rcvd_pkt = rx_pkt;
+        Indication::IrPktReceived();
+        return;
+    }
     // Shot incoming
-    if(rx_pkt.zero == 0) {
+    if(rx_pkt.bits_cnt == 14 and rx_pkt.zero == 0) {
         if(hit_cnt <= 0) return; // Nothing to do when no hits left
-        // Ignore friendly fire (and pkt from self, too)
-        if(rx_pkt.team_id == *settings.team_id) return;
-        // Ignore if not enough time passed since last hit
-        if(Sys::TimeElapsedSince(prev_hit_time_st) < TIME_S2I(*settings.min_delay_btw_hits_s)) return;
-        // Hit occured, decrement if not infinity
-        int32_t damage = rx_pkt.GetDamageHits();
-        if(!settings.hit_cnt.IsInfinity()) {
-            hit_cnt = (damage < hit_cnt)? (hit_cnt - damage) : 0;
+        if(rx_pkt.player_id == *settings.player_id) return; // Ignore pkt from self
+        int32_t damage;
+        // Special case: SuperDamageID - remove all hits if shot from him
+        if(rx_pkt.player_id == *settings.super_damage_id) {
+            damage = 9999999;
+            hit_cnt = 0;
+        }
+        else {
+            // Ignore friendly fire (and pkt from self, too)
+            if(rx_pkt.team_id == *settings.team_id) return;
+            // Ignore if not enough time passed since last hit
+            if(Sys::TimeElapsedSince(prev_hit_time_st) < TIME_S2I(*settings.min_delay_btw_hits_s)) return;
+            // Hit occured, decrement if not infinity
+            damage = rx_pkt.GetDamageHits();
+            if(!settings.hit_cnt.IsInfinity()) {
+                hit_cnt = (damage < hit_cnt)? (hit_cnt - damage) : 0;
+            }
         }
         Indication::Hit(rx_pkt.player_id, damage);
         if(hit_cnt > 0) prev_hit_time_st = Sys::GetSysTimeX();
         else Indication::HitsEnded();
-    } // if zero
-    // Reset
-    else if(rx_pkt.word16 == static_cast<uint16_t>(PktType::NewGame))
-        evt_q_app.SendNowOrExit(AppEvt::Reset);
-    else {
-        uint16_t pkt_type = rx_pkt.word16 & 0xFF00U; // Zero second byte
-        uint16_t pkt_value = rx_pkt.bytes[1];
-        if(pkt_type == static_cast<uint16_t>(PktType::AddHealth)) {
-            Sys::Lock();
-            output_hits_ended.SetHi();
-            hit_cnt = (pkt_value > *settings.hit_cnt)? *settings.hit_cnt : pkt_value;
-            prev_hit_time_st = Sys::GetSysTimeX();
-            Sys::Unlock();
-            Indication::HitsAdded(pkt_value);
+    } // if 14 bit & zero
+    else if(rx_pkt.bits_cnt == 16) {
+        // Reset
+        if(rx_pkt.word16 == static_cast<uint16_t>(PktType::NewGame))
+            evt_q_app.SendNowOrExit(AppEvt::Reset);
+        else {
+            uint16_t pkt_type = rx_pkt.word16 & 0xFF00U; // Zero second byte
+            uint16_t pkt_value = rx_pkt.word16 & 0x00FF;
+            if(pkt_type == static_cast<uint16_t>(PktType::AddHealth)) {
+                Sys::Lock();
+                output_hits_ended.SetHi();
+                hit_cnt = (pkt_value > *settings.hit_cnt)? *settings.hit_cnt : pkt_value;
+                prev_hit_time_st = Sys::GetSysTimeX();
+                Sys::Unlock();
+                Indication::HitsAdded(pkt_value);
+            }
+            else if(pkt_type == static_cast<uint16_t>(PktType::AddCartridges)) {
+                int32_t magazines_to_add = pkt_value / *settings.rounds_in_magaz;
+                int32_t rounds_left_to_add = pkt_value - (*settings.rounds_in_magaz * magazines_to_add);
+                Sys::Lock();
+                magazines_cnt += magazines_to_add;
+                if(magazines_cnt > *settings.magazines_cnt) magazines_cnt = *settings.magazines_cnt;
+                rounds_cnt += rounds_left_to_add;
+                // Check if current magazine is overflown
+                if(rounds_cnt > *settings.rounds_in_magaz) rounds_cnt = *settings.rounds_in_magaz;
+                prev_hit_time_st = Sys::GetSysTimeX();
+                Sys::Unlock();
+                Indication::RoundsAdded(magazines_to_add, rounds_left_to_add);
+            }
         }
-        else if(pkt_type == static_cast<uint16_t>(PktType::AddCartridges)) {
-            int32_t magazines_to_add = pkt_value / *settings.rounds_in_magaz;
-            int32_t rounds_left_to_add = pkt_value - (*settings.rounds_in_magaz * magazines_to_add);
-            Sys::Lock();
-            magazines_cnt += magazines_to_add;
-            if(magazines_cnt > *settings.magazines_cnt) magazines_cnt = *settings.magazines_cnt;
-            rounds_cnt += rounds_left_to_add;
-            // Check if current magazine is overflown
-            if(rounds_cnt > *settings.rounds_in_magaz) rounds_cnt = *settings.rounds_in_magaz;
-            prev_hit_time_st = Sys::GetSysTimeX();
-            Sys::Unlock();
-            Indication::RoundsAdded(magazines_to_add, rounds_left_to_add);
-        }
-    }
+    } // if bit_cnt == 16
 }
 #endif
 
@@ -405,27 +446,33 @@ bool IsFiring;
 
 void Fire() {
     IsFiring = true;
-    if(!settings.rounds_in_magaz.IsInfinity()) rounds_cnt--;
-    // Prepare pkt
-    uint32_t bits_to_transmit = 16;
-    pkt_tx.word16 = static_cast<uint16_t>(*settings.pkt_type);
-    switch(*settings.pkt_type) { // Modify pkt if needed
-        case static_cast<uint16_t>(PktType::Shot):
-            pkt_tx.word16 = 0;
-            pkt_tx.player_id = *settings.player_id;
-            pkt_tx.team_id  = *settings.team_id;
-            pkt_tx.damage_id = settings.tx_damage.bits;
-            bits_to_transmit = 14;
-            break;
+    if(settings.transmit_what_rcvd.IsEnabled()) pkt_tx = last_rcvd_pkt;
+    else {
+        if(!settings.rounds_in_magaz.IsInfinity()) rounds_cnt--;
+        // Prepare pkt
+        pkt_tx.bits_cnt = 16; // All pkts excluding shot one
+        pkt_tx.word16 = static_cast<uint16_t>(*settings.pkt_type);
+        switch(*settings.pkt_type) { // Modify pkt if needed
+            case static_cast<uint16_t>(PktType::Shot):
+                pkt_tx.word16 = 0;
+                pkt_tx.player_id = *settings.player_id;
+                pkt_tx.team_id  = *settings.team_id;
+                pkt_tx.damage_id = settings.tx_damage.bits;
+                pkt_tx.bits_cnt = 14;
+                break;
 
-        case static_cast<uint16_t>(PktType::AddHealth):
-        case static_cast<uint16_t>(PktType::AddCartridges):
-            pkt_tx.bytes[1] = *settings.tx_amount;
-            break;
-        default: break; // some special pkt type, do not modify
-    } // switch
-    pkt_tx.Print("PktTx");
-    irLed::TransmitWord(pkt_tx.word16, bits_to_transmit, *settings.ir_tx_pwr, OnIrTxEndI);
+            case static_cast<uint16_t>(PktType::AddHealth):
+            case static_cast<uint16_t>(PktType::AddCartridges):
+                pkt_tx.word16 |= static_cast<uint16_t>(*settings.tx_amount & 0xFFL);
+                break;
+            default: break; // some special pkt type, do not modify
+        } // switch
+    }
+
+    pkt_tx.Print((Shell*)&dbg_uart, "PktTx");
+    pkt_tx.Print((Shell*)&usb_msd_cdc, "PktTx");
+
+    irLed::TransmitWord(pkt_tx.word16, pkt_tx.bits_cnt, *settings.ir_tx_pwr, OnIrTxEndI);
     fire_start_time_st = Sys::GetSysTimeX();
     Indication::Shot();
 }
@@ -439,6 +486,7 @@ void Reset(bool quiet) {
     input_burst_fire.CleanIrqFlag();
     input_single_fire.CleanIrqFlag();
     IsFiring = false;
+    burst_from_cmd = false;
     rounds_cnt = *settings.rounds_in_magaz;
     magazines_cnt = *settings.magazines_cnt;
     fire_tmr.ResetI();
@@ -454,15 +502,17 @@ void Reset(bool quiet) {
 static THD_WORKSPACE(waAppThread, 256);
 static void AppThread() {
     while(true) {
-        AppMsg Msg = evt_q_app.Fetch(TIME_INFINITE);
+        AppMsg msg = evt_q_app.Fetch(TIME_INFINITE);
         if(is_testing) { // Sleep if testing
             Sys::SleepMilliseconds(999);
             continue;
         }
         // Will be here when new Evt occur and if not in testing mode
-        if(Msg.evt == AppEvt::Reset) Reset();
-        else if(Msg.evt == AppEvt::IrRx) ProcessRxPkt(IRPkt(Msg.data16));
-        else if(hit_cnt > 0) switch(Msg.evt) { // Do nothing if no hits left
+        if(msg.evt == AppEvt::Reset) Reset();
+
+        else if(msg.evt == AppEvt::IrRx) ProcessRxPkt(IRPkt(msg.data8, msg.data16));
+
+        else if(hit_cnt > 0) switch(msg.evt) { // Do nothing if no hits left
             case AppEvt::StartFire:
                 if(!IsFiring and rounds_cnt > 0) Fire();
                 break;
@@ -507,8 +557,6 @@ static void AppThread() {
 
 void AppInit() {
     evt_q_app.Init();
-    irLed::Init();
-    irRcvr::Init(IrRxCallbackI);
     // Control pins init
     output_hits_ended.SetupOut(gpio::OutMode::PushPull);
 //    OutPulseOnHit.Init(); // Removed to implement PWM input
@@ -519,3 +567,15 @@ void AppInit() {
     // Create and start thread
     Sys::CreateThd(waAppThread, sizeof(waAppThread), NORMALPRIO, AppThread);
 }
+
+void FireSingleShot() {
+    burst_from_cmd = false;
+    evt_q_app.SendNowOrExit(AppMsg(AppEvt::StartFire));
+}
+
+void FireBurst() {
+    burst_from_cmd = true;
+    evt_q_app.SendNowOrExit(AppMsg(AppEvt::StartFire));
+}
+
+void StopFire() { burst_from_cmd = false; }

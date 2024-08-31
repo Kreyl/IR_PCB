@@ -454,6 +454,10 @@ struct DMAChannel_t {
 #if 1 // ============================= Timer ===================================
 // Bits
 #define TIM_CTL0_CEN        (1UL << 0)
+#define TIM_CTL0_UPDIS      (1UL << 1)
+#define TIM_CTL0_UPS        (1UL << 2)
+#define TIM_CTL0_SPM        (1UL << 3)
+#define TIM_CTL0_DIR        (1UL << 4)
 #define TIM_CTL0_ARSE       (1UL << 7)
 #define TIM_SMCFG_ETP       (1UL << 15)
 

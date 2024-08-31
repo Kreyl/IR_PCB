@@ -189,7 +189,8 @@ public:
     void EnableDmaOnCapture(uint32_t ChnlN) const { itmr->DMAINTEN |= TIM_DMAINTEN_DMAEN(ChnlN); }
     void EnableDmaOnUpdate()  const { itmr->DMAINTEN |= TIM_DMAINTEN_UPDEN; }
     // Evt
-    void GenerateUpdateEvt()  const { itmr->GenerateUpdateEvt(); }
+    void GenerateUpdateEvt()   const { itmr->GenerateUpdateEvt(); }
+    void SetUpdateSrcOvfOnly() const { itmr->CTL0 |= TIM_CTL0_UPS; };
     // Enable IRQ
     void EnableIrqOnUpdate()  const  { itmr->DMAINTEN |= TIM_DMAINTEN_UPIE; }
     void EnableIrqOnCompare0() const { itmr->DMAINTEN |= TIM_DMAINTEN_CH0IE; }
@@ -202,12 +203,15 @@ public:
     void DisableIrqOnCompare1() const { itmr->DMAINTEN &= ~TIM_DMAINTEN_CH1IE; }
     void DisableIrqOnCompare2() const { itmr->DMAINTEN &= ~TIM_DMAINTEN_CH2IE; }
     void DisableIrqOnCompare3() const { itmr->DMAINTEN &= ~TIM_DMAINTEN_CH3IE; }
-    // Clear IRQ
+    // Get IRQ
+    uint32_t GetIrqFlags() const { return itmr->INTF; }
+    // Clear IRQ flags
     void ClearUpdateIrqPendingBit()   const { itmr->INTF &= ~TIM_INTF_UPIF; }
     void ClearCompare0IrqPendingBit() const { itmr->INTF &= ~TIM_INTF_CH0IF; }
     void ClearCompare1IrqPendingBit() const { itmr->INTF &= ~TIM_INTF_CH1IF; }
     void ClearCompare2IrqPendingBit() const { itmr->INTF &= ~TIM_INTF_CH2IF; }
     void ClearCompare3IrqPendingBit() const { itmr->INTF &= ~TIM_INTF_CH3IF; }
+    void ClearAllIrqFlags()           const { itmr->INTF = 0; }
     // Check
     bool IsEnabled()            const { return (itmr->CTL0 & TIM_CTL0_CEN); }
     bool IsUpdateIrqFired()     const { return (itmr->INTF & TIM_INTF_UPIF); }
@@ -219,6 +223,13 @@ public:
     bool IsCompare1IrqEnabled() const { return (itmr->DMAINTEN & TIM_DMAINTEN_CH1IE); }
     bool IsCompare2IrqEnabled() const { return (itmr->DMAINTEN & TIM_DMAINTEN_CH2IE); }
     bool IsCompare3IrqEnabled() const { return (itmr->DMAINTEN & TIM_DMAINTEN_CH3IE); }
+    // Flags check
+    static bool IsUpdateFlagSet  (uint32_t flags) { return flags & TIM_INTF_UPIF; }
+    static bool IsCompare0FlagSet(uint32_t flags) { return flags & TIM_INTF_CH0IF; }
+    static bool IsCompare1FlagSet(uint32_t flags) { return flags & TIM_INTF_CH1IF; }
+    static bool IsCompare2FlagSet(uint32_t flags) { return flags & TIM_INTF_CH2IF; }
+    static bool IsCompare3FlagSet(uint32_t flags) { return flags & TIM_INTF_CH3IF; }
+
 };
 #endif
 

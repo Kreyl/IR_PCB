@@ -16,6 +16,10 @@ void AppInit();
 void SetInputs(uint32_t AIn[2]);
 void Reset(bool quiet = false);
 
-void IrRxCallbackI(uint32_t Rcvd);
+void FireSingleShot();
+void FireBurst();
+void StopFire();
+
+void IrRxCallbackI(uint8_t bit_cnt, uint16_t rcvd);
 
 #endif /* APP_H_ */

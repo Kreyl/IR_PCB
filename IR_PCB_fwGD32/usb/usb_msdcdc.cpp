@@ -15,7 +15,7 @@
 #include "MsgQ.h"
 #include "EvtMsgIDs.h"
 
-UsbMsdCdc_t UsbMsdCdc;
+UsbMsdCdc usb_msd_cdc;
 
 static uint8_t SByte;
 
@@ -246,7 +246,7 @@ void Usb::EventCallback(Usb::Evt event) {
 #endif // Events
 
 #if 1 // =========================== CDC =======================================
-retv UsbMsdCdc_t::IPutChar(char c) {
+retv UsbMsdCdc::IPutChar(char c) {
     if(!Usb::IsActive()) return retv::Disconnected;
     Sys::Lock();
     retv r = CdcInBuf.Put(c);
@@ -258,7 +258,7 @@ retv UsbMsdCdc_t::IPutChar(char c) {
     return r;
 }
 
-void UsbMsdCdc_t::IStartTransmissionIfNotYet() {
+void UsbMsdCdc::IStartTransmissionIfNotYet() {
     // Start tx if it has not already started and if buf is not empty.
     if(Usb::IsActive() and !Usb::IsEpTransmitting(EP_CDC_DATA) and !CdcInBuf.IsEmpty()) {
         Sys::Lock();
@@ -268,7 +268,7 @@ void UsbMsdCdc_t::IStartTransmissionIfNotYet() {
     }
 }
 
-retv UsbMsdCdc_t::TryParseRxBuff() {
+retv UsbMsdCdc::TryParseRxBuff() {
     while(CdcOutQ::BufToParse.Sz) {
         CdcOutQ::BufToParse.Sz--;
         if(Cmd.PutChar(*CdcOutQ::BufToParse.Ptr++) == pdrNewCmd) return retv::Ok;
@@ -277,7 +277,7 @@ retv UsbMsdCdc_t::TryParseRxBuff() {
 }
 
 // Send '>' and receive what follows
-retv UsbMsdCdc_t::ReceiveBinaryToBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_ms) {
+retv UsbMsdCdc::ReceiveBinaryToBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_ms) {
     CdcOutQ::Action = CdcOutQ::TransferAction::WakeThd; // Do not send evt to main q on buf reception
     if(IPutChar('>') != retv::Ok) return retv::Fail;
     IStartTransmissionIfNotYet();
@@ -305,7 +305,7 @@ retv UsbMsdCdc_t::ReceiveBinaryToBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeou
 }
 
 // Wait '>' and then transmit buffer
-retv UsbMsdCdc_t::TransmitBinaryFromBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_ms) {
+retv UsbMsdCdc::TransmitBinaryFromBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_ms) {
     if(Usb::IsEpTransmitting(EP_CDC_DATA)) return retv::Busy;
     retv r = retv::Timeout;
     Sys::Lock();
@@ -414,7 +414,7 @@ retv ReceiveToBuf(uint32_t *Ptr, uint32_t Len) {
 }
 #endif
 
-void UsbMsdCdc_t::Init() {
+void UsbMsdCdc::Init() {
     // Variables
     SenseData.ResponseCode = 0x70;
     SenseData.AddSenseLen = 0x0A;
@@ -422,16 +422,16 @@ void UsbMsdCdc_t::Init() {
     Sys::CreateThd(waMsdThd, sizeof(waMsdThd), NORMALPRIO, MsdThd);
 }
 
-void UsbMsdCdc_t::Reset() {
+void UsbMsdCdc::Reset() {
     // Wake thread if sleeping
     Sys::Lock();
     if(PMsdThd and PMsdThd->state == ThdState::Sleeping) Sys::WakeI(&PMsdThd, retv::Reset);
     Sys::Unlock();
 }
 
-void UsbMsdCdc_t::Connect()    { Usb::Connect(); }
-void UsbMsdCdc_t::Disconnect() { Usb::Disconnect(); }
-bool UsbMsdCdc_t::IsActive()   { return Usb::IsActive(); }
+void UsbMsdCdc::Connect()    { Usb::Connect(); }
+void UsbMsdCdc::Disconnect() { Usb::Disconnect(); }
+bool UsbMsdCdc::IsActive()   { return Usb::IsActive(); }
 
 #if 1 // =========================== SCSI ======================================
 //#define DBG_PRINT_CMD   TRUE

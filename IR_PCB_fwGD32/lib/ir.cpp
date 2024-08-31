@@ -21,8 +21,8 @@ static void DmaTxEndIrqHandler(void *p, uint32_t flags);
 static const DMA_t DmaTx {DAC_DMA, DmaTxEndIrqHandler, nullptr, IRQ_PRIO_MEDIUM};
 // Samples count
 static struct {
-    int32_t Header, Space, One, Zero, Pause;
-} NSamples;
+    int32_t header, space, one, zero, pause;
+} samples_cnt;
 
 // DAC buf: reserve size fo 56kHz (969)
 #define DAC_BUF_SZ          999UL
@@ -79,17 +79,17 @@ void Init() {
     SamplingTmr.SelectMasterMode(HwTim::MasterMode::Update);
 }
 
-void SetCarrierFreq(uint32_t CarrierFreqHz) {
-    uint32_t SamplingFreqHz = CarrierFreqHz * 2;
-    SamplingTmr.SetUpdateFreqChangingTopValue(SamplingFreqHz);
+void SetCarrierFreq(uint32_t carrier_freq_Hz) {
+    uint32_t sampling_freq_Hz = carrier_freq_Hz * 2;
+    SamplingTmr.SetUpdateFreqChangingTopValue(sampling_freq_Hz);
     // Every SamplePair contains 4 actual samples
-    NSamples.Header = (((kIr::Header_us * CarrierFreqHz) + 1999999L) / 2000000L);
-    NSamples.Space  = (((kIr::Space_us  * CarrierFreqHz) + 1999999L) / 2000000L);
-    NSamples.Zero   = (((kIr::Zero_us   * CarrierFreqHz) + 1999999L) / 2000000L);
-    NSamples.One    = (((kIr::One_us    * CarrierFreqHz) + 1999999L) / 2000000L);
-    NSamples.Pause  = (((kIr::PauseAfter_us * CarrierFreqHz) + 1999999UL) / 2000000UL);
+    samples_cnt.header = (((kIr::Header_us * carrier_freq_Hz) + 1999999L) / 2000000L);
+    samples_cnt.space  = (((kIr::Space_us  * carrier_freq_Hz) + 1999999L) / 2000000L);
+    samples_cnt.zero   = (((kIr::Zero_us   * carrier_freq_Hz) + 1999999L) / 2000000L);
+    samples_cnt.one    = (((kIr::One_us    * carrier_freq_Hz) + 1999999L) / 2000000L);
+    samples_cnt.pause  = (((kIr::PauseAfter_us * carrier_freq_Hz) + 1999999UL) / 2000000UL);
     // Check if buf sz is enough
-    uint32_t N = NSamples.Header + NSamples.Space + (NSamples.One + NSamples.Space) * IR_BIT_CNT_MAX + NSamples.Pause;
+    uint32_t N = samples_cnt.header + samples_cnt.space + (samples_cnt.one + samples_cnt.space) * IR_BIT_CNT_MAX + samples_cnt.pause;
     if(N > DAC_BUF_SZ) Printf("IR TX DAC Buf Sz too small: %d < %d\r\n", DAC_BUF_SZ, N);
 }
 
@@ -100,19 +100,19 @@ void TransmitWord(uint16_t wData, int32_t BitCnt, uint8_t Power, ftVoidVoid Call
     DacSamplePair_t *p = DacBuf, ISampleCarrier{Power}, ISampleSpace{0};
     int32_t i, j;
     // Put header
-    for(i=0; i<NSamples.Header; i++) *p++ = ISampleCarrier;
-    for(i=0; i<NSamples.Space; i++)  *p++ = ISampleSpace;
+    for(i=0; i<samples_cnt.header; i++) *p++ = ISampleCarrier;
+    for(i=0; i<samples_cnt.space; i++)  *p++ = ISampleSpace;
     // Put data
     for(j=0; j<BitCnt; j++) {
         // Carrier
-        if(wData & 0x8000) { for(i=0; i<NSamples.One;  i++) *p++ = ISampleCarrier; }
-        else               { for(i=0; i<NSamples.Zero; i++) *p++ = ISampleCarrier; }
-        // Space
-        for(i=0; i<NSamples.Space; i++)  *p++ = ISampleSpace;
+        if(wData & 0x8000) { for(i=0; i<samples_cnt.one;  i++) *p++ = ISampleCarrier; }
+        else               { for(i=0; i<samples_cnt.zero; i++) *p++ = ISampleCarrier; }
+        // space
+        for(i=0; i<samples_cnt.space; i++)  *p++ = ISampleSpace;
         wData <<= 1;
     }
     // Put pause
-    for(i=0; i<NSamples.Pause; i++) *p++ = ISampleSpace;
+    for(i=0; i<samples_cnt.pause; i++) *p++ = ISampleSpace;
     // ==== Start transmission ====
     TransactionSz = (p - DacBuf) * 4; // Every sample pair contains 4 actual samples
     StartTx();
@@ -134,75 +134,83 @@ Two outputs of EdgeDetector1 are used: CI1FE0 and CI1FE1.
 Edge polarity is set in CHCTL2 reg: for CI1FE0 using CH0P bit, and for
 CI1FE1 using CH1P bit. (CH0P sets edge polarity for both CI0FE0 and CI1FE0 signals;
 CH1P - for CI0FE1 and CI1FE1; and so on).
-______        ________
-      |______|
-      ^      ^
-   TI2FP2   TI2FP1
-   CI1FE1   CI1FE0
-   Trigger  Capture
-   Reset    CCR1 => DMA req CCR1 => TIMx Ch1 (not Ch2!) request
+____        _____________________
+    |______|   InterBitTimeot    ^
+    ^      ^                     ^
+ TI2FP2   TI2FP1                OVF => Timeout IRQ
+ CI1FE1   CI1FE0
+ Trigger  Capture
+ Reset    CCR1 => Capture IRQ
 */
 namespace irRcvr {
 
-ftVoidU32 ICallbackI;
-HwTim TmrRx{TMR_IR_RX};
+ftVoidU8U16 callbackI;
+HwTim tmr_rx{TMR_IR_RX};
 
-void Init(ftVoidU32 CallbackI) {
-    ICallbackI = CallbackI;
+void Init() {
     gpio::SetupInput(IR_RX_DATA_PIN, gpio::PullUp);
-    TmrRx.Init();
-    TmrRx.SetTopValue(0xFFFF); // Maximum
-    TmrRx.SetInputFreqChangingPrescaler(1000000);  // Input Freq: 1 MHz => one tick = 1 uS
+    tmr_rx.Init();
+    tmr_rx.DisableAutoreloadBuffering(); // To put there timeout immediately
+    tmr_rx.SetTopValue(0xFFFF); // Maximum, just to start
+    tmr_rx.SetUpdateSrcOvfOnly();
+    tmr_rx.SetInputFreqChangingPrescaler(1000000);  // Input Freq: 1 MHz => one tick = 1 uS
     // Setup input mode for Channel0: capture Input1 (not Input0) on rising edge
-    TmrRx.SetChnlMode(0, HwTim::ChnlMode::CI1FE0); // Chnl0 is input, capture on Input1's CI1FE0 signal
-    TmrRx.SetInputActiveEdge(0, RiseFall::Rising); // CI1FE0 is Active Rising (CI0FE0 is the same, but it is not used)
+    tmr_rx.SetChnlMode(0, HwTim::ChnlMode::CI1FE0); // Chnl0 is input, capture on Input1's CI1FE0 signal
+    tmr_rx.SetInputActiveEdge(0, RiseFall::Rising); // CI1FE0 is Active Rising (CI0FE0 is the same, but it is not used)
     // Reset timer on trigger; trigger is falling edge on CI1FE1
-    TmrRx.SetTriggerInput(HwTim::TriggerIn::CI1FE1); // Use Input1's CI1FE1 as TriggerIn
-    TmrRx.SetInputActiveEdge(1, RiseFall::Falling);
+    tmr_rx.SetTriggerInput(HwTim::TriggerIn::CI1FE1); // Use Input1's CI1FE1 as TriggerIn
+    tmr_rx.SetInputActiveEdge(1, RiseFall::Falling);
     // Configure slave mode controller in Restart mode
-    TmrRx.SelectSlaveMode(HwTim::SlaveMode::Restart);
+    tmr_rx.SelectSlaveMode(HwTim::SlaveMode::Restart);
     // Enable the capture on channel 0
-    TmrRx.EnChnl(0);
+    tmr_rx.EnChnl(0);
     // IRQ
-    TmrRx.EnableIrqOnCompare0();
+    tmr_rx.EnableIrqOnCompare0();
     Nvic::EnableVector(TMR_IR_RX_IRQ, IRQ_PRIO_HIGH);
     // Start capture
-    TmrRx.Enable();
+    tmr_rx.Enable();
 }
 
-void SetCallback(ftVoidU32 CallbackI) { ICallbackI = CallbackI; }
-
 // Parsing
-static int32_t IBitCnt = -1, StopRemainder = 0; // Header not received
-static uint32_t IRxData;
-static systime_t RxStartTime = 0;
+static int32_t bit_indx = -1; // header not received
+static uint32_t rx_data;
 
-static inline void ProcessDurationI(uint32_t Dur) {
-//    PrintfI("%d\r", Dur);
-    if(IsLike<uint32_t>(Dur, kIr::Header_us, *settings.ir_rx_deviation)) { // Header rcvd
-        IBitCnt = 16;
-        StopRemainder = 0;
-        IRxData = 0;
-        RxStartTime = Sys::GetSysTimeX();
+static void OnReceptionDone() {
+//    PrintfI("ibto\r");
+    int32_t bit_cnt = 16L - bit_indx;
+    if(bit_cnt > 0 and bit_cnt <= 16) { // Some bits were received
+        if(callbackI) callbackI(bit_cnt, rx_data);
     }
-    // Ignore received if error occured previously
-    else if(IBitCnt != -1) {
-        if(Sys::TimeElapsedSince(RxStartTime) < TIME_MS2I(IR_RX_PKT_TIMEOUT_MS)) {
+    tmr_rx.DisableIrqOnUpdate(); // Disable interbit timeout
+    bit_indx = -1; // Reset reception
+}
+
+static void ProcessIrqI(uint32_t flags, uint32_t dur) {
+//    PrintfI("0x%X %u\r",  flags, dur);
+    if(IsLike<uint32_t>(dur, kIr::Header_us, *settings.ir_rx_deviation)) { // header rcvd
+        bit_indx = 16;
+        rx_data = 0;
+        // Setup timeout
+        tmr_rx.SetTopValue(dur + kIr::InterBitTimeot_us);
+        tmr_rx.EnableIrqOnUpdate();
+    }
+    else { // Not header
+        // Check if timeout occured, i.e. update IRQ fired
+        if(HwTim::IsUpdateFlagSet(flags)) OnReceptionDone();
+        else if(bit_indx != -1) { // No timeout; ignore received if not after header, or if bad length is received previously
             uint32_t bit;
-            if     (IsLike<uint32_t>(Dur, kIr::Zero_us, *settings.ir_rx_deviation)) bit = 0UL;
-            else if(IsLike<uint32_t>(Dur, kIr::One_us,  *settings.ir_rx_deviation)) bit = 1UL;
-            else { IBitCnt = -1; return; } // Bad duration
-            // Find out expected bit cnt
-            if(IBitCnt == 16 and bit == 0) StopRemainder = 2; // if first bit is 0, 14 bits are expected
-            IBitCnt--;
-            IRxData |= bit << IBitCnt;
-            if(IBitCnt <= StopRemainder) { // Reception completed
-                if(ICallbackI) ICallbackI(IRxData);
-                IBitCnt = -1; // Wait header
+            if     (IsLike<uint32_t>(dur, kIr::Zero_us, *settings.ir_rx_deviation)) bit = 0UL;
+            else if(IsLike<uint32_t>(dur, kIr::One_us,  *settings.ir_rx_deviation)) bit = 1UL;
+            else { // Bad duration
+                bit_indx = -1;
+                tmr_rx.DisableIrqOnUpdate(); // Disable interbit timeout
+                return;
             }
-            else RxStartTime = Sys::GetSysTimeX(); // Restart timeout
+            // Find out expected bit cnt
+            bit_indx--;
+            rx_data |= bit << bit_indx;
+            if(bit_indx == 0) OnReceptionDone(); // Reception completed, as maximim amount of bits received
         }
-        else IBitCnt = -1; // timeout occured
     }
 }
 
@@ -213,8 +221,9 @@ extern "C"
 void TMR_IR_RX_IRQ_HNDLR() {
     Sys::IrqPrologue();
     Sys::LockFromIRQ();
-    irRcvr::TmrRx.ClearCompare0IrqPendingBit();
-    irRcvr::ProcessDurationI(irRcvr::TmrRx.GetChnl0Value());
+    uint32_t flags = irRcvr::tmr_rx.GetIrqFlags();
+    irRcvr::tmr_rx.ClearAllIrqFlags();
+    irRcvr::ProcessIrqI(flags, irRcvr::tmr_rx.GetChnl0Value());
     Sys::UnlockFromIRQ();
     Sys::IrqEpilogue();
 }

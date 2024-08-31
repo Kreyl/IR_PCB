@@ -186,6 +186,13 @@ const BeepChunk bsqHit[] = {
         {Chunk::End}
 };
 
+const BeepChunk bsqIrPktRcvd[] = {
+        {Chunk::Setup, BEEP_VOLUME_MAX, 2700, 1000},
+        {Chunk::Wait, 27},
+        {Chunk::Setup, 0},
+        {Chunk::End}
+};
+
 const BeepChunk bsqHitsEnded[] = {
         {Chunk::Setup, BEEP_VOLUME_MAX, 260, 0},
         {Chunk::Wait, 200},
@@ -196,15 +203,17 @@ const BeepChunk bsqHitsEnded[] = {
         {Chunk::End}
 };
 
+inline constexpr uint32_t kInterNotePause_ms = 27;
 const BeepChunk bsqHitsAdded[] = { // XXX
-        {Chunk::Setup, BEEP_VOLUME, Fa_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
-        {Chunk::Setup, BEEP_VOLUME, Mi_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
-        {Chunk::Setup, BEEP_VOLUME, Fa_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
-        {Chunk::Setup, BEEP_VOLUME, Mi_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
-        {Chunk::Setup, BEEP_VOLUME, Do_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
-        {Chunk::Setup, BEEP_VOLUME, Do_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
-        {Chunk::Setup, BEEP_VOLUME, La_2, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, 18},
+        {Chunk::Setup, BEEP_VOLUME, Fa_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, kInterNotePause_ms},
+        {Chunk::Setup, BEEP_VOLUME, Mi_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, kInterNotePause_ms},
+        {Chunk::Setup, BEEP_VOLUME, Fa_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, kInterNotePause_ms},
+        {Chunk::Setup, BEEP_VOLUME, Mi_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, kInterNotePause_ms},
+        {Chunk::Setup, BEEP_VOLUME, Do_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, kInterNotePause_ms},
+        {Chunk::Setup, BEEP_VOLUME, Do_3, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, kInterNotePause_ms},
+        {Chunk::Setup, BEEP_VOLUME, La_2, 0}, {Chunk::Wait, OneHalfth}, {Chunk::Setup, 0, 0, 0}, {Chunk::Wait, kInterNotePause_ms},
         {Chunk::Setup, BEEP_VOLUME, Re_3, 0}, {Chunk::Wait, OneHalfth},
+        {Chunk::Setup, 0, 0, 0},
         {Chunk::End}
 };
 

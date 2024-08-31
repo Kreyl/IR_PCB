@@ -10,7 +10,7 @@
 #define MSD_TIMEOUT_MS   2700
 #define MSD_DATABUF_SZ   4096
 
-class UsbMsdCdc_t : public Shell {
+class UsbMsdCdc : public Shell {
 private:
     void IStartTransmissionIfNotYet(); // Required for printf implementation
     retv IPutChar(char c);             // Required for printf implementation
@@ -25,6 +25,6 @@ public:
     retv TransmitBinaryFromBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_ms);
 };
 
-extern UsbMsdCdc_t UsbMsdCdc;
+extern UsbMsdCdc usb_msd_cdc;
 
 #endif // USB_MSD_CDC_H__

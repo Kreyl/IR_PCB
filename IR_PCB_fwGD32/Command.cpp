@@ -45,7 +45,7 @@ static const int32_t sinbuf[] = {
 -6928, -6128, -5142, -3999, -2736, -1389};
 #define SIN_SZ    36
 
-void TestIrRxCallbackI(uint32_t Rcvd) { PrintfI("RX: 0x%X\r", Rcvd); }
+void TestIrRxCallbackI(uint8_t bit_cnt, uint16_t rcvd) { PrintfI("RX: 0x%X\r", rcvd); }
 void I2SDmaDoneCbI() {
     if(is_testing and tst_indx == 0) {
         Codec::TransmitBuf((void*)sinbuf, SIN_SZ);
@@ -55,7 +55,7 @@ void I2SDmaDoneCbI() {
 static void DoTest(Shell *pshell) {
     is_testing = true;
     beeped = false;
-    irRcvr::SetCallback(TestIrRxCallbackI);
+    irRcvr::callbackI = TestIrRxCallbackI;
     // Gpios
     gpio::SetupOut(Gpio1, gpio::PushPull, gpio::speed2MHz);
     gpio::SetupOut(Gpio2, gpio::PushPull, gpio::speed2MHz);
@@ -78,7 +78,7 @@ static void Restore(Shell *pshell) {
 }
 
 static void GetSettings(Shell *pshell) {
-    for(ValueBase* const pval : settings.values_arr) pval->PrintOnGet(pshell);
+    for(auto pval : settings.values_arr) pval->PrintOnGet(pshell);
 }
 
 static void Set(Shell *pshell) {
@@ -141,6 +141,21 @@ static void IrTx(Shell *pshell) {
     pshell->Ok();
 }
 
+static void CmdFire(Shell *pshell) {
+    FireSingleShot();
+    pshell->Ok();
+}
+
+static void CmdBurst(Shell *pshell) {
+    FireBurst();
+    pshell->Ok();
+}
+
+static void CmdStop(Shell *pshell) {
+    StopFire();
+    pshell->Ok();
+}
+
 
 #if 0 // ==== Debug ====
 static void CtrlSet(Shell *pshell) {
@@ -192,6 +207,9 @@ static const ShellCmd_t cmds[] = {
         {"Set", Set, "Set one or more value of settings, ex: 'Set HitCnt 18, TeamID 7'. This will not save to Flash!"},
         {"SaveSettings", SaveSettings, "Save current settings to Flash"},
         {"LoadSettings", LoadSettings, "Load settings from Flash"},
+        {"Fire", CmdFire, "Fire single shot"},
+        {"Burst", CmdBurst, "Fire burst"},
+        {"Stop", CmdStop, "Stop Fire"},
         // ==== Research ====
         {"IrTx", IrTx,"'IrTx Pwr, bits': transmit bits (up to 16) via IR LED at specified power. Divide bits into pieces for convenience. Ex: 'IRTx 90, 1100 0101 11 1001"},
         // ==== Debug ====
@@ -220,5 +238,3 @@ void OnCmd(Shell *pshell) {
         pshell->CmdUnknown();
     }
 }
-
-

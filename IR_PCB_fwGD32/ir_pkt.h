@@ -22,34 +22,36 @@ enum class PktType {
 };
 
 #pragma pack(push, 1)
-union IRPkt {
-    uint16_t word16;
-    uint8_t bytes[2];
-    struct { // LSB to MSB
-        uint32_t _reserved: 2; // Not used in 14-bit pkt
-        uint32_t damage_id: 4;
-        uint32_t team_id: 2;
-        uint32_t player_id: 7;
-        uint32_t zero: 1;
+class IRPkt {
+public:
+    uint32_t bits_cnt;
+    union {
+        uint16_t word16;
+        struct { // LSB to MSB
+            uint32_t _reserved: 2; // Not used in 14-bit pkt
+            uint32_t damage_id: 4;
+            uint32_t team_id: 2;
+            uint32_t player_id: 7;
+            uint32_t zero: 1;
+        };
     };
 
-    IRPkt() : word16(0) {}
-    IRPkt(uint16_t AW16) : word16(AW16) {}
+    IRPkt() : bits_cnt(0), word16(0) {}
+    IRPkt(uint32_t abit_cnt, uint16_t aword16) : bits_cnt(abit_cnt), word16(aword16) {}
 
-    void PrintI(const char* S) {
-        if(zero == 0) PrintfI("%S W16=%04X; pl_id %u; tm_id %u; dmg %u\r\n",
-                S, word16, player_id, team_id, damage_id);
-        else PrintfI("%S word %04X\r\n", S, word16);
-    }
-    void Print(const char* S) {
-        Sys::Lock();
-        PrintI(S);
-        Sys::Unlock();
+    void Print(Shell *pshell, const char* S) {
+        if(bits_cnt == 14 and zero == 0) pshell->Print("%S W16=%04X sz=%u; pl_id %u; tm_id %u; dmg %u\r\n",
+                S, word16, bits_cnt, player_id, team_id, damage_id);
+        else pshell->Print("%S W16=%04X sz=%u\r\n", S, word16, bits_cnt);
     }
 
     int32_t GetDamageHits() { return Damage_IdToHits(damage_id); }
 
-    IRPkt& operator =(const IRPkt &Right) { word16 = Right.word16; return *this; }
+    IRPkt& operator =(const IRPkt &right) {
+        bits_cnt = right.bits_cnt;
+        word16 = right.word16;
+        return *this;
+    }
 };
 #pragma pack(pop)
 
