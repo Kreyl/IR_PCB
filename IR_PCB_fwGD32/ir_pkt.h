@@ -12,7 +12,7 @@
 #include "shell.h"
 
 int32_t Damage_IdToHits(int32_t damage_id);
-StatusOrI32 Damage_HitsToId(int32_t hits);
+RetvValI32 Damage_HitsToId(int32_t hits);
 
 enum class PktType {
     Shot = 0x0000,

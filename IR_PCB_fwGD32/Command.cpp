@@ -125,7 +125,7 @@ static void IrTx(Shell *pshell) {
     Cmd_t *pcmd = &pshell->Cmd;
     int32_t pwr, bit_indx = 16; // Fill word starting from MSB
     uint16_t word = 0;
-    if(pcmd->GetNext(&pwr) != retv::Ok) { pshell->BadParam(); return; }
+    if(pcmd->GetNext(&pwr).NotOk()) { pshell->BadParam(); return; }
     char *S;
     while((S = pcmd->GetNextString()) != nullptr and bit_indx > 0) {
         while(*S != '\0') {
@@ -239,8 +239,7 @@ void OnCmd(Shell *pshell) {
     else {
         for(auto &SCmd : cmds) {
             if(PCmd->NameIs(SCmd.Name)) {
-                if(SCmd.Dispatcher == nullptr) pshell->Print("NoDispatsher\r\n");
-                else SCmd.Dispatcher(pshell);
+                SCmd.Dispatcher(pshell);
                 return;
             }
         }

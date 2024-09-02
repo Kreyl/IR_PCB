@@ -122,8 +122,8 @@ public:
     ValueDamage(const char* asection, const char* aname, const char *acomment) :
         ValueBase(1, asection, aname, acomment), bits(0) {} // 0 means 1 hit
     retv CheckAndSetIfOk(int32_t avalue) {
-        StatusOrI32 r = Damage_HitsToId(avalue);
-        if(r.Ok()) {
+        RetvValI32 r = Damage_HitsToId(avalue);
+        if(r.IsOk()) {
             v = avalue;
             bits = r.v;
             return retv::Ok;

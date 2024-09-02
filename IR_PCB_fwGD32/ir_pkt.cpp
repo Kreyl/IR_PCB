@@ -17,8 +17,8 @@ int32_t Damage_IdToHits(int32_t damage_id) {
     return kDamageTable[damage_id];
 }
 
-StatusOrI32 Damage_HitsToId(int32_t hits) {
-    StatusOrI32 r{retv::BadValue};
+RetvValI32 Damage_HitsToId(int32_t hits) {
+    RetvValI32 r{retv::BadValue};
     for(int32_t i=0; i<kDamTableSz; i++) {
         if(hits == kDamageTable[i]) {
             r.v = i;

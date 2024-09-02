@@ -487,7 +487,7 @@ static void wakeup(void *p) {
         default: // Any other state, nothing to do
             break;
     }
-    tp->u.msg = retv::Timeout;
+    tp->msg = retv::Timeout;
     SchReadyI(tp);
     Sys::UnlockFromIRQ();
 }
@@ -505,7 +505,7 @@ retv SchGoSleepTimeoutS(ThdState newstate, systime_t timeout) {
         // Will be here after awake
         if(vt.IsArmedX()) vt.DoResetI(); // Stop timer if thread is woken by something else
     }
-    return currp->u.msg;
+    return currp->msg;
 }
 
 /* The thread is inserted into the ready list or immediately made running depending on its relative priority compared to the current
@@ -516,7 +516,7 @@ void SchWakeupS(Thread_t *newtp, retv msg) {
     dbg.CheckClassS();
     dbg.Check((rlist.queue.next == (Thread_t*)&rlist.queue) or (rlist.current->prio >= rlist.queue.next->prio), "priority order violation");
     // Store the message to be retrieved by the target thread when it will restart execution
-    newtp->u.msg = msg;
+    newtp->msg = msg;
     /* If the waken thread has a not-greater priority than the current one then it is just inserted in the ready list, else it made
        running immediately and the invoking thread goes in the ready list instead.*/
     if(newtp->prio <= oldtp->prio) SchReadyI(newtp);
@@ -600,7 +600,7 @@ void Semaphore_t::SignalI() {
     dbg.Check((cnt >= 0 and queue.IsEmpty()) or (cnt < 0 and !queue.IsEmpty()), "inconsistent semaphore");
     if(++cnt <= 0) {
         Thread_t *tp = queue.FifoRemove(); // Remove curr thd from queue
-        tp->u.msg = retv::Ok;
+        tp->msg = retv::Ok;
         SchReadyI(tp); // ...and start it
     }
 }
@@ -705,13 +705,13 @@ retv Sleep(systime_t Delay_st) {
 retv SleepMilliseconds(uint32_t Delay_ms) { return Sleep(TIME_MS2I(Delay_ms)); }
 retv SleepSeconds(uint32_t Delay_s)       { return Sleep(TIME_S2I(Delay_s)); }
 
-void WakeI(ThdReference_t *pThdref, retv Msg) {
+void WakeI(ThdReference_t *pThdref, retv amsg) {
     dbg.CheckClassI();
     if(*pThdref != nullptr) {
         Thread_t *pThd = *pThdref;
         *pThdref = nullptr;
         if(pThd->state != ThdState::Ready) {
-            pThd->u.msg = Msg;
+            pThd->msg = amsg;
             // Make it ready and insert in ready list
             pThd->state = ThdState::Ready;
             Thread_t *cp = (Thread_t*)&rlist.queue;

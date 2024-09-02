@@ -193,8 +193,8 @@ struct Thread_t {
     stkalign_t *wabase;   // This pointer is used for stack overflow checks
     ThdState state;       // Current thread state
     // State-specific fields. Valid in the specified state or condition and are thus volatile
+    retv msg;             // message sent to the thread by the waking thread or interrupt handler. The value is valid after exiting the SchWakeupS() function.
     union {
-        retv msg;         // message sent to the thread by the waking thread or interrupt handler. The value is valid after exiting the SchWakeupS() function.
         void *wtobjp;     // Pointer to a generic "wait" synchronization object. Valid when the thread is in one of the wait states.
         ThdReference_t *wttrp; // Pointer to a generic thread reference object, valid when the thread is in Suspended state.
         Semaphore_t *pSem; // valid when the thread is in OnSemaphore state.
