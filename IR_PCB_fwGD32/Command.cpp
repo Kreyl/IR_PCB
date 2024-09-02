@@ -156,6 +156,15 @@ static void CmdStop(Shell *pshell) {
     pshell->Ok();
 }
 
+//static void CtrlSet(Shell *pshell) {
+//    Cmd_t *pcmd = &pshell->Cmd;
+//    int32_t sta; // Fill word starting from MSB
+//    if(pcmd->GetNext(&sta) != retv::Ok) { pshell->BadParam(); return; }
+//    if(sta == 0) gpio::SetLo(Gpio3);
+//    else gpio::SetHi(Gpio3);
+//    pshell->Ok();
+//}
+
 
 #if 0 // ==== Debug ====
 static void CtrlSet(Shell *pshell) {

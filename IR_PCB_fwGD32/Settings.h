@@ -70,7 +70,31 @@ public:
             const char* asection, const char* aname, const char *acomment) :
                 ValueBase(adefault, asection, aname, acomment),
                 v_min(amin), v_max(amax) {}
+};
 
+class ValueGpioMode : public ValueBase {
+public:
+    enum class Mode {
+        PushPullActiveHi=0, PushPullActiveLo=1,
+        OpenDrainActiveHi=2, OpenDrainActiveLo=3
+    };
+    static constexpr const char* mode_names[4] = {
+            "PushPullActiveHi", "PushPullActiveLo",
+            "OpenDrainActiveHi", "OpenDrainActiveLo"
+    };
+    Mode GetMode() { return static_cast<Mode>(v); }
+    retv CheckAndSetIfOk(int32_t avalue) {
+        if(avalue >= 0 and avalue <= 3) {
+            v = avalue;
+            return retv::Ok;
+        }
+        else return retv::BadValue;
+    }
+    void PrintOnGet(Shell *pshell) { pshell->Print("%*S = %4d; default = %4d; %S\r\n", kValueNameSz, name, v, v_default, comment); }
+    void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d (%S)\r\n", name, v, mode_names[v]); }
+    void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: %d\r\n", name, bad_value); }
+    ValueGpioMode(Mode adefault, const char* asection, const char* aname, const char *acomment) :
+                ValueBase(static_cast<int32_t>(adefault), asection, aname, acomment) {}
 };
 
 class ValuePktType : public ValueBase {
@@ -91,7 +115,6 @@ public:
     void PrintOnNew(Shell *pshell) { pshell->Print("%S = 0x%04X\r\n", name, v); }
     void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: 0x%04X\r\n", name, bad_value); }
 };
-
 
 class ValueDamage : public ValueBase {
 public:
@@ -115,6 +138,7 @@ public:
     void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: %d\r\n", name, bad_value); }
 };
 
+
 class Settings {
 public:
     // IDs
@@ -126,17 +150,21 @@ public:
     ValueMinMaxDef rounds_in_magaz  { 9, 1, 254, "Counts", "RoundsInMagazine", "Number of rounds in a single magazine, can be unlimited" };
     ValueMinMaxDef magazines_cnt    { 4, 1, 254, "Counts", "MagazinesCnt", "Number of magazines, can be unlimited" };
     // Delays
-    ValueMinMaxDef shots_period_ms    { 252, 0, 9999, "Delays", "ShotsPeriod_ms", "Minimum delay between shots, ms" };
-    ValueMinMaxDef magaz_reload_delay_s {   4, 0,   60, "Delays", "MagazReloadDelay", "Time needed to reload the magazine, s" };
-    ValueMinMaxDef min_delay_btw_hits_s {   0, 0,   60, "Delays", "MinDelayBetwHits", "Time between two consecutive hits, s: more frequent hits are ignored" };
+    ValueMinMaxDef shots_period_ms    { 252, 0, 9999, "Delays", "ShotsPeriod_ms", "Interval between shots in burst fire, ms" };
+    ValueMinMaxDef magaz_reload_delay_s {   4, 0,   60, "Delays", "MagazReloadDelay", "Interval between autoreloading of magazines, s" };
+    ValueMinMaxDef min_delay_btw_hits_s {   0, 0,   60, "Delays", "MinDelayBetwHits", "Minimum delay between hits loss, s (when 0, it is possible to loose all within a second)" };
     // IR RX
-    ValueMinMaxDef ir_rx_deviation { 150, 1, 600, "IRRX", "Deviation", "Tolerance to received IR pulse duration variation, us" };
+    ValueMinMaxDef ir_rx_deviation { 150, 1, 600, "IRRX", "Deviation", "Deviation of received pulse length, us. Larger is more tolerant" };
     // IR TX
     ValueMinMaxDef ir_tx_pwr  {     90,     1,    255, "IRTX", "TXPwr", "Power of IR output" };
     ValueMinMaxDef ir_tx_freq {  56000, 30000,  56000, "IRTX", "TXFreq", "IR transmission modulation frequency, Hz" };
     ValuePktType   pkt_type   { 0x0000,                "IRTX", "PktType" };
     ValueDamage    tx_damage  {                        "IRTX", "TXDamage", "Damage caused by a single shot" };
     ValueMinMaxDef tx_amount  {      1,     1,    100, "IRTX", "Amount", "Number of things to be added by special packets: AddHealth, AddRounds, etc." };
+    // Gpio control
+    ValueGpioMode gpio3_mode  { ValueGpioMode::Mode::PushPullActiveHi, "Gpio", "Gpio3Mode",
+        "Mode of Gpio3 (hits_present): 0 is PushPullActiveHi, 1 is PushPullActiveLo, "
+        "2 is OpenDrainActiveHi, 3 is OpenDrainActiveLo" };
     // Research
 //    ValueEnable print_rx_pkt {1, "Research", "PrintRxPkt", "Print received IR packet when enabled; 1 is enabled, 0 is disabled" };
     ValueEnable transmit_what_rcvd {0, "Research", "TransmitWhatRcvd", "Transmit last received pkt when firing; 1 is enabled, 0 is disabled" };
@@ -148,6 +176,7 @@ public:
             &shots_period_ms, &magaz_reload_delay_s, &min_delay_btw_hits_s,
             &ir_rx_deviation,
             &ir_tx_pwr, &ir_tx_freq, &pkt_type, &tx_damage, &tx_amount,
+            &gpio3_mode,
             /*&print_rx_pkt,*/ &transmit_what_rcvd
     };
 

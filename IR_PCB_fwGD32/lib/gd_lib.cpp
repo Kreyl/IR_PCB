@@ -155,18 +155,6 @@ void SetupAlterFunc(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode OutM
 
 } // namespace Gpio
 
-void PulserCallback(void *p) { static_cast<PulserPin*>(p)->IOnTmrDone(); }
-void PulserPin::PulseI(uint32_t Dur) {
-    itmr.ResetI();
-    SetHi();
-    if(Dur == 0) SetLo();
-    else itmr.SetI(TIME_MS2I(Dur), PulserCallback, (void*)this);
-}
-void PulserPin::ResetI() {
-    itmr.ResetI();
-    SetLo();
-}
-
 #if 1 // =========================== External IRQ ==============================
 // IRQ handlers
 extern "C" {

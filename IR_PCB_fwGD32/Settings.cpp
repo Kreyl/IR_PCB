@@ -28,15 +28,21 @@ void SaveValueWithMinMaxInfDefault(ValueMinMaxDef &value) {
     f_printf(&common_file, "%S = %D\r\n", value.name, value.v);
 }
 
-void SaveValueWithCommentMinMaxInfDefault(ValueMinMaxDef &value, const char* comment) {
-    f_printf(&common_file, "# %S\r\n", comment);
+void SaveValueWithCommentMinMaxInfDefault(ValueMinMaxDef &value) {
+    f_printf(&common_file, "# %S\r\n", value.comment);
     f_printf(&common_file, "# Min=%D, Max=%D, Infininty=%D, Default=%D\r\n", value.v_min, value.v_max, value.v_max+1, value.v_default);
     f_printf(&common_file, "%S = %D\r\n\r\n", value.name, value.v);
 }
 
-void SaveValueWithCommentMinMaxDefault(ValueMinMaxDef &value, const char* comment) {
-    f_printf(&common_file, "# %S\r\n", comment);
+void SaveValueWithCommentMinMaxDefault(ValueMinMaxDef &value) {
+    f_printf(&common_file, "# %S\r\n", value.comment);
     f_printf(&common_file, "# Min=%D, Max=%D, Default=%D\r\n", value.v_min, value.v_max, value.v_default);
+    f_printf(&common_file, "%S = %D\r\n\r\n", value.name, value.v);
+}
+
+void SaveValueEnable(ValueEnable &value) {
+    f_printf(&common_file, "# %S\r\n", value.comment);
+    f_printf(&common_file, "# Default=%D\r\n", value.v_default);
     f_printf(&common_file, "%S = %D\r\n\r\n", value.name, value.v);
 }
 
@@ -49,6 +55,7 @@ retv Settings::Save() {
     f_printf(&common_file, "[IDs]\r\n");
     SaveValueWithMinMax(player_id);
     SaveValueWithMinMax(team_id);
+    SaveValueWithCommentMinMaxDefault(super_damage_id);
     // Counts
     f_printf(&common_file, "\r\n[Counts]\r\n");
     SaveValueWithMinMaxInfDefault(hit_cnt);
@@ -56,17 +63,16 @@ retv Settings::Save() {
     SaveValueWithMinMaxInfDefault(magazines_cnt);
     // Delays
     f_printf(&common_file, "\r\n[Delays]\r\n");
-    SaveValueWithCommentMinMaxInfDefault(shots_period_ms, "Interval between shots in burst fire, ms");
-    SaveValueWithCommentMinMaxInfDefault(magaz_reload_delay_s, "Interval between autoreloading of magazines, s");
-    SaveValueWithCommentMinMaxInfDefault(min_delay_btw_hits_s, "Minimum delay between hits loss, s (when 0, it is possible to loose all within a second)");
-//    SaveValueWithCommentMinMaxInfDefault(pulse_len_hit_ms, "Duration of side LEDs blink in case of loss a hit");
+    SaveValueWithCommentMinMaxInfDefault(shots_period_ms);
+    SaveValueWithCommentMinMaxInfDefault(magaz_reload_delay_s);
+    SaveValueWithCommentMinMaxInfDefault(min_delay_btw_hits_s);
     // IR RX
     f_printf(&common_file, "\r\n[IRRX]\r\n");
-    SaveValueWithCommentMinMaxDefault(ir_rx_deviation, "Deviation of received pulse length, us. Larger is more tolerant");
+    SaveValueWithCommentMinMaxDefault(ir_rx_deviation);
     // IRTX
     f_printf(&common_file, "\r\n[IRTX]\r\n");
-    SaveValueWithCommentMinMaxDefault(ir_tx_pwr,  "Power of IR LED impulse");
-    SaveValueWithCommentMinMaxDefault(ir_tx_freq, "Carrier frequency of IR LED");
+    SaveValueWithCommentMinMaxDefault(ir_tx_pwr);
+    SaveValueWithCommentMinMaxDefault(ir_tx_freq);
     f_printf(&common_file,
             "# PktType to transmit:\r\n"
             "#   SHOT is 0x0000 (PlayerID, TeamID and Damage added automatically"
@@ -77,11 +83,21 @@ retv Settings::Save() {
     f_printf(&common_file, "%S = 0x%04X\r\n\r\n", pkt_type.name, pkt_type.v);
     // Special case: damage
     f_printf(&common_file, "# Hits Damage in 'Shot' pkt. Unusable for other pkt types.\r\n"
-            "Possible values: 1,2,4,5,7,10,15,17,20,25,30,35,40,50,75,100\r\n");
+            "# Possible values: 1,2,4,5,7,10,15,17,20,25,30,35,40,50,75,100\r\n");
     f_printf(&common_file, "%S = 0x%04X\r\n\r\n", tx_damage.name, tx_damage.v);
     // Amount
-    SaveValueWithCommentMinMaxDefault(tx_amount,
-            "For pkt types of 0x80 and 0x81: number of units added");
+    SaveValueWithCommentMinMaxDefault(tx_amount);
+
+    // Gpio
+    f_printf(&common_file, "\r\n[Gpio]\r\n");
+    f_printf(&common_file, "# %S\r\n", gpio3_mode.comment);
+    f_printf(&common_file, "# Default=%D\r\n", gpio3_mode.v_default);
+    f_printf(&common_file, "%S = %D\r\n\r\n", gpio3_mode.name, gpio3_mode.v);
+
+    // Research
+    f_printf(&common_file, "\r\n[Research]\r\n");
+    SaveValueEnable(transmit_what_rcvd);
+
     CloseFile(&common_file);
     return retv::Ok;
 }

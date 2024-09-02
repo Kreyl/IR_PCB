@@ -53,7 +53,7 @@
 
 // Usage by app
 //#define Output_PulseOnHit
-#define Output_HitsEnded    Gpio3
+#define Output_HitsPresent  Gpio3
 #define Input_BurstFire     Gpio2, gpio::PullDown
 #define Input_SingleFire    Gpio1, gpio::PullDown
 #define INPUT_DEADTTIME_ms  36

@@ -15,7 +15,6 @@
 #include "board.h"
 #include "kl_buf.h"
 #include <vector>
-#include "yartos.h"
 
 #if 1 // ============================ General ==================================
 // ==== Build time ====
@@ -294,24 +293,6 @@ public:
     void SetupOut(const gpio::OutMode OutMode, const gpio::Speed ASpeed = gpio::speed10MHz) {
         gpio::SetupOut(pgpio, pin_n, OutMode, ASpeed);
     }
-};
-
-void PulserCallback(void *p);
-
-//class VirtualTimer;
-
-class PulserPin: private Pin_t {
-private:
-    VirtualTimer itmr;
-    friend void PulserCallback(void *p);
-    void IOnTmrDone() { SetLo(); }
-public:
-    PulserPin(GPIO_TypeDef *APGPIO, uint16_t APin) : Pin_t(APGPIO, APin) {}
-    void Init() { Pin_t::SetupOut(gpio::PushPull); }
-    void PulseI(uint32_t Dur);
-    void ResetI();
-    void SetHi() { Pin_t::SetHi(); }
-    void SetLo() { Pin_t::SetLo(); }
 };
 
 // ==== PWM output ====
