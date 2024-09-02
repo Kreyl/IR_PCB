@@ -62,7 +62,59 @@ public:
 #endif
 
 #if 1 // ============================ AppOutPin ================================
+enum class PinMode {
+    PushPullActiveHi=0, PushPullActiveLo=1,
+    OpenDrainActiveHi=2, OpenDrainActiveLo=3
+};
 
+class CustomOutPin {
+private:
+    GPIO_TypeDef *pgpio;
+    uint32_t pin_n;
+    PinMode mode;
+public:
+    CustomOutPin(GPIO_TypeDef *apgpio, uint32_t apin_n) :
+        pgpio(apgpio), pin_n(apin_n), mode(PinMode::PushPullActiveHi) {}
+
+    void SetActive() {
+        if(mode == PinMode::PushPullActiveHi or mode == PinMode::OpenDrainActiveHi)
+            gpio::SetHi(pgpio, pin_n);
+        else
+            gpio::SetLo(pgpio, pin_n);
+    }
+
+    void SetInactive() {
+        if(mode == PinMode::PushPullActiveHi or mode == PinMode::OpenDrainActiveHi)
+            gpio::SetLo(pgpio, pin_n);
+        else
+            gpio::SetHi(pgpio, pin_n);
+    }
+
+    void SetActive(bool be_active) {
+        if(be_active) SetActive();
+        else SetInactive();
+    }
+
+    bool IsActive() {
+        bool is_set_hi = pgpio->OCTL & (1UL << pin_n);
+        if(mode == PinMode::PushPullActiveHi or mode == PinMode::OpenDrainActiveHi)
+            return is_set_hi;
+        else return !is_set_hi;
+    }
+
+    void SetMode(PinMode amode) {
+        mode = amode;
+        pgpio->SPD &= ~(1UL << pin_n); // No need in 120 MHz speed
+        uint32_t ctl_mode = static_cast<uint32_t>(gpio::Speed::speed10MHz) & 0b11UL;
+        if(mode == PinMode::PushPullActiveHi or mode == PinMode::PushPullActiveLo)
+            ctl_mode |= static_cast<uint32_t>(gpio::OutMode::PushPull) << 2;
+        else
+            ctl_mode |= static_cast<uint32_t>(gpio::OutMode::OpenDrain) << 2;
+        pgpio->SetCtlMode(pin_n, ctl_mode);
+    }
+
+    void Init() { RCU->EnGpio(pgpio); }
+};
 #endif
 
 #if 1 // ======================== Input pin: IRQ & Timed =======================

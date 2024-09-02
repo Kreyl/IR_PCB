@@ -30,7 +30,7 @@ AppMsgQueue evt_q_app;
 
 #if 1 // ============================== Controls ===============================
 // Outputs
-Pin_t output_hits_present {Output_HitsPresent};
+CustomOutPin output_hits_present {Output_HitsPresent};
 
 // Inputs
 InputPinIrqTimed input_single_fire{Input_SingleFire};
@@ -182,7 +182,7 @@ void HitsEnded() {
     // Beeper
     if(beeper.GetCurrentSequence() == bsqHit) beeper.SetNextSequenceI(bsqHitsEnded);
     else beeper.StartOrRestartI(bsqHitsEnded);
-    output_hits_present.SetLo();
+    output_hits_present.SetInactive();
     for(auto& Led : side_LEDs) Led.StartOrRestartI(lsqHitsEnded);
     Sys::Unlock();
     PrintEverywhere("#Hits Ended\r\n");
@@ -259,12 +259,13 @@ void ProcessRxPkt(IRPkt rx_pkt) {
         if(rx_pkt.word16 == static_cast<uint16_t>(PktType::NewGame))
             evt_q_app.SendNowOrExit(AppEvt::Reset);
         else {
-            uint16_t pkt_type = rx_pkt.word16 & 0xFF00U; // Zero second byte
-            uint16_t pkt_value = rx_pkt.word16 & 0x00FF;
+            uint16_t pkt_type = rx_pkt.word16 & 0xFF00U; // Zero MSB
+            uint16_t pkt_value = rx_pkt.word16 & 0x00FF; // Zero LSB
             if(pkt_type == static_cast<uint16_t>(PktType::AddHealth)) {
                 Sys::Lock();
-                output_hits_present.SetHi();
                 hit_cnt = (pkt_value > *settings.hit_cnt)? *settings.hit_cnt : pkt_value;
+                if(hit_cnt > 0) output_hits_present.SetActive();
+                else output_hits_present.SetInactive();
                 prev_hit_time_st = Sys::GetSysTimeX();
                 Sys::Unlock();
                 Indication::HitsAdded(pkt_value);
@@ -350,7 +351,8 @@ void Fire() {
 void Reset(bool quiet) {
     Sys::Lock();
     irLed::ResetI();
-    output_hits_present.SetHi();
+    output_hits_present.SetMode(settings.pin_mode_gpio3.GetMode());
+    output_hits_present.SetActive();
 //    OutPulseOnHit.ResetI();  // Removed to implement PWM input
     input_burst_fire.CleanIrqFlag();
     input_single_fire.CleanIrqFlag();
@@ -428,7 +430,7 @@ void AppInit() {
     evt_q_app.Init();
     // Control pins init
 //    output_hits_ended.SetupOut(gpio::OutMode::PushPull);
-    output_hits_present.SetupOut(gpio::OutMode::OpenDrain);
+    output_hits_present.Init(); // Mode and Active will be set inside Reset()
 //    OutPulseOnHit.Init(); // Removed to implement PWM input
     input_burst_fire.Init();
     input_single_fire.Init();

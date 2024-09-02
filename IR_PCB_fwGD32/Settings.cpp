@@ -90,9 +90,9 @@ retv Settings::Save() {
 
     // Gpio
     f_printf(&common_file, "\r\n[Gpio]\r\n");
-    f_printf(&common_file, "# %S\r\n", gpio3_mode.comment);
-    f_printf(&common_file, "# Default=%D\r\n", gpio3_mode.v_default);
-    f_printf(&common_file, "%S = %D\r\n\r\n", gpio3_mode.name, gpio3_mode.v);
+    f_printf(&common_file, "# %S\r\n", pin_mode_gpio3.comment);
+    f_printf(&common_file, "# Default=%D\r\n", pin_mode_gpio3.v_default);
+    f_printf(&common_file, "%S = %D\r\n\r\n", pin_mode_gpio3.name, pin_mode_gpio3.v);
 
     // Research
     f_printf(&common_file, "\r\n[Research]\r\n");

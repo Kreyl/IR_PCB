@@ -11,8 +11,11 @@
 #include "types.h"
 #include "ir_pkt.h"
 #include <vector>
+#include "app_classes.h"
 
 #define SETTINGS_FILENAME   "Settings.ini"
+
+extern CustomOutPin output_hits_present;
 
 class ValueBase {
 public:
@@ -73,19 +76,21 @@ public:
 };
 
 class ValueGpioMode : public ValueBase {
+private:
+    CustomOutPin *ppin;
 public:
-    enum class Mode {
-        PushPullActiveHi=0, PushPullActiveLo=1,
-        OpenDrainActiveHi=2, OpenDrainActiveLo=3
-    };
     static constexpr const char* mode_names[4] = {
             "PushPullActiveHi", "PushPullActiveLo",
             "OpenDrainActiveHi", "OpenDrainActiveLo"
     };
-    Mode GetMode() { return static_cast<Mode>(v); }
+    PinMode GetMode() { return static_cast<PinMode>(v); }
     retv CheckAndSetIfOk(int32_t avalue) {
         if(avalue >= 0 and avalue <= 3) {
             v = avalue;
+            // Switch pin
+            bool is_active = ppin->IsActive();
+            ppin->SetMode(GetMode());
+            ppin->SetActive(is_active);
             return retv::Ok;
         }
         else return retv::BadValue;
@@ -93,8 +98,8 @@ public:
     void PrintOnGet(Shell *pshell) { pshell->Print("%*S = %4d; default = %4d; %S\r\n", kValueNameSz, name, v, v_default, comment); }
     void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d (%S)\r\n", name, v, mode_names[v]); }
     void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: %d\r\n", name, bad_value); }
-    ValueGpioMode(Mode adefault, const char* asection, const char* aname, const char *acomment) :
-                ValueBase(static_cast<int32_t>(adefault), asection, aname, acomment) {}
+    ValueGpioMode(PinMode adefault, const char* asection, const char* aname, const char *acomment, CustomOutPin *appin) :
+                ValueBase(static_cast<int32_t>(adefault), asection, aname, acomment), ppin(appin) {}
 };
 
 class ValuePktType : public ValueBase {
@@ -138,7 +143,6 @@ public:
     void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: %d\r\n", name, bad_value); }
 };
 
-
 class Settings {
 public:
     // IDs
@@ -162,9 +166,9 @@ public:
     ValueDamage    tx_damage  {                        "IRTX", "TXDamage", "Damage caused by a single shot" };
     ValueMinMaxDef tx_amount  {      1,     1,    100, "IRTX", "Amount", "Number of things to be added by special packets: AddHealth, AddRounds, etc." };
     // Gpio control
-    ValueGpioMode gpio3_mode  { ValueGpioMode::Mode::PushPullActiveHi, "Gpio", "Gpio3Mode",
+    ValueGpioMode pin_mode_gpio3 { PinMode::PushPullActiveHi, "Gpio", "Gpio3Mode",
         "Mode of Gpio3 (hits_present): 0 is PushPullActiveHi, 1 is PushPullActiveLo, "
-        "2 is OpenDrainActiveHi, 3 is OpenDrainActiveLo" };
+        "2 is OpenDrainActiveHi, 3 is OpenDrainActiveLo",  &output_hits_present };
     // Research
 //    ValueEnable print_rx_pkt {1, "Research", "PrintRxPkt", "Print received IR packet when enabled; 1 is enabled, 0 is disabled" };
     ValueEnable transmit_what_rcvd {0, "Research", "TransmitWhatRcvd", "Transmit last received pkt when firing; 1 is enabled, 0 is disabled" };
@@ -176,7 +180,7 @@ public:
             &shots_period_ms, &magaz_reload_delay_s, &min_delay_btw_hits_s,
             &ir_rx_deviation,
             &ir_tx_pwr, &ir_tx_freq, &pkt_type, &tx_damage, &tx_amount,
-            &gpio3_mode,
+            &pin_mode_gpio3,
             /*&print_rx_pkt,*/ &transmit_what_rcvd
     };
 
