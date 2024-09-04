@@ -8,11 +8,10 @@ Settings settings;
 void Settings::Load() {
     for(ValueBase* const pval : values_arr) {
         int32_t v;
-        if(ini::Read(SETTINGS_FILENAME, pval->section, pval->name, &v) != retv::Ok or
-                pval->CheckAndSetIfOk(v) != retv::Ok) {
-            SetAllToDefault();
-            Printf("Bad %S %S. Default settings loaded\r\n", pval->section, pval->name);
-            return;
+        if(ini::Read(SETTINGS_FILENAME, pval->section, pval->name, &v).NotOk() or
+                pval->CheckAndSetIfOk(v).NotOk()) {
+            pval->SetToDefault();
+            Printf("Bad %S %S. Default value set\r\n", pval->section, pval->name);
         }
     }
     Printf("Settings loaded\r\n");

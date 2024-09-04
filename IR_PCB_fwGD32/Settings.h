@@ -169,6 +169,8 @@ public:
     ValueGpioMode pin_mode_gpio3 { PinMode::PushPullActiveHi, "Gpio", "Gpio3Mode",
         "Mode of Gpio3 (hits_present): 0 is PushPullActiveHi, 1 is PushPullActiveLo, "
         "2 is OpenDrainActiveHi, 3 is OpenDrainActiveLo",  &output_hits_present };
+    // Behavior, Modes of operation
+    ValueEnable fire_always {0, "Behavior", "FireAlways", "Burst fire always: 1 is enabled, 0 is disabled" };
     // Research
 //    ValueEnable print_rx_pkt {1, "Research", "PrintRxPkt", "Print received IR packet when enabled; 1 is enabled, 0 is disabled" };
     ValueEnable transmit_what_rcvd {0, "Research", "TransmitWhatRcvd", "Transmit last received pkt when firing; 1 is enabled, 0 is disabled" };
@@ -181,6 +183,7 @@ public:
             &ir_rx_deviation,
             &ir_tx_pwr, &ir_tx_freq, &pkt_type, &tx_damage, &tx_amount,
             &pin_mode_gpio3,
+            &fire_always,
             /*&print_rx_pkt,*/ &transmit_what_rcvd
     };
 

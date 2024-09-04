@@ -438,6 +438,11 @@ void AppInit() {
     Reset();
     // Create and start thread
     Sys::CreateThd(waAppThread, sizeof(waAppThread), NORMALPRIO, AppThread);
+    // Start eternal fire if needed
+    if(settings.fire_always.IsEnabled()) {
+        burst_from_cmd = true;
+        evt_q_app.SendNowOrExit(AppMsg(AppEvt::StartFire));
+    }
 }
 
 void FireSingleShot() {
