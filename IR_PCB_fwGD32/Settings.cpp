@@ -8,12 +8,8 @@ Settings settings;
 void Settings::Load() {
     for(ValueBase* const pval : values_arr) {
         int32_t v;
-        retv r = ini::Read(SETTINGS_FILENAME, pval->section, pval->name, &v);
-        if(r == retv::NotFound) {
-            settings.SetAllToDefault();
-            return;
-        }
-        else if(r.NotOk() or pval->CheckAndSetIfOk(v).NotOk()) {
+        if(ini::Read(SETTINGS_FILENAME, pval->section, pval->name, &v).NotOk() or
+                pval->CheckAndSetIfOk(v).NotOk()) {
             pval->SetToDefault();
             Printf("Bad %S %S. Default value set\r\n", pval->section, pval->name);
         }

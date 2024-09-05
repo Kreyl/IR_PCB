@@ -32,7 +32,7 @@ public:
     virtual retv CheckAndSetIfOk(int32_t) = 0;
     virtual void PrintOnGet(Shell*) = 0;
     virtual void PrintOnNew(Shell *pshell) = 0;
-    virtual void PrintOnBad(Shell *pshell, int32_t bad_value) = 0;
+    void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: %d\r\n", name, bad_value); }
     virtual void Save(FIL* pfile) = 0;
     static const uint32_t kValueNameSz = 16;
     ValueBase(int32_t adefault, const char* asection, const char* aname, const char *acomment):
@@ -52,7 +52,6 @@ public:
     }
     void PrintOnGet(Shell *pshell) { pshell->Print("%*S = %4d; Def = %d; %S\r\n", kValueNameSz, name, v, v_default, comment); }
     void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d\r\n", name, v); }
-    void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: %d\r\n", name, bad_value); }
     void Save(FIL* pfile) {
         f_printf(pfile, "# %S\r\n", comment);
         f_printf(pfile, "# Default = %D\r\n", v_default);
@@ -76,7 +75,6 @@ public:
         pshell->Print("%*S = %4d; Min = %4d Max = %4d; %S\r\n", kValueNameSz, name, v, v_min, v_max, comment);
     }
     void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d\r\n", name, v); }
-    void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: %d\r\n", name, bad_value); }
     void Save(FIL* pfile) {
         f_printf(pfile, "# %S\r\n", comment);
         f_printf(pfile, "# Min = %D, Max = %D\r\n", v_min, v_max);
@@ -89,12 +87,20 @@ public:
 };
 
 // No infinity here
-class ValueMinMaxDef : public ValueMinMax {
+class ValueMinMaxDef : public ValueBase {
+protected:
+    const int32_t v_min, v_max;
 public:
+    retv CheckAndSetIfOk(int32_t avalue) {
+        if(avalue < v_min or avalue > v_max) return retv::BadValue;
+        v = avalue;
+        return retv::Ok;
+    }
     void PrintOnGet(Shell *pshell) {
         pshell->Print("%*S = %4d; Min = %4d Max = %4d Def = %3d; %S\r\n",
                 kValueNameSz, name, v, v_min, v_max, v_default, comment);
     }
+    void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d\r\n", name, v); }
     void Save(FIL* pfile) {
         f_printf(pfile, "# %S\r\n", comment);
         f_printf(pfile, "# Min = %D, Max = %D, Default = %D\r\n", v_min, v_max, v_default);
@@ -102,11 +108,14 @@ public:
     }
     ValueMinMaxDef(int32_t adefault, int32_t amin, int32_t amax,
             const char* asection, const char* aname, const char *acomment) :
-                ValueMinMax(adefault, amin, amax, asection, aname, acomment) {}
+                ValueBase(adefault, asection, aname, acomment),
+                v_min(amin), v_max(amax) {}
 };
 
 // Infinity value added
-class ValueMinMaxDefInf : public ValueMinMaxDef {
+class ValueMinMaxDefInf : public ValueBase {
+protected:
+    const int32_t v_min, v_max;
 public:
     bool IsInfinity() { return v == (v_max + 1L); }
     retv CheckAndSetIfOk(int32_t avalue) {
@@ -118,15 +127,17 @@ public:
         pshell->Print("%*S = %4d; Min = %4d Max = %4d Def = %3d Inf = %3d; %S\r\n",
                 kValueNameSz, name, v, v_min, v_max, v_default, v_max+1L, comment);
     }
+    void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d\r\n", name, v); }
     void Save(FIL* pfile) {
         f_printf(pfile, "# %S\r\n", comment);
-        f_printf(pfile, "#  Min = %D Max = %DDefault = %D Infinity = %D\r\n", v_min, v_max, v_default, v_max+1L);
-        f_printf(pfile, "%S=%D\r\n\r\n", name, v);
+        f_printf(pfile, "# Min = %D, Max = %D, Default = %D, Infinity = %D\r\n", v_min, v_max, v_default, v_max+1L);
+        f_printf(pfile, "%S = %D\r\n\r\n", name, v);
     }
 
     ValueMinMaxDefInf(int32_t adefault, int32_t amin, int32_t amax,
             const char* asection, const char* aname, const char *acomment) :
-                ValueMinMaxDef(adefault, amin, amax, asection, aname, acomment) {}
+                ValueBase(adefault, asection, aname, acomment),
+                v_min(amin), v_max(amax) {}
 };
 
 class ValueGpioMode : public ValueBase {
@@ -159,7 +170,6 @@ public:
         f_printf(pfile, "%S = %D\r\n\r\n", name, v);
     }
     void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d (%S)\r\n", name, v, mode_names[v]); }
-    void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: %d\r\n", name, bad_value); }
     ValueGpioMode(PinMode adefault, const char* asection, const char* aname, const char *acomment, CustomOutPin *appin) :
                 ValueBase(static_cast<int32_t>(adefault), asection, aname, acomment), ppin(appin) {}
 };
@@ -182,14 +192,13 @@ public:
     void Save(FIL* pfile) {
         f_printf(pfile,
                     "# PktType to transmit:\r\n"
-                    "#   Shot is 0x0000 (PlayerID, TeamID and Damage added automatically"
-                    "#   NewGame is 0x8305\r\n"
-                    "#   AddHealth is 0x8000 (number of added health points set in the amount value)\r\n"
-                    "#   AddRounds is 0x8100 (number of added rounds set in the amount value)\r\n");
+                    "#   * Shot is 0x0000 (PlayerID, TeamID and Damage added automatically)\r\n"
+                    "#   * NewGame is 0x8305\r\n"
+                    "#   * AddHealth is 0x8000 (number of added health points set in the amount value)\r\n"
+                    "#   * AddRounds is 0x8100 (number of added rounds set in the amount value)\r\n");
         f_printf(pfile, "%S = 0x%04X\r\n\r\n", name, v);
     }
     void PrintOnNew(Shell *pshell) { pshell->Print("%S = 0x%04X\r\n", name, v); }
-    void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: 0x%04X\r\n", name, bad_value); }
 };
 
 class ValueDamage : public ValueBase {
@@ -214,10 +223,9 @@ public:
     void Save(FIL* pfile) {
         f_printf(pfile, "# Hits Damage in 'Shot' pkt. Unusable for other pkt types.\r\n"
                 "# %S\r\n", kPossible);
-        f_printf(pfile, "%S = 0x%04X\r\n\r\n", name, v);
+        f_printf(pfile, "%S = %D\r\n\r\n", name, v);
     }
     void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d\r\n", name, v); }
-    void PrintOnBad(Shell *pshell, int32_t bad_value) { pshell->Print("%S BadValue: %d\r\n", name, bad_value); }
 };
 
 class Settings {
