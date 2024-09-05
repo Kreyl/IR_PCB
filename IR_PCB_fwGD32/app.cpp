@@ -230,7 +230,7 @@ void ProcessRxPkt(IRPkt rx_pkt) {
         return;
     }
     // Shot incoming
-    if(rx_pkt.bits_cnt == 14 and rx_pkt.zero == 0) {
+    if((rx_pkt.bits_cnt == 14 or rx_pkt.bits_cnt == 16) and rx_pkt.zero == 0) {
         if(hit_cnt <= 0) return; // Nothing to do when no hits left
         if(rx_pkt.player_id == *settings.player_id) return; // Ignore pkt from self
         int32_t damage;
