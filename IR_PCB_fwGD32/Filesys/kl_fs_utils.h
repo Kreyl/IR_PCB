@@ -163,12 +163,13 @@ retv ReadStringTo(const char *AFileName, const char *ASection, const char *AKey,
 template <typename T>
 static retv Read(const char *AFileName, const char *ASection, const char *AKey, T *POutput) {
     char *S = nullptr;
-    if(ReadString(AFileName, ASection, AKey, &S) == retv::Ok) {
+    retv r = ReadString(AFileName, ASection, AKey, &S);
+    if(r.IsOk()) {
         int32_t tmp = kl_strtol(S, NULL, 0);
         *POutput = (T)tmp;
         return retv::Ok;
     }
-    else return retv::Fail;
+    else return r;
 }
 
 retv ReadColor (const char *AFileName, const char *ASection, const char *AKey, Color_t *AOutput);

@@ -231,7 +231,10 @@ retv ReadString(const char *AFileName, const char *ASection, const char *AKey, c
     // Open file
     rslt = f_open(&common_file, AFileName, FA_READ+FA_OPEN_EXISTING);
     if(rslt != FR_OK) {
-        if (rslt == FR_NO_FILE) Printf("%S: not found\r", AFileName);
+        if (rslt == FR_NO_FILE) {
+            Printf("%S: not found\r", AFileName);
+            return retv::NotFound;
+        }
         else Printf("%S: openFile error: %u\r", AFileName, rslt);
         return retv::Fail;
     }
@@ -239,7 +242,7 @@ retv ReadString(const char *AFileName, const char *ASection, const char *AKey, c
     if(f_size(&common_file) == 0) {
         f_close(&common_file);
         Printf("Empty file\r");
-        return retv::Fail;
+        return retv::Empty;
     }
     // Move through file one line at a time until a section is matched or EOF.
     char *StartP, *EndP = nullptr;
