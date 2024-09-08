@@ -14,8 +14,6 @@
 #include "app_classes.h"
 #include "ff.h"
 
-#define SETTINGS_FILENAME   "Settings.ini"
-
 extern CustomOutPin output_hits_present;
 
 class ValueBase {
@@ -87,20 +85,12 @@ public:
 };
 
 // No infinity here
-class ValueMinMaxDef : public ValueBase {
-protected:
-    const int32_t v_min, v_max;
+class ValueMinMaxDef : public ValueMinMax {
 public:
-    retv CheckAndSetIfOk(int32_t avalue) {
-        if(avalue < v_min or avalue > v_max) return retv::BadValue;
-        v = avalue;
-        return retv::Ok;
-    }
     void PrintOnGet(Shell *pshell) {
         pshell->Print("%*S = %4d; Min = %4d Max = %4d Def = %3d; %S\r\n",
                 kValueNameSz, name, v, v_min, v_max, v_default, comment);
     }
-    void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d\r\n", name, v); }
     void Save(FIL* pfile) {
         f_printf(pfile, "# %S\r\n", comment);
         f_printf(pfile, "# Min = %D, Max = %D, Default = %D\r\n", v_min, v_max, v_default);
@@ -108,14 +98,11 @@ public:
     }
     ValueMinMaxDef(int32_t adefault, int32_t amin, int32_t amax,
             const char* asection, const char* aname, const char *acomment) :
-                ValueBase(adefault, asection, aname, acomment),
-                v_min(amin), v_max(amax) {}
+                ValueMinMax(adefault, amin, amax, asection, aname, acomment) {}
 };
 
 // Infinity value added
-class ValueMinMaxDefInf : public ValueBase {
-protected:
-    const int32_t v_min, v_max;
+class ValueMinMaxDefInf : public ValueMinMaxDef {
 public:
     bool IsInfinity() { return v == (v_max + 1L); }
     retv CheckAndSetIfOk(int32_t avalue) {
@@ -134,10 +121,10 @@ public:
         f_printf(pfile, "%S = %D\r\n\r\n", name, v);
     }
 
+
     ValueMinMaxDefInf(int32_t adefault, int32_t amin, int32_t amax,
             const char* asection, const char* aname, const char *acomment) :
-                ValueBase(adefault, asection, aname, acomment),
-                v_min(amin), v_max(amax) {}
+                ValueMinMaxDef(adefault, amin, amax, asection, aname, acomment) {}
 };
 
 class ValueGpioMode : public ValueBase {
@@ -230,6 +217,8 @@ public:
 
 class Settings {
 private:
+    static constexpr const char* kSettingsFilename = "Settings.ini";
+    // Group names
     static constexpr const char* kGrpIDs = "IDs";
     static constexpr const char* kGrpCounts = "Counts";
     static constexpr const char* kGrpDelays = "Delays";
@@ -237,7 +226,6 @@ private:
     static constexpr const char* kGrpIrTx = "IRTX";
     static constexpr const char* kGrpGpio = "Gpio";
     static constexpr const char* kGrpBehavior = "Behavior";
-    static constexpr const char* kGrpResearch = "Research";
 public:
     // IDs
     ValueMinMax player_id { 0, 0, 127, kGrpIDs, "PlayerID", "Player ID, must be unique" };
@@ -263,9 +251,7 @@ public:
     ValueGpioMode pin_mode_gpio3 { PinMode::PushPullActiveHi, kGrpGpio, "Gpio3Mode", "Gpio3 (hits_present)",  &output_hits_present };
     // Behavior, Modes of operation
     ValueEnable fire_always {0, kGrpBehavior, "FireAlways", "Burst fire always: 1 is enabled, 0 is disabled" };
-    // Research
-//    ValueEnable print_rx_pkt {1, "Research", "PrintRxPkt", "Print received IR packet when enabled; 1 is enabled, 0 is disabled" };
-    ValueEnable transmit_what_rcvd {0, kGrpResearch, "TransmitWhatRcvd", "Transmit last received pkt when firing; 1 is enabled, 0 is disabled" };
+    ValueEnable transmit_what_rcvd {0, kGrpBehavior, "TransmitWhatRcvd", "Transmit last received pkt when firing; 1 is enabled, 0 is disabled" };
 
     // Array of value pointers
     std::vector<ValueBase*> values_arr = {
@@ -275,8 +261,7 @@ public:
             &ir_rx_deviation,
             &ir_tx_pwr, &ir_tx_freq, &pkt_type, &tx_damage, &tx_amount,
             &pin_mode_gpio3,
-            &fire_always,
-            /*&print_rx_pkt,*/ &transmit_what_rcvd
+            &fire_always, &transmit_what_rcvd
     };
 
     void Load();

@@ -8,8 +8,12 @@ Settings settings;
 void Settings::Load() {
     for(ValueBase* const pval : values_arr) {
         int32_t v;
-        if(ini::Read(SETTINGS_FILENAME, pval->section, pval->name, &v).NotOk() or
-                pval->CheckAndSetIfOk(v).NotOk()) {
+        retv r = ini::Read(kSettingsFilename, pval->section, pval->name, &v);
+        if(r == retv::NotFound) {
+            SetAllToDefault();
+            return;
+        }
+        else if(r.NotOk() or pval->CheckAndSetIfOk(v).NotOk()) {
             pval->SetToDefault();
             Printf("Bad %S %S. Default value set\r\n", pval->section, pval->name);
         }
@@ -19,7 +23,7 @@ void Settings::Load() {
 
 retv Settings::Save() {
     const char* curr_grp = nullptr;
-    if(TryOpenFileRewrite(SETTINGS_FILENAME, &common_file) != retv::Ok) return retv::Fail;
+    if(TryOpenFileRewrite(kSettingsFilename, &common_file) != retv::Ok) return retv::Fail;
     // Description
     f_printf(&common_file, "# IR PCB v3.2 Settings.ini\r\n\r\n");
     // Values
