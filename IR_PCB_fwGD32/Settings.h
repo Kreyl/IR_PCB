@@ -14,8 +14,6 @@
 #include "app_classes.h"
 #include "ff.h"
 
-#define SETTINGS_FILENAME   "Settings.ini"
-
 extern CustomOutPin output_hits_present;
 
 class ValueBase {
@@ -222,6 +220,8 @@ public:
 
 class Settings {
 private:
+    static constexpr const char* kSettingsFilename = "Settings.ini";
+    // Group names
     static constexpr const char* kGrpIDs = "IDs";
     static constexpr const char* kGrpCounts = "Counts";
     static constexpr const char* kGrpDelays = "Delays";
@@ -229,7 +229,6 @@ private:
     static constexpr const char* kGrpIrTx = "IRTX";
     static constexpr const char* kGrpGpio = "Gpio";
     static constexpr const char* kGrpBehavior = "Behavior";
-    static constexpr const char* kGrpResearch = "Research";
 public:
     // IDs
     ValueMinMax player_id { 0, 0, 127, kGrpIDs, "PlayerID", "Player ID, must be unique" };
@@ -255,9 +254,7 @@ public:
     ValueGpioMode pin_mode_gpio3 { PinMode::PushPullActiveHi, kGrpGpio, "Gpio3Mode", "Gpio3 (hits_present)",  &output_hits_present };
     // Behavior, Modes of operation
     ValueEnable fire_always {0, kGrpBehavior, "FireAlways", "Burst fire always: 1 is enabled, 0 is disabled" };
-    // Research
-//    ValueEnable print_rx_pkt {1, "Research", "PrintRxPkt", "Print received IR packet when enabled; 1 is enabled, 0 is disabled" };
-    ValueEnable transmit_what_rcvd {0, kGrpResearch, "TransmitWhatRcvd", "Transmit last received pkt when firing; 1 is enabled, 0 is disabled" };
+    ValueEnable transmit_what_rcvd {0, kGrpBehavior, "TransmitWhatRcvd", "Transmit last received pkt when firing; 1 is enabled, 0 is disabled" };
 
     // Array of value pointers
     std::vector<ValueBase*> values_arr = {
@@ -267,8 +264,7 @@ public:
             &ir_rx_deviation,
             &ir_tx_pwr, &ir_tx_freq, &pkt_type, &tx_damage, &tx_amount,
             &pin_mode_gpio3,
-            &fire_always,
-            /*&print_rx_pkt,*/ &transmit_what_rcvd
+            &fire_always, &transmit_what_rcvd
     };
 
     void Load();
