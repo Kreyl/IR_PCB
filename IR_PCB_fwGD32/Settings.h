@@ -114,14 +114,11 @@ public:
         pshell->Print("%*S = %4d; Min = %4d Max = %4d Def = %3d Inf = %3d; %S\r\n",
                 kValueNameSz, name, v, v_min, v_max, v_default, v_max+1L, comment);
     }
-    void PrintOnNew(Shell *pshell) { pshell->Print("%S = %d\r\n", name, v); }
     void Save(FIL* pfile) {
         f_printf(pfile, "# %S\r\n", comment);
         f_printf(pfile, "# Min = %D, Max = %D, Default = %D, Infinity = %D\r\n", v_min, v_max, v_default, v_max+1L);
         f_printf(pfile, "%S = %D\r\n\r\n", name, v);
     }
-
-
     ValueMinMaxDefInf(int32_t adefault, int32_t amin, int32_t amax,
             const char* asection, const char* aname, const char *acomment) :
                 ValueMinMaxDef(adefault, amin, amax, asection, aname, acomment) {}
