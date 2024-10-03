@@ -47,28 +47,28 @@ uint16_t x2Value(uint16_t x, uint16_t fMin, uint16_t fMax) { return Proportion<u
 
 class Spark_t {
 private:
-    int16_t MoveDelay_ms = 81;
-    int16_t Acceleration = 27;
-    int32_t x = -1, xMax = 0;
-    VirtualTimer_t ITmrMove;
-    systime_t SystimeToStart = 540;
-    std::vector<Color_t> IBuf;
+    int16_t move_delay_ms = 81;
+    int16_t acceleration = 27;
+    int32_t x = -1, x_max = 0;
+    VirtualTimer_t tmr_move;
+    systime_t systime_to_start = 540;
+    std::vector<Color_t> ibuf;
 public:
     int32_t band_indx = 0;
     void Init() { // Recreate IBuf making it's colors black
-        IBuf.clear();
+        ibuf.clear();
         if(ISettings.Sparks.Mode == SPARKS_MODE_RANDOM)
-            IBuf.resize(ISettings.Sparks.TailLen + SPARK_CENTER_SZ + ISettings.Sparks.TailLen);
+            ibuf.resize(ISettings.Sparks.TailLen + SPARK_CENTER_SZ + ISettings.Sparks.TailLen);
     }
 
     void Sleep() {
         x = -1; // Sleeping
-        SystimeToStart = Sys::GetSysTimeX() + TIME_MS2I(Random::Generate(0, ISettings.Sparks.DelayBeforeRestart));
+        systime_to_start = Sys::GetSysTimeX() + TIME_MS2I(Random::Generate(0, ISettings.Sparks.DelayBeforeRestart));
     }
 
     void Generate() {
         if(ISettings.Sparks.Mode == SPARKS_MODE_RANDOM) { // Prepare buf which is spark's image
-            xMax = (Flames.flame_len - 1) + (int32_t)IBuf.size();
+            x_max = (Flames.flame_len - 1) + (int32_t)ibuf.size();
             int32_t N = 0, TailLen = ISettings.Sparks.TailLen, MaxV = ISettings.Sparks.ClrV, BrtRGB, BrtW;
             ColorHSV_t hsv{ISettings.Sparks.GetRandomHue(), 100, (uint8_t)MaxV};
             Color_t rgbw = hsv.ToRGB();
@@ -90,16 +90,16 @@ public:
                     BrtRGB = Proportion<int32_t>(0, TailLen, BRT_TAIL_END, MaxV, i); // [0;TailLen) -> [1; MaxV)
                     BrtW   = Proportion<int32_t>(0, TailLen, BRT_TAIL_END, MaxW, i); // [0;TailLen) -> [1; MaxW)
                 }
-                IBuf[N] = rgbw;
-                IBuf[N].SetRGBWBrightness(BrtRGB, BrtW, BRT_MAX);
-                IBuf[N].ApplyGammaCorrectionRGBW();
+                ibuf[N] = rgbw;
+                ibuf[N].SetRGBWBrightness(BrtRGB, BrtW, BRT_MAX);
+                ibuf[N].ApplyGammaCorrectionRGBW();
                 N++;
             }
 
             // Center
             for(int32_t i=0; i<SPARK_CENTER_SZ; i++) {
-                IBuf[N] = rgbw;
-                IBuf[N].ApplyGammaCorrectionRGBW();
+                ibuf[N] = rgbw;
+                ibuf[N].ApplyGammaCorrectionRGBW();
                 N++;
             }
 
@@ -117,35 +117,35 @@ public:
                     BrtRGB = Proportion<int32_t>(0, TailLen, MaxV, BRT_TAIL_END, i); // [0;TailLen) -> [MaxV; 1)
                     BrtW   = Proportion<int32_t>(0, TailLen, MaxW, BRT_TAIL_END, i); // [0;TailLen) -> [MaxW; 1)
                 }
-                IBuf[N] = rgbw;
-                IBuf[N].SetRGBWBrightness(BrtRGB, BrtW, BRT_MAX);
-                IBuf[N].ApplyGammaCorrectionRGBW();
+                ibuf[N] = rgbw;
+                ibuf[N].SetRGBWBrightness(BrtRGB, BrtW, BRT_MAX);
+                ibuf[N].ApplyGammaCorrectionRGBW();
                 N++;
             }
         }
         else { // Gradient
-            xMax = Flames.flame_len + ISettings.Sparks.TailLen;
+            x_max = Flames.flame_len + ISettings.Sparks.TailLen;
         }
         // === Init coord, speed, acceleration ===
         x = 0;
-        MoveDelay_ms = Random::Generate(ISettings.Sparks.StartDelayMin, ISettings.Sparks.StartDelayMax);
-        if(MoveDelay_ms < SPARK_DELAY_MIN) MoveDelay_ms = SPARK_DELAY_MIN;
-        Acceleration = Random::Generate(ISettings.Sparks.AccMin, ISettings.Sparks.AccMax);
-        ITmrMove.Set(TIME_MS2I(MoveDelay_ms), SparkTmrCallback, this);
+        move_delay_ms = Random::Generate(ISettings.Sparks.StartDelayMin, ISettings.Sparks.StartDelayMax);
+        if(move_delay_ms < SPARK_DELAY_MIN) move_delay_ms = SPARK_DELAY_MIN;
+        acceleration = Random::Generate(ISettings.Sparks.AccMin, ISettings.Sparks.AccMax);
+        tmr_move.Set(TIME_MS2I(move_delay_ms), SparkTmrCallback, this);
     }
 
     void Process() {
         if(x == -1) {
-            if(Sys::GetSysTimeX() >= SystimeToStart) Generate();
+            if(Sys::GetSysTimeX() >= systime_to_start) Generate();
             else return;
         }
         // Draw it
         if(ISettings.Sparks.Mode == SPARKS_MODE_RANDOM) {
-            int32_t Len = IBuf.size();
+            int32_t Len = ibuf.size();
             int32_t Start = (x < Flames.flame_len)? 0 : x - (Flames.flame_len -1);
             int32_t Stop  = (x < Len)? x : Len - 1;
             int32_t xCurr = (x < Flames.flame_len)? x : (Flames.flame_len - 1);
-            for(int32_t i=Start; i<=Stop; i++) SetPixRing(band_indx, xCurr--, IBuf[i]);
+            for(int32_t i=Start; i<=Stop; i++) SetPixRing(band_indx, xCurr--, ibuf[i]);
         }
         else { // Gradient
             int32_t SparkLen = ISettings.Sparks.TailLen + 1;
@@ -163,21 +163,21 @@ public:
     }
 
     void StopI() {
-        ITmrMove.ResetI(); // IsArmed checked inside
+        tmr_move.ResetI(); // IsArmed checked inside
     }
 
     void OnTmrI() {
         x++;
-        if(x < xMax) {
-            MoveDelay_ms -= Acceleration;
-            if(MoveDelay_ms <= SPARK_DELAY_MIN) MoveDelay_ms = SPARK_DELAY_MIN;
-            ITmrMove.SetI(TIME_MS2I(MoveDelay_ms), SparkTmrCallback, this);
+        if(x < x_max) {
+            move_delay_ms -= acceleration;
+            if(move_delay_ms <= SPARK_DELAY_MIN) move_delay_ms = SPARK_DELAY_MIN;
+            tmr_move.SetI(TIME_MS2I(move_delay_ms), SparkTmrCallback, this);
         }
         else Sleep();
     }
 
     void Print() {
-        Printf("%d %d %d %d; t=%u\r", MoveDelay_ms, Acceleration, x, xMax, SystimeToStart);
+        Printf("%d %d %d %d; t=%u\r", move_delay_ms, acceleration, x, x_max, systime_to_start);
     }
 };
 

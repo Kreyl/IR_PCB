@@ -231,13 +231,39 @@ void OnCmd(Shell_t *PShell) {
     else if(PCmd->NameIs("Stop"))  { Flames.Stop(); PShell->Ok(); }
 
 
-    else if(PCmd->NameIs("Npx")) {
+    else if(PCmd->NameIs("SetAll")) {
         Color_t clr;
-        if(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.SetAll(clr);
+        if(PCmd->GetClrRGB(&clr) == retv::Ok) {
+            NpxLeds.SetAll(clr);
+            NpxLeds.SetCurrentColors();
+            PShell->Ok();
+        }
         else PShell->BadParam();
-        uint32_t i=0;
-        while(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.ClrBuf[i++] = clr;
-        NpxLeds.SetCurrentColors();
+    }
+
+    else if(PCmd->NameIs("Set")) {
+        Color_t clr;
+        uint32_t indx=0;
+        if(PCmd->GetNext(&indx) == retv::Ok) {
+            while(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.ClrBuf[indx++] = clr;
+            NpxLeds.SetCurrentColors();
+            PShell->Ok();
+        }
+        else PShell->BadParam();
+    }
+
+    else if(PCmd->NameIs("SetStep")) {
+        Color_t clr;
+        uint32_t indx, step;
+        if(PCmd->GetNext(&indx) == retv::Ok and PCmd->GetNext(&step) == retv::Ok  and PCmd->GetClrRGB(&clr) == retv::Ok and step > 0) {
+            while(indx < NpxLeds.ClrBuf.size()) {
+                NpxLeds.ClrBuf[indx] = clr;
+                indx += step;
+            }
+            NpxLeds.SetCurrentColors();
+            PShell->Ok();
+        }
+        else PShell->BadParam();
     }
 
     else if(PCmd->NameIs("Npx3")) {
@@ -256,9 +282,9 @@ void OnCmd(Shell_t *PShell) {
     }
 
     else if(PCmd->NameIs("NpxIndx")) {
-        int32_t indx;
+        uint32_t indx;
         Color_t clr;
-        if(PCmd->GetNextI32(&indx) == retv::Ok and PCmd->GetClrRGB(&clr) == retv::Ok) {
+        if(PCmd->GetNext(&indx) == retv::Ok and PCmd->GetClrRGB(&clr) == retv::Ok) {
             if(indx < 0 or indx >= NpxLeds.ClrBuf.size()) { PShell->BadParam(); return; }
             NpxLeds.ClrBuf[indx] = clr;
         }
