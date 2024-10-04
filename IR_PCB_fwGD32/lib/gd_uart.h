@@ -28,7 +28,7 @@ void UartDmaTxIrqHandler(void *p, uint32_t flags);
 
 class BaseUart_t {
 protected:
-    const UartParams_t* const Params;
+    const UartParams_t* const params;
     char TXBuf[UART_TXBUF_SZ];
     char *PRead, *PWrite;
     bool ITxDmaIsIdle;
@@ -41,11 +41,11 @@ protected:
     retv IPutByteNow(uint8_t b);
     void IStartTransmissionIfNotYet();
     // ==== Constructor ====
-    BaseUart_t(const UartParams_t &APParams) : Params(&APParams)
+    BaseUart_t(const UartParams_t &APParams) : params(&APParams)
     , PRead(TXBuf), PWrite(TXBuf), ITxDmaIsIdle(true), IFullSlotsCount(0), ITransSize(0),
         OldWIndx(0), RIndx(0),
-        DmaTx(Params->DmaChnlTx, UartDmaTxIrqHandler, this, IRQ_PRIO_LOW),
-        DmaRx(Params->DmaChnlRx, nullptr, nullptr, IRQ_PRIO_LOW) {}
+        DmaTx(params->DmaChnlTx, UartDmaTxIrqHandler, this, IRQ_PRIO_LOW),
+        DmaRx(params->DmaChnlRx, nullptr, nullptr, IRQ_PRIO_LOW) {}
     retv GetByte(uint8_t *b);
 public:
     void Init();
@@ -53,10 +53,10 @@ public:
     void OnClkChange();
     void StopTx();
     // Enable/Disable
-    void EnableTx()  { Params->Uart->EnableTx();  }
-    void DisableTx() { Params->Uart->DisableTx(); }
-    void EnableRx()  { Params->Uart->EnableRx();  }
-    void DisableRx() { Params->Uart->DisableRx(); }
+    void EnableTx()  { params->Uart->EnableTx();  }
+    void DisableTx() { params->Uart->DisableTx(); }
+    void EnableRx()  { params->Uart->EnableRx();  }
+    void DisableRx() { params->Uart->DisableRx(); }
     // Inner use
     void IRQDmaTxHandler();
 };

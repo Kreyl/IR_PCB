@@ -36,23 +36,23 @@ using systime_t = uint16_t;
 #define TIME_I2MS(interval) (uint32_t)((((uint64_t)(interval) * (uint64_t)1000) + (uint64_t)SYS_TIM_FREQUENCY - (uint64_t)1) / (uint64_t)SYS_TIM_FREQUENCY)
 #define TIME_I2US(interval) (uint32_t)((((uint64_t)(interval) * (uint64_t)1000000) + (uint64_t)SYS_TIM_FREQUENCY - (uint64_t)1) / (uint64_t)SYS_TIM_FREQUENCY)
 
-struct Thread_t;
-typedef Thread_t *ThdReference_t;
+struct Thread;
+typedef Thread *ThdReference_t;
 enum class ThdState { Ready, Current, WTStart, Suspended, Queued, OnSemaphore, Sleeping };
 
 // Generic threads bidirectional linked list header and element.
-struct ThreadsQueue_t {
-    Thread_t *next; // Next in the list/queue
-    Thread_t *prev; // Previous in the queue
+struct ThreadsQueue {
+    Thread *next; // Next in the list/queue
+    Thread *prev; // Previous in the queue
     inline void Init();
     inline bool IsEmpty();
-    inline Thread_t* FifoRemove();
-    inline void Insert(Thread_t *tp);
+    inline Thread* FifoRemove();
+    inline void Insert(Thread *tp);
 };
 
-class Semaphore_t {
+class Semaphore {
 private:
-    ThreadsQueue_t queue;  // Queue of the threads sleeping on this semaphore
+    ThreadsQueue queue;  // Queue of the threads sleeping on this semaphore
     int32_t cnt;
 public:
     void Init(int32_t ACnt);
@@ -154,7 +154,7 @@ struct McuExtCtx_t { // port_extctx
 #endif /* CORTEX_USE_FPU */
 };
 
-struct McuIntCtx_t {
+struct McuIntCtx {
 #if __FPU_PRESENT
     regarm_t s16;
     regarm_t s17;
@@ -186,10 +186,10 @@ struct McuIntCtx_t {
 
 
 // Structure representing a thread
-struct Thread_t {
-    ThreadsQueue_t queue; // Threads queue header
+struct Thread {
+    ThreadsQueue queue; // Threads queue header
     uint32_t prio;        // Thread priority
-    McuIntCtx_t *IntCtx;  // Processor context
+    McuIntCtx *IntCtx;  // Processor context
     stkalign_t *wabase;   // This pointer is used for stack overflow checks
     ThdState state;       // Current thread state
     // State-specific fields. Valid in the specified state or condition and are thus volatile
@@ -197,7 +197,7 @@ struct Thread_t {
     union {
         void *wtobjp;     // Pointer to a generic "wait" synchronization object. Valid when the thread is in one of the wait states.
         ThdReference_t *wttrp; // Pointer to a generic thread reference object, valid when the thread is in Suspended state.
-        Semaphore_t *pSem; // valid when the thread is in OnSemaphore state.
+        Semaphore *pSem; // valid when the thread is in OnSemaphore state.
     } u;
 };
 
@@ -218,8 +218,8 @@ namespace Sys {
 void Init();
 
 // Threads
-Thread_t *CreateThd(void *Workspace, size_t Sz, uint32_t Prio, tfunc_t ThdFunc);
-Thread_t *GetSelfThd();
+Thread *CreateThd(void *Workspace, size_t Sz, uint32_t Prio, tfunc_t ThdFunc);
+Thread *GetSelfThd();
 
 // Scheduler
 void RescheduleS();

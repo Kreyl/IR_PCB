@@ -56,7 +56,7 @@ void MSDStartReceiveHdrI();
 void OnMSDDataOut(uint32_t Sz);
 void OnMSDDataIn();
 static bool ISayIsReady = true;
-static Thread_t *PMsdThd = nullptr;
+static Thread *PMsdThd = nullptr;
 #endif
 
 // CDC Reception buffers and methods
@@ -65,14 +65,14 @@ static enum class TransferAction { SendEvt, WakeThd } Action = TransferAction::S
 
 static uint8_t Buf1[CDC_OUT_BUF_SZ], Buf2[CDC_OUT_BUF_SZ], *pBufW = Buf1;
 static Buf_t BufToParse;
-static Thread_t *pWaitingThd = nullptr;
+static Thread *pWaitingThd = nullptr;
 
 // OUT transfer end callback
 void OnTransferEnd(uint32_t Sz) {
     Sys::LockFromIRQ();
     // Save what received
-    BufToParse.Ptr = pBufW;
-    BufToParse.Sz = Sz;
+    BufToParse.ptr = pBufW;
+    BufToParse.sz = Sz;
     // Switch buffers and start new reception
     pBufW = (pBufW == Buf1)? Buf2 : Buf1;
     Usb::StartReceiveI(EP_CDC_DATA, pBufW, CDC_OUT_BUF_SZ);
@@ -95,7 +95,7 @@ void CdcOnBulkInTransferEnd() {
     if(Usb::IsActive() and !CdcInBuf.IsEmpty()) {
         BufType_t<uint8_t> buf = CdcInBuf.GetAndLockBuf();
         Sys::LockFromIRQ();
-        Usb::StartTransmitI(EP_CDC_DATA, buf.Ptr, buf.Sz);
+        Usb::StartTransmitI(EP_CDC_DATA, buf.ptr, buf.sz);
         Sys::UnlockFromIRQ();
     }
 }
@@ -252,7 +252,7 @@ retv UsbMsdCdc::IPutChar(char c) {
     retv r = CdcInBuf.Put(c);
     if(CdcInBuf.IsFullBufPresent() and !Usb::IsEpTransmitting(EP_CDC_DATA)) { // New buffer is full
         BufType_t<uint8_t> buf = CdcInBuf.GetAndLockBuf();
-        Usb::StartTransmitI(EP_CDC_DATA, buf.Ptr, buf.Sz);
+        Usb::StartTransmitI(EP_CDC_DATA, buf.ptr, buf.sz);
     }
     Sys::Unlock();
     return r;
@@ -263,15 +263,15 @@ void UsbMsdCdc::IStartTransmissionIfNotYet() {
     if(Usb::IsActive() and !Usb::IsEpTransmitting(EP_CDC_DATA) and !CdcInBuf.IsEmpty()) {
         Sys::Lock();
         BufType_t<uint8_t> buf = CdcInBuf.GetAndLockBuf();
-        Usb::StartTransmitI(EP_CDC_DATA, buf.Ptr, buf.Sz);
+        Usb::StartTransmitI(EP_CDC_DATA, buf.ptr, buf.sz);
         Sys::Unlock();
     }
 }
 
 retv UsbMsdCdc::TryParseRxBuff() {
-    while(CdcOutQ::BufToParse.Sz) {
-        CdcOutQ::BufToParse.Sz--;
-        if(Cmd.PutChar(*CdcOutQ::BufToParse.Ptr++) == pdrNewCmd) return retv::Ok;
+    while(CdcOutQ::BufToParse.sz) {
+        CdcOutQ::BufToParse.sz--;
+        if(Cmd.PutChar(*CdcOutQ::BufToParse.ptr++) == pdrNewCmd) return retv::Ok;
     }
     return retv::Fail;
 }
@@ -294,10 +294,10 @@ retv UsbMsdCdc::ReceiveBinaryToBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_
         CdcOutQ::pWaitingThd = Sys::GetSelfThd();
         if(Sys::SleepS(TimeLeft) == retv::Timeout) break; // Timeout occured
         // Will be here after successful reception; put data to buffer
-        if(CdcOutQ::BufToParse.Sz > Len) CdcOutQ::BufToParse.Sz = Len; // Flush too large data
-        memcpy(ptr, CdcOutQ::BufToParse.Ptr, CdcOutQ::BufToParse.Sz);
-        Len -= CdcOutQ::BufToParse.Sz;
-        ptr += CdcOutQ::BufToParse.Sz;
+        if(CdcOutQ::BufToParse.sz > Len) CdcOutQ::BufToParse.sz = Len; // Flush too large data
+        memcpy(ptr, CdcOutQ::BufToParse.ptr, CdcOutQ::BufToParse.sz);
+        Len -= CdcOutQ::BufToParse.sz;
+        ptr += CdcOutQ::BufToParse.sz;
     }
     CdcOutQ::Action = CdcOutQ::TransferAction::SendEvt; // Return to normal life
     Sys::Unlock();
@@ -322,8 +322,8 @@ retv UsbMsdCdc::TransmitBinaryFromBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeo
         CdcOutQ::pWaitingThd = Sys::GetSelfThd();
         if(Sys::SleepS(TimeLeft) == retv::Timeout) break; // Timeout occured
         // Will be here after successful reception; check if '>' present
-        for(uint32_t i=0; i<CdcOutQ::BufToParse.Sz; i++) {
-            if(CdcOutQ::BufToParse.Ptr[i] == '>') {
+        for(uint32_t i=0; i<CdcOutQ::BufToParse.sz; i++) {
+            if(CdcOutQ::BufToParse.ptr[i] == '>') {
                 // Found
                 r = retv::Ok;
                 break;

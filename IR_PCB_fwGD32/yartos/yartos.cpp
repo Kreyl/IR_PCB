@@ -16,7 +16,7 @@ extern stkalign_t __main_thread_stack_base__;
 // Asm function prototypes
 extern "C" {
     void _port_irq_epilogue();
-    void _port_switch(Thread_t *newtp, Thread_t *oldtp);
+    void _port_switch(Thread *newtp, Thread *oldtp);
     void _port_thread_start();
     void _port_switch_from_isr();
     void _port_exit_from_isr();
@@ -30,7 +30,7 @@ void InitSysHw();
 void EnableRtos();
 void PortLock();
 void PortUnlock();
-inline void SwitchContext(Thread_t *newtp, Thread_t *oldtp);
+inline void SwitchContext(Thread *newtp, Thread *oldtp);
 
 // Sys timer related
 namespace SysTimer {
@@ -339,41 +339,41 @@ void EvtTimer::StartIfNotRunning() {
 
 #if 1 // ============================ Thread Queue =============================
 static struct ReadyList_t {
-    ThreadsQueue_t queue;
+    ThreadsQueue queue;
     uint32_t prio;
-    Thread_t *current; // The currently running thread
+    Thread *current; // The currently running thread
 } rlist;
 
 // Current thread pointer
 #define currp rlist.current
 
-inline void ThreadsQueue_t::Insert(Thread_t *tp) {
-    tp->queue.next = (Thread_t*)this;
+inline void ThreadsQueue::Insert(Thread *tp) {
+    tp->queue.next = (Thread*)this;
     tp->queue.prev = prev;
     tp->queue.prev->queue.next = tp;
     prev = tp;
 }
 
-inline Thread_t* ThreadsQueue_t::FifoRemove() {
-    Thread_t *tp = next;
+inline Thread* ThreadsQueue::FifoRemove() {
+    Thread *tp = next;
     next = tp->queue.next;
-    next->queue.prev = (Thread_t*)this;
+    next->queue.prev = (Thread*)this;
     return tp;
 }
 
-static inline Thread_t* queue_dequeue(Thread_t *tp) {
+static inline Thread* queue_dequeue(Thread *tp) {
     tp->queue.prev->queue.next = tp->queue.next;
     tp->queue.next->queue.prev = tp->queue.prev;
     return tp;
 }
 
-inline void ThreadsQueue_t::Init() {
-    next = (Thread_t*)this;
-    prev = (Thread_t*)this;
+inline void ThreadsQueue::Init() {
+    next = (Thread*)this;
+    prev = (Thread*)this;
 }
 
-inline bool ThreadsQueue_t::IsEmpty() {
-    return (next == (Thread_t*)this);
+inline bool ThreadsQueue::IsEmpty() {
+    return (next == (Thread*)this);
 }
 #endif
 
@@ -389,12 +389,12 @@ bool SchIsPreemptionRequired() {
 }
 
 // Inserts a thread in the Ready List placing it behind all threads with higher or equal priority.
-Thread_t *SchReadyI(Thread_t *tp) {
+Thread *SchReadyI(Thread *tp) {
     dbg.CheckClassI();
     dbg.Check(tp != NULL, "#TP nullptr");
     dbg.Check(tp->state != ThdState::Ready, "invalid state");
     tp->state = ThdState::Ready;;
-    Thread_t *cp = (Thread_t*)&rlist.queue;
+    Thread *cp = (Thread*)&rlist.queue;
     do {
         cp = cp->queue.next;
     } while(cp->prio >= tp->prio);
@@ -407,13 +407,13 @@ Thread_t *SchReadyI(Thread_t *tp) {
 }
 
 // Inserts a thread in the Ready List placing it ahead all threads with higher or equal priority.
-Thread_t* SchReadyAheadI(Thread_t *tp) {
-    Thread_t *cp;
+Thread* SchReadyAheadI(Thread *tp) {
+    Thread *cp;
     dbg.CheckClassI();
     dbg.Check(tp != nullptr, "#TP nullptr");
     dbg.Check(tp->state != ThdState::Ready, "invalid state");
     tp->state = ThdState::Ready;
-    cp = (Thread_t*)&rlist.queue;
+    cp = (Thread*)&rlist.queue;
     do {
         cp = cp->queue.next;
     } while(cp->prio > tp->prio);
@@ -431,7 +431,7 @@ Thread_t* SchReadyAheadI(Thread_t *tp) {
  *          threads having the same priority.
  */
 void SchDoRescheduleAhead() {
-    Thread_t *oldtp = currp;
+    Thread *oldtp = currp;
     // Pick the first thread from the ready queue and make it current
     currp = rlist.queue.FifoRemove();
     currp->state = ThdState::Current;
@@ -442,7 +442,7 @@ void SchDoRescheduleAhead() {
 
 extern "C"
 void SchDoRescheduleI() {
-    Thread_t *oldtp = currp;
+    Thread *oldtp = currp;
     // Pick the first thread from the ready queue and make it current
     currp = rlist.queue.FifoRemove();
     currp->state = ThdState::Current;
@@ -458,7 +458,7 @@ static inline bool SchIsReschRequiredI() {
 
 // Puts the current thread to sleep into the specified state
 void SchGoSleepS(ThdState newstate) {
-    Thread_t *oldtp = currp;
+    Thread *oldtp = currp;
     dbg.CheckClassS();
     oldtp->state = newstate;
     // Next thread in ready list becomes current
@@ -469,7 +469,7 @@ void SchGoSleepS(ThdState newstate) {
 
 // Timeout wakeup callback
 static void wakeup(void *p) {
-    Thread_t *tp = (Thread_t*)p;
+    Thread *tp = (Thread*)p;
     Sys::LockFromIRQ();
     switch(tp->state) {
         case ThdState::Ready: // Special case: thread has been made ready by another thread with higher priority
@@ -511,10 +511,10 @@ retv SchGoSleepTimeoutS(ThdState newstate, systime_t timeout) {
 /* The thread is inserted into the ready list or immediately made running depending on its relative priority compared to the current
 thread. The thread must not be already inserted in any list through its next and prev or list corruption would occur.
 It is equivalent to a chSchReadyI() followed by a RescheduleS() but much more efficient. */
-void SchWakeupS(Thread_t *newtp, retv msg) {
-    Thread_t *oldtp = currp;
+void SchWakeupS(Thread *newtp, retv msg) {
+    Thread *oldtp = currp;
     dbg.CheckClassS();
-    dbg.Check((rlist.queue.next == (Thread_t*)&rlist.queue) or (rlist.current->prio >= rlist.queue.next->prio), "priority order violation");
+    dbg.Check((rlist.queue.next == (Thread*)&rlist.queue) or (rlist.current->prio >= rlist.queue.next->prio), "priority order violation");
     // Store the message to be retrieved by the target thread when it will restart execution
     newtp->msg = msg;
     /* If the waken thread has a not-greater priority than the current one then it is just inserted in the ready list, else it made
@@ -530,7 +530,7 @@ void SchWakeupS(Thread_t *newtp, retv msg) {
 #endif // Scheduler
 
 #if 1 // ============================= Semaphore ===============================
-void Semaphore_t::Init(int32_t ACnt) {
+void Semaphore::Init(int32_t ACnt) {
     queue.Init();
     cnt = ACnt;
 }
@@ -549,7 +549,7 @@ void Semaphore_t::Init(int32_t ACnt) {
  *
  * @sclass
  */
-retv Semaphore_t::WaitTimeoutS(systime_t Timeout) {
+retv Semaphore::WaitTimeoutS(systime_t Timeout) {
     dbg.CheckClassS();
     dbg.Check((cnt >= 0 and queue.IsEmpty()) or (cnt < 0 and !queue.IsEmpty()), "inconsistent semaphore");
     if(--cnt < 0L) {
@@ -578,7 +578,7 @@ retv Semaphore_t::WaitTimeoutS(systime_t Timeout) {
 *
 * @api
 */
-retv Semaphore_t::WaitTimeout(systime_t Timeout) {
+retv Semaphore::WaitTimeout(systime_t Timeout) {
     retv msg;
     Sys::Lock();
     msg = WaitTimeoutS(Timeout);
@@ -595,11 +595,11 @@ retv Semaphore_t::WaitTimeout(systime_t Timeout) {
  *
  * @iclass
  */
-void Semaphore_t::SignalI() {
+void Semaphore::SignalI() {
     dbg.CheckClassI();
     dbg.Check((cnt >= 0 and queue.IsEmpty()) or (cnt < 0 and !queue.IsEmpty()), "inconsistent semaphore");
     if(++cnt <= 0) {
-        Thread_t *tp = queue.FifoRemove(); // Remove curr thd from queue
+        Thread *tp = queue.FifoRemove(); // Remove curr thd from queue
         tp->msg = retv::Ok;
         SchReadyI(tp); // ...and start it
     }
@@ -609,7 +609,7 @@ void Semaphore_t::SignalI() {
  * @brief   Performs a signal operation on a semaphore.
  *
  */
-void Semaphore_t::Signal() {
+void Semaphore::Signal() {
     Sys::Lock();
     dbg.Check((cnt >= 0 and queue.IsEmpty()) or (cnt < 0 and !queue.IsEmpty()), "inconsistent semaphore");
     if(++cnt <= 0) SchWakeupS(queue.FifoRemove(), retv::Ok);
@@ -639,7 +639,7 @@ static void IdleThd() {
 }
 #endif
 
-static Thread_t mainthread;
+static Thread mainthread;
 
 namespace Sys { // =========================== Sys =============================
 
@@ -663,7 +663,7 @@ void Init() {
     CreateThd(wsIdleThd, sizeof(wsIdleThd), IDLEPRIO, IdleThd);
 }
 
-Thread_t *CreateThd(void *Workspace, size_t Sz, uint32_t Prio, tfunc_t ThdFunc) {
+Thread *CreateThd(void *Workspace, size_t Sz, uint32_t Prio, tfunc_t ThdFunc) {
     dbg.Check((Workspace != NULL) &&
                MEM_IS_ALIGNED(Workspace, STACK_ALIGN) &&
                (Sz >= THD_WORKSPACE_SZ(0)) &&
@@ -673,7 +673,7 @@ Thread_t *CreateThd(void *Workspace, size_t Sz, uint32_t Prio, tfunc_t ThdFunc) 
     /* The thread structure is laid out in the upper part of the thread
        workspace. The thread position structure is aligned to the required
        stack alignment because it represents the stack top.*/
-    Thread_t *tp = (Thread_t*)((uint8_t*)Workspace + Sz - MEM_ALIGN_NEXT(sizeof(Thread_t), STACK_ALIGN));
+    Thread *tp = (Thread*)((uint8_t*)Workspace + Sz - MEM_ALIGN_NEXT(sizeof(Thread), STACK_ALIGN));
     tp->wabase = (stkalign_t*)Workspace; // Stack boundary
     SETUP_CONTEXT(tp, ThdFunc); // Setup the port-dependent part of the working area
     tp->prio  = Prio;
@@ -684,7 +684,7 @@ Thread_t *CreateThd(void *Workspace, size_t Sz, uint32_t Prio, tfunc_t ThdFunc) 
     return tp;
 }
 
-Thread_t *GetSelfThd() { return rlist.current; }
+Thread *GetSelfThd() { return rlist.current; }
 
 void RescheduleS() {
     dbg.CheckClassS();
@@ -708,13 +708,13 @@ retv SleepSeconds(uint32_t Delay_s)       { return Sleep(TIME_S2I(Delay_s)); }
 void WakeI(ThdReference_t *pThdref, retv amsg) {
     dbg.CheckClassI();
     if(*pThdref != nullptr) {
-        Thread_t *pThd = *pThdref;
+        Thread *pThd = *pThdref;
         *pThdref = nullptr;
         if(pThd->state != ThdState::Ready) {
             pThd->msg = amsg;
             // Make it ready and insert in ready list
             pThd->state = ThdState::Ready;
-            Thread_t *cp = (Thread_t*)&rlist.queue;
+            Thread *cp = (Thread*)&rlist.queue;
             do {
                 cp = cp->queue.next;
             } while(cp->prio >= pThd->prio);
@@ -812,8 +812,8 @@ void PortUnlock() {
  * @param[in] newtp       the thread to be switched in
  * @param[in] oldtp       the thread to be switched out
  */
-inline void SwitchContext(Thread_t *newtp, Thread_t *oldtp) {
-    McuIntCtx_t *r13 = (McuIntCtx_t*)__get_PSP();
+inline void SwitchContext(Thread *newtp, Thread *oldtp) {
+    McuIntCtx *r13 = (McuIntCtx*)__get_PSP();
     if((stkalign_t*)(r13 - 1) < oldtp->wabase) SysHalt("stack overflow");
     _port_switch(newtp, oldtp);
 }

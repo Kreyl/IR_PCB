@@ -34,15 +34,15 @@ void BaseUart_t::ISendViaDMA() {
         ITxDmaIsIdle = false;
         DmaTx.SetMemoryAddr(PRead);
         DmaTx.SetTransferDataCnt(ITransSize);
-        Params->Uart->STAT0 &= ~USART_STAT0_TC; // Clear TC flag
+        params->Uart->STAT0 &= ~USART_STAT0_TC; // Clear TC flag
         DmaTx.Enable();
     }
 }
 
 retv BaseUart_t::IPutByteNow(uint8_t b) {
-    while(!(Params->Uart->STAT0 & USART_STAT0_TBE));
-    Params->Uart->DATA = b;
-    while(!(Params->Uart->STAT0 & USART_STAT0_TBE));
+    while(!(params->Uart->STAT0 & USART_STAT0_TBE));
+    params->Uart->DATA = b;
+    while(!(params->Uart->STAT0 & USART_STAT0_TBE));
     return retv::Ok;
 }
 
@@ -70,38 +70,38 @@ retv BaseUart_t::GetByte(uint8_t *b) {
 #endif
 
 void BaseUart_t::Init() {
-    RCU->EnUart(Params->Uart); // Clock
+    RCU->EnUart(params->Uart); // Clock
     OnClkChange();  // Setup baudrate
 
     // ==== TX ====
-    gpio::SetupAlterFunc(Params->PGpioTx, Params->PinTx, gpio::PushPull, gpio::speed50MHz);
-    DmaTx.Init(&Params->Uart->DATA, UART_DMA_TX_MODE);
+    gpio::SetupAlterFunc(params->PGpioTx, params->PinTx, gpio::PushPull, gpio::speed50MHz);
+    DmaTx.Init(&params->Uart->DATA, UART_DMA_TX_MODE);
     ITxDmaIsIdle = true;
 
     // ==== RX ====
-    gpio::SetupInput(Params->PGpioRx, Params->PinRx, gpio::PullUp);
-    DmaRx.Init(&Params->Uart->DATA, IRxBuf, UART_DMA_RX_MODE, UART_RXBUF_SZ);
+    gpio::SetupInput(params->PGpioRx, params->PinRx, gpio::PullUp);
+    DmaRx.Init(&params->Uart->DATA, IRxBuf, UART_DMA_RX_MODE, UART_RXBUF_SZ);
     DmaRx.Enable();
 
     // UART Regs setup
-    Params->Uart->CTL0 = USART_CTL0_TEN | USART_CTL0_REN;     // TX & RX en, 8bit, no parity
-    Params->Uart->CTL1 = 0;  // Nothing interesting there
-    Params->Uart->CTL2 = USART_CTL2_DENT | USART_CTL2_DENR; // Enable DMA at TX & RX
-    Params->Uart->CTL0 |= USART_CTL0_UEN;    // Enable USART
+    params->Uart->CTL0 = USART_CTL0_TEN | USART_CTL0_REN;     // TX & RX en, 8bit, no parity
+    params->Uart->CTL1 = 0;  // Nothing interesting there
+    params->Uart->CTL2 = USART_CTL2_DENT | USART_CTL2_DENR; // Enable DMA at TX & RX
+    params->Uart->CTL0 |= USART_CTL0_UEN;    // Enable USART
 }
 
 void BaseUart_t::OnClkChange() {
-    if(Params->Uart == USART0)
-        Params->Uart->BAUD = Clk::APB2FreqHz / Params->baudrate; // The only UART on APB2
+    if(params->Uart == USART0)
+        params->Uart->BAUD = Clk::APB2FreqHz / params->baudrate; // The only UART on APB2
     else
-        Params->Uart->BAUD = Clk::APB1FreqHz / Params->baudrate; // Others are on APB1
+        params->Uart->BAUD = Clk::APB1FreqHz / params->baudrate; // Others are on APB1
 }
 
 void BaseUart_t::StopTx() {
-    Params->Uart->CTL0 &= ~USART_CTL0_UEN; // Disable UART
+    params->Uart->CTL0 &= ~USART_CTL0_UEN; // Disable UART
     DmaTx.DisableAndClearIRQ();
     ITxDmaIsIdle = true;
     PRead = TXBuf;
     PWrite = TXBuf;
-    Params->Uart->CTL0 |= USART_CTL0_UEN;
+    params->Uart->CTL0 |= USART_CTL0_UEN;
 }

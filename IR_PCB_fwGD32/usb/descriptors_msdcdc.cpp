@@ -248,17 +248,17 @@ Buf_t Usb::GetDescriptor(uint8_t dtype,  uint8_t dindex, uint16_t lang) {
     Buf_t Dsc;
     switch(dtype) {
         case USB_DESCRIPTOR_DEVICE:
-            Dsc.Sz = sizeof(DeviceDescriptor);
-            Dsc.Ptr = (uint8_t*)&DeviceDescriptor;
+            Dsc.sz = sizeof(DeviceDescriptor);
+            Dsc.ptr = (uint8_t*)&DeviceDescriptor;
             break;
         case USB_DESCRIPTOR_CONFIGURATION:
-            Dsc.Sz = sizeof(ConfigDescriptor);
-            Dsc.Ptr = (uint8_t*)&ConfigDescriptor;
+            Dsc.sz = sizeof(ConfigDescriptor);
+            Dsc.ptr = (uint8_t*)&ConfigDescriptor;
             break;
         case USB_DESCRIPTOR_STRING:
             if(dindex < 4) {
-                Dsc.Sz = StringDescriptors[dindex]->bLength;
-                Dsc.Ptr = (uint8_t*)StringDescriptors[dindex];
+                Dsc.sz = StringDescriptors[dindex]->bLength;
+                Dsc.ptr = (uint8_t*)StringDescriptors[dindex];
             }
             break;
     } // switch

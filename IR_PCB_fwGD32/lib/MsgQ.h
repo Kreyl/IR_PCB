@@ -88,8 +88,8 @@ private:
         T IBuf[sz];
     };
     T *read_ptr, *write_ptr;
-    Semaphore_t full_sem;    // Full slots counter
-    Semaphore_t empty_sem;   // Empty slots counter
+    Semaphore full_sem;    // Full slots counter
+    Semaphore empty_sem;   // Empty slots counter
 public:
     EvtMsgQ() : __Align(0), read_ptr(IBuf), write_ptr(IBuf) {}
     void Init() {

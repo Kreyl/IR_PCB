@@ -301,20 +301,20 @@ public:
  * PinOutputPWM_t Led {LedPin};
 */
 
-struct PwmSetup_t {
+struct PwmSetup {
     GPIO_TypeDef *PGpio;
     uint16_t Pin;
     TIM_TypeDef *PTimer;
     uint32_t TimerChnl;
     Inverted_t Inverted;
-    gpio::OutMode OutputType;
-    uint32_t TopValue;
-    PwmSetup_t(GPIO_TypeDef *APGpio, uint16_t APin,
+    gpio::OutMode output_mode;
+    uint32_t top_value;
+    PwmSetup(GPIO_TypeDef *APGpio, uint16_t APin,
             TIM_TypeDef *APTimer, uint32_t ATimerChnl,
             Inverted_t AInverted, gpio::OutMode AOutputType,
             uint32_t ATopValue) : PGpio(APGpio), Pin(APin), PTimer(APTimer),
-                    TimerChnl(ATimerChnl), Inverted(AInverted), OutputType(AOutputType),
-                    TopValue(ATopValue) {}
+                    TimerChnl(ATimerChnl), Inverted(AInverted), output_mode(AOutputType),
+                    top_value(ATopValue) {}
 };
 
 #if 1 // =========================== External IRQ ==============================
@@ -427,8 +427,8 @@ class Thread_t;
 class i2c_t {
 private:
     I2C_TypeDef *pi2c;
-    GPIO_TypeDef *PGpioScl, *PGpioSda;
-    uint32_t PinScl, PinSda;
+    GPIO_TypeDef *pgpio_scl, *pgpio_sda;
+    uint32_t pin_scl, pin_sda;
     retv IBusyWait(uint32_t Timeout_ms = 4);
     retv IWaitStartSent();
     retv IWaitAddrSent();
@@ -441,7 +441,7 @@ private:
     uint8_t IAddr = 0;
     Buf_t IBufW, IBufR;
     uint32_t ILen2 = 0;
-    Thread_t* PThd = nullptr;
+    Thread_t* pthd = nullptr;
 #if I2C_USE_SEMAPHORE
     binary_semaphore_t BSemaphore;
 #endif
@@ -449,7 +449,7 @@ public:
     i2c_t(I2C_TypeDef *pi2c,
             GPIO_TypeDef *PGpioScl, uint32_t PinScl,
             GPIO_TypeDef *PGpioSda, uint32_t PinSda) :
-        pi2c(pi2c), PGpioScl(PGpioScl), PGpioSda(PGpioSda), PinScl(PinScl), PinSda(PinSda) {}
+        pi2c(pi2c), pgpio_scl(PGpioScl), pgpio_sda(PGpioSda), pin_scl(PinScl), pin_sda(PinSda) {}
     void Init();
     void Standby();
     void Resume();
@@ -646,7 +646,7 @@ uint32_t GetTimInputFreq(const TIM_TypeDef *PTimer);
 
 class PinOutputPWM_t {
 private:
-    const PwmSetup_t ISetup;
+    const PwmSetup ISetup;
 public:
     void Set(uint32_t AValue) const { ISetup.PTimer->SetChnlValue(ISetup.TimerChnl, AValue); }
 //    uint32_t Get() const { return *TMR_PCCR(ITmr, ISetup.TimerChnl); }
@@ -665,7 +665,7 @@ public:
     void SetTopValue(uint32_t Value) const { ISetup.PTimer->SetTopValue(Value); }
 //    void SetTmrClkFreq(uint32_t FreqHz) const { Timer_t::SetTmrClkFreq(FreqHz); }
 //    void SetPrescaler(uint32_t PrescalerValue) const { Timer_t::SetPrescaler(PrescalerValue); }
-    PinOutputPWM_t(const PwmSetup_t &ASetup) : ISetup(ASetup) {}
+    PinOutputPWM_t(const PwmSetup &ASetup) : ISetup(ASetup) {}
 //    PinOutputPWM_t(GPIO_TypeDef *PGpio, uint16_t Pin,
 //            TIM_TypeDef *PTimer, uint32_t TimerChnl,
 //            Inverted_t Inverted, Gpio::OutMode_t OutputType, uint32_t TopValue) :

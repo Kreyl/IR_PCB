@@ -70,7 +70,7 @@ protected:
     }
     void SetCurrent() { IChnl.Set(ICurrentValue); }
 public:
-    LedSmooth(const PwmSetup_t APinSetup, const uint32_t AFreq = 0xFFFFFFFF) :
+    LedSmooth(const PwmSetup APinSetup, const uint32_t AFreq = 0xFFFFFFFF) :
         BaseSequencer(), IChnl(APinSetup), ICurrentValue(0), PWMFreq(AFreq) {}
     void Init() {
         IChnl.Init();
@@ -96,7 +96,7 @@ private:
 //        Printf("v=%u\r", FValue);
     }
 public:
-    LedSmoothWBrt_t(const PwmSetup_t APinSetup, const uint32_t AFreq = 0xFFFFFFFF) : LedSmooth(APinSetup, AFreq) {}
+    LedSmoothWBrt_t(const PwmSetup APinSetup, const uint32_t AFreq = 0xFFFFFFFF) : LedSmooth(APinSetup, AFreq) {}
     void SetBrightness(uint32_t NewBrt) {
         CurrBrt = NewBrt;
         SetCurrent();
@@ -171,9 +171,9 @@ protected:
     }
 public:
     LedRGBParent_t(
-            const PwmSetup_t ARed,
-            const PwmSetup_t AGreen,
-            const PwmSetup_t ABlue,
+            const PwmSetup ARed,
+            const PwmSetup AGreen,
+            const PwmSetup ABlue,
             const uint32_t APWMFreq) :
         BaseSequencer(), R(ARed), G(AGreen), B(ABlue), PWMFreq(APWMFreq) {}
     void Init() {
@@ -194,9 +194,9 @@ public:
 class LedRGB_t : public LedRGBParent_t {
 public:
     LedRGB_t(
-            const PwmSetup_t ARed,
-            const PwmSetup_t AGreen,
-            const PwmSetup_t ABlue,
+            const PwmSetup ARed,
+            const PwmSetup AGreen,
+            const PwmSetup ABlue,
             const uint32_t AFreq = 0xFFFFFFFF) :
                 LedRGBParent_t(ARed, AGreen, ABlue, AFreq) {}
 
@@ -214,9 +214,9 @@ private:
     const PinOutput_t PwrPin;
 public:
     LedRGBwPower_t(
-            const PwmSetup_t ARed,
-            const PwmSetup_t AGreen,
-            const PwmSetup_t ABlue,
+            const PwmSetup ARed,
+            const PwmSetup AGreen,
+            const PwmSetup ABlue,
             const PinOutput_t APwrPin,
             const uint32_t AFreq = 0xFFFFFFFF) :
                 LedRGBParent_t(ARed, AGreen, ABlue, AFreq), PwrPin(APwrPin) {}
@@ -238,9 +238,9 @@ public:
 class LedRGBLum_t : public LedRGBParent_t {
 public:
     LedRGBLum_t(
-            const PwmSetup_t ARed,
-            const PwmSetup_t AGreen,
-            const PwmSetup_t ABlue,
+            const PwmSetup ARed,
+            const PwmSetup AGreen,
+            const PwmSetup ABlue,
             const uint32_t AFreq = 0xFFFFFFFF) :
                 LedRGBParent_t(ARed, AGreen, ABlue, AFreq) {}
 
@@ -287,9 +287,9 @@ protected:
     }
 public:
     LedHSV_t(
-            const PwmSetup_t ARed,
-            const PwmSetup_t AGreen,
-            const PwmSetup_t ABlue,
+            const PwmSetup ARed,
+            const PwmSetup AGreen,
+            const PwmSetup ABlue,
             const uint32_t APWMFreq = 0xFFFFFFFF) :
         BaseSequencer(), R(ARed), G(AGreen), B(ABlue), PWMFreq(APWMFreq) {}
     void Init() {

@@ -27,7 +27,7 @@ private:
     Spi_t spi;
     Pin_t Nss{FLASH_NSS};
     DMA_t DmaTx, DmaRx;
-    Thread_t* PThd = nullptr;
+    Thread* PThd = nullptr;
     uint8_t WriteCmdRead1Byte(uint8_t Cmd);
     void WriteCmdAndAddr(uint8_t Cmd, uint32_t Addr);
     void WriteEnable();

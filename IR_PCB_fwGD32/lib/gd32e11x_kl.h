@@ -1347,7 +1347,7 @@ struct OPTB_Typedef {
 #define PWRCLKCTL_SUCLK         (1UL<<0) // Stop SUCLK
 
 // Host channel registers group.
-struct UsbHostChnl_t {
+struct UsbHostChnl_TypeDef {
     volatile uint32_t HCCHAR;     /**< @brief Host channel characteristics register */
     volatile uint32_t resvd8;
     volatile uint32_t HCINT;      /**< @brief Host channel interrupt register.*/
@@ -1359,22 +1359,22 @@ struct UsbHostChnl_t {
 };
 
 // Device input endpoint registers group.
-struct UsbInEp_t {
+struct UsbInEp_Typedef {
     volatile uint32_t DIEPCTL;    /**< @brief Device control IN endpoint control register */
     volatile uint32_t resvd4;
     volatile uint32_t DIEPINT;    /**< @brief Device IN endpoint interrupt register */
     volatile uint32_t resvdC;
-    volatile uint32_t DIEPTSIZ;   /**< @brief Device IN endpoint transfer size register */
+    volatile uint32_t DIEPLEN;   /**< @brief Device IN endpoint transfer size register */
     volatile uint32_t resvd14;
-    volatile uint32_t DTXFSTS;    /**< @brief Device IN endpoint transmit FIFO status register */
+    volatile uint32_t DIEPTFSTAT;    /**< @brief Device IN endpoint transmit FIFO status register */
     volatile uint32_t resvd1C;
 };
 
 // Device output endpoint registers group.
-struct UsbOutEp_t {
+struct UsbOutEp_Typedef {
     volatile uint32_t DOEPCTL;    /**< @brief Device control OUT endpoint control register */
     volatile uint32_t resvd4;
-    volatile uint32_t DOEPINT;    /**< @brief Device OUT endpoint interrupt register */
+    volatile uint32_t DOEPINTF;    /**< @brief Device OUT endpoint interrupt register */
     volatile uint32_t resvdC;
     volatile uint32_t DOEPTSIZ;   /**< @brief Device OUT endpoint transfer size register */
     volatile uint32_t resvd14;
@@ -1413,7 +1413,7 @@ struct USB_Typedef {
     volatile uint32_t resvd41C[9];
     volatile uint32_t HPRT;       /**< @brief Host port control and status register */
     volatile uint32_t resvd444[47];
-    UsbHostChnl_t hc[16];  /**< @brief Host channels array.            */
+    UsbHostChnl_TypeDef hc[16];  /**< @brief Host channels array.            */
     volatile uint32_t resvd700[64];
     volatile uint32_t DCFG;       /**< @brief Device configuration register.  */
     volatile uint32_t DCTL;       /**< @brief Device control register.        */
@@ -1422,20 +1422,20 @@ struct USB_Typedef {
     volatile uint32_t DIEPINTEN;  // 810 Device IN endpoint common interrupt mask register
     volatile uint32_t DOEPINTEN;  // 814 Device OUT endpoint common interrupt mask register
     volatile uint32_t DAEPINT;    // 818 Device all endpoints interrupt register
-    volatile uint32_t DAINTMSK;   // 81C Device all endpoints interrupt mask register
+    volatile uint32_t DAEPINTEN;   // 81C Device all endpoints interrupt mask register
     volatile uint32_t resvd820;
     volatile uint32_t resvd824;
     volatile uint32_t DVBUSDIS;   // 828 Device VBUS discharge time register
     volatile uint32_t DVBUSPULSE; // 82C Device VBUS pulsing time register
     volatile uint32_t resvd830;
-    volatile uint32_t DIEPEMPMSK; // 834 Device IN endpoint FIFO empty interrupt mask register
+    volatile uint32_t DIEPFEINTEN; // 834 Device IN endpoint FIFO empty interrupt mask register
     volatile uint32_t resvd838;
     volatile uint32_t resvd83C;
     volatile uint32_t resvd840[16];
     volatile uint32_t resvd880[16];
     volatile uint32_t resvd8C0[16];
-    UsbInEp_t ie[16];     /**< @brief Input endpoints.                */
-    UsbOutEp_t oe[16];    /**< @brief Output endpoints.               */
+    UsbInEp_Typedef ie[16];     /**< @brief Input endpoints.                */
+    UsbOutEp_Typedef oe[16];    /**< @brief Output endpoints.               */
     volatile uint32_t resvdD00[64];
     volatile uint32_t PWRCLKCTL;    /**< @brief Power and clock gating control register */
     volatile uint32_t resvdE04[127];
@@ -1491,9 +1491,9 @@ struct I2C_TypeDef {
     volatile uint32_t STAT1;  /*!< Transfer status register 1, offset: 0x18 */
     volatile uint32_t CKCFG;  /*!< Clock configure register,   offset: 0x1C */
     volatile uint32_t RT;     /*!< Rise time register,         offset: 0x20 */
-    volatile uint32_t resvd1[24];
+    volatile uint32_t resvd1[23];
     volatile uint32_t SAMCFG; /*!< SAM control and status register, Address offset: 0x80 */
-    volatile uint32_t resvd2[4];
+    volatile uint32_t resvd2[3];
     volatile uint32_t FMPCFG; /*!< Fast-mode-plus configure register, Address offset: 0x90 */
 
     void Enable()  { CTL0 |=  (1UL << 0); }

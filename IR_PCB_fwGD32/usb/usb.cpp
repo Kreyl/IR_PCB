@@ -121,7 +121,7 @@ public:
             uint32_t n = isp->Sz - isp->Cnt;
             if(n > EpCfg[ep]->InMaxPktSz) n = EpCfg[ep]->InMaxPktSz;
             // Check that the TXFIFO has enough space for the next packet
-            if(((USB->ie[ep].DTXFSTS & DTXFSTS_INEPTFSAV_MASK) * 4) < n) return;
+            if(((USB->ie[ep].DIEPTFSTAT & DTXFSTS_INEPTFSAV_MASK) * 4) < n) return;
             // Fill it
             volatile uint32_t *fifop = USB->FIFO[ep]; // Destination
             uint8_t *buf = &isp->pBuf[isp->Cnt]; // Src
@@ -133,7 +133,7 @@ public:
                 buf += 4;
             }
         } // while
-        USB->DIEPEMPMSK &= ~DIEPEMPMSK_INEPTXFEM(ep); // Disable FIFO_EMPTY IRQ
+        USB->DIEPFEINTEN &= ~DIEPEMPMSK_INEPTXFEM(ep); // Disable FIFO_EMPTY IRQ
     }
 
 } TxFifo;
@@ -161,11 +161,11 @@ void StartInTransfer(uint32_t ep) {
     // Transfer initialization
     isp->TotalSz = isp->Sz;
     // Special case, sending zero size packet
-    if(isp->Sz == 0) USB->ie[0].DIEPTSIZ = DIEPTSIZ_PKTCNT(1) | DIEPTSIZ_XFRSIZ(0);
+    if(isp->Sz == 0) USB->ie[0].DIEPLEN = DIEPTSIZ_PKTCNT(1) | DIEPTSIZ_XFRSIZ(0);
     else { // Ordinal case
         if(ep == 0 and isp->Sz > EP0_SZ) isp->Sz = EP0_SZ; // Single pkt only for Ep0
         uint32_t pktcnt = (isp->Sz + EpCfg[ep]->InMaxPktSz - 1UL) / EpCfg[ep]->InMaxPktSz;
-        USB->ie[ep].DIEPTSIZ = DIEPTSIZ_MCNT(1) | DIEPTSIZ_PKTCNT(pktcnt) | DIEPTSIZ_XFRSIZ(isp->Sz);
+        USB->ie[ep].DIEPLEN = DIEPTSIZ_MCNT(1) | DIEPTSIZ_PKTCNT(pktcnt) | DIEPTSIZ_XFRSIZ(isp->Sz);
     }
     // Special case for isochronous endpoint
     if(EpCfg[ep]->Type == Usb::EpType::Iso) { // Toggle odd/even bit
@@ -174,7 +174,7 @@ void StartInTransfer(uint32_t ep) {
     }
     // Start operation
     USB->ie[ep].DIEPCTL |= DIEPCTL_EPENA | DIEPCTL_CNAK;
-    USB->DIEPEMPMSK |= DIEPEMPMSK_INEPTXFEM(ep);
+    USB->DIEPFEINTEN |= DIEPEMPMSK_INEPTXFEM(ep);
 }
 
     /* Transaction size is rounded to a multiple of packet size because the
@@ -402,13 +402,13 @@ void Reset() {
 static void EpDisableAll() { // otg_disable_ep
     for(uint32_t i=0; i < USBFS_MAX_EP_COUNT; i++) {
         USB->ie[i].DIEPCTL = 0;
-        USB->ie[i].DIEPTSIZ = 0;
+        USB->ie[i].DIEPLEN = 0;
         USB->ie[i].DIEPINT = 0xFFFFFFFF;
         USB->oe[i].DOEPCTL = 0;
         USB->oe[i].DOEPTSIZ = 0;
-        USB->oe[i].DOEPINT = 0xFFFFFFFF;
+        USB->oe[i].DOEPINTF = 0xFFFFFFFF;
     }
-    USB->DAINTMSK = DAINTMSK_OEPM(0) | DAINTMSK_IEPM(0);
+    USB->DAEPINTEN = DAINTMSK_OEPM(0) | DAINTMSK_IEPM(0);
 }
 
 static EpSta GetStatusIn(uint32_t ep) {
@@ -493,9 +493,9 @@ static retv DefaultRequestHandler() {
         case REC_REQ(USB_REQ_RECPNT_DEVICE,  USB_REQ_GET_DESCRIPTOR):
         case REC_REQ(USB_REQ_RECPNT_INTRFCE, USB_REQ_GET_DESCRIPTOR):
             Dsc = Usb::GetDescriptor(Usb::SetupPkt.dscType, Usb::SetupPkt.dscIndex, Usb::SetupPkt.wIndex);
-            if(Dsc.Ptr == nullptr) return retv::Fail;
+            if(Dsc.ptr == nullptr) return retv::Fail;
             // Length is first byte of descriptor
-            Ep0::PrepareSetupTransfer(Dsc.Ptr, Dsc.Sz, nullptr);
+            Ep0::PrepareSetupTransfer(Dsc.ptr, Dsc.sz, nullptr);
             return retv::Ok;
 
         case REC_REQ(USB_REQ_RECPNT_DEVICE, USB_REQ_GET_CONFIGURATION): // Return the last selected configuration
@@ -606,7 +606,7 @@ static void StartCore() {
         // Clear all pending Device Interrupts, only the USB Reset interrupt is required initially
         USB->DIEPINTEN  = 0;
         USB->DOEPINTEN  = 0;
-        USB->DAINTMSK = 0;
+        USB->DAEPINTEN = 0;
 #if USB_SOF_CB_EN
         USB->GINTEN = GINTEN_ENUMFIE | GINTEN_RSTIE | GINTEN_SPIE |
         GINTEN_ESPIE | GINTEN_SESIE | GINTEN_WKUPIE | GINTEN_ISOINCIE | GINTEN_ISOONCIE |
@@ -626,7 +626,7 @@ static void StopCore() {
     Sys::Lock();
     if(UsbState != UsbSta::Stop) {
         EpDisableAll();
-        USB->DAINTMSK = 0;
+        USB->DAEPINTEN = 0;
         USB->GAHBCS   = 0;
         USB->GCCFG    = 0;
         Nvic::DisableVector(USB_IRQ_NUMBER);
@@ -650,15 +650,15 @@ static void OnIrqReset() {
     Ep0::Reset();
     TxFifo.Flush(0);
     // Clear and disable all ep irqs
-    USB->DIEPEMPMSK = 0;
-    USB->DAINTMSK   = DAINTMSK_OEPM(0) | DAINTMSK_IEPM(0);
+    USB->DIEPFEINTEN = 0;
+    USB->DAEPINTEN   = DAINTMSK_OEPM(0) | DAINTMSK_IEPM(0);
 
     // Set all endpoints in NAK mode, clear interrupts
     for(unsigned i = 0; i <= USB_NUM_EP_MAX; i++) {
         USB->ie[i].DIEPCTL = DIEPCTL_SNAK;
         USB->oe[i].DOEPCTL = DOEPCTL_SNAK;
         USB->ie[i].DIEPINT = 0xFFFFFFFF;
-        USB->oe[i].DOEPINT = 0xFFFFFFFF;
+        USB->oe[i].DOEPINTF = 0xFFFFFFFF;
     }
 
     TxFifo.Reset(); // Reset the FIFO memory allocator
@@ -679,7 +679,7 @@ static void OnIrqReset() {
     Ep0::State = Ep0::Sta::STP_WAITING; // EP0 state machine initialization
     USB->oe[0].DOEPTSIZ = DOEPTSIZ_STUPCNT(3);
     USB->oe[0].DOEPCTL = DOEPCTL_SD0PID | DOEPCTL_USBAEP | DOEPCTL_EPTYP_CTRL | DOEPCTL_MPSIZ(EP0_SZ);
-    USB->ie[0].DIEPTSIZ = 0;
+    USB->ie[0].DIEPLEN = 0;
     USB->ie[0].DIEPCTL = DIEPCTL_SD0PID | DIEPCTL_USBAEP | DIEPCTL_EPTYP_CTRL |
                           DIEPCTL_TXFNUM(0) | DIEPCTL_MPSIZ(EP0_SZ);
     USB->DIEP0TFLEN = DIEPTFLEN_IEPTXFD(EP0_SZ / 4) | DIEPTFLEN_IEPTXRSAR(TxFifo.Allocate(EP0_SZ / 4));
@@ -756,8 +756,8 @@ static void OnIrqRxFifoNotEmpty() {
 }
 
 static void OnIrqEpOut(uint32_t ep) {
-    uint32_t epint = USB->oe[ep].DOEPINT;
-    USB->oe[ep].DOEPINT = epint; // Clear all EP IRQ flags
+    uint32_t epint = USB->oe[ep].DOEPINTF;
+    USB->oe[ep].DOEPINTF = epint; // Clear all EP IRQ flags
     // Setup packets are handled using a specific callback
     if((ep == 0) and (epint & DOEPINT_STUP) and (USB->DOEPINTEN & DOEPMSK_STUPM)) Ep0::SetupCallback();
     // Transfer complete
@@ -804,7 +804,7 @@ static void OnIrqEpIn(uint32_t ep) {
         }
     } // XFRC
     // TX FIFO empty or emptying => fill it
-    if((epint & DIEPINT_TXFE) and (USB->DIEPEMPMSK & DIEPEMPMSK_INEPTXFEM(ep))) {
+    if((epint & DIEPINT_TXFE) and (USB->DIEPFEINTEN & DIEPEMPMSK_INEPTXFEM(ep))) {
         TxFifo.Fill(ep);
     }
 }
@@ -844,15 +844,15 @@ void InitEp(uint32_t ep, const EpConfig_t *pCfg) {
     USB->oe[ep].DOEPTSIZ = 0;
     if(pCfg->OutMaxPktSz != 0) { // OUT enabled
         USB->oe[ep].DOEPCTL = ctl | DOEPCTL_MPSIZ(pCfg->OutMaxPktSz);
-        USB->DAINTMSK |= DAINTMSK_OEPM(ep);
+        USB->DAEPINTEN |= DAINTMSK_OEPM(ep);
     }
     else { // Disable OUT functionality
         USB->oe[ep].DOEPCTL &= ~DOEPCTL_USBAEP;
-        USB->DAINTMSK &= ~DAINTMSK_OEPM(ep);
+        USB->DAEPINTEN &= ~DAINTMSK_OEPM(ep);
     }
 
     // IN endpoint activation or deactivation
-    USB->ie[ep].DIEPTSIZ = 0;
+    USB->ie[ep].DIEPLEN = 0;
     if(pCfg->InMaxPktSz != 0) {
         // Allocate FIFO
         uint32_t fsize = pCfg->InMaxPktSz / 4; // FIFO data is 32-bit wide
@@ -861,13 +861,13 @@ void InitEp(uint32_t ep, const EpConfig_t *pCfg) {
         USB->DIEPTFLEN[ep-1] = DIEPTFLEN_IEPTXFD(fsize) | DIEPTFLEN_IEPTXRSAR(TxFifo.Allocate(fsize));
         TxFifo.Flush(ep);
         USB->ie[ep].DIEPCTL = ctl | DIEPCTL_TXFNUM(ep) | DIEPCTL_MPSIZ(pCfg->InMaxPktSz);
-        USB->DAINTMSK |= DAINTMSK_IEPM(ep);
+        USB->DAEPINTEN |= DAINTMSK_IEPM(ep);
     }
     else { // Disable IN functionality
         USB->DIEPTFLEN[ep-1] = 0x02000400; // Reset value
         TxFifo.Flush(ep);
         USB->ie[ep].DIEPCTL &= ~DIEPCTL_USBAEP;
-        USB->DAINTMSK &= ~DAINTMSK_IEPM(ep);
+        USB->DAEPINTEN &= ~DAINTMSK_IEPM(ep);
     }
 }
 

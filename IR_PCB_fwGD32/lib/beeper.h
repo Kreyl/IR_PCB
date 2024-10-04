@@ -13,25 +13,25 @@
 
 class Beeper : public BaseSequencer<BeepChunk> {
 private:
-    const PinOutputPWM_t IPin;
-    uint32_t CurrFreq = 0;
-    void ISwitchOff() { IPin.Set(0); }
+    const PinOutputPWM_t ipin;
+    uint32_t curr_freq = 0;
+    void ISwitchOff() { ipin.Set(0); }
     SequencerLoopTask_t ISetup() {
-        IPin.Set(pcurrent_chunk->volume);
+        ipin.Set(pcurrent_chunk->volume);
         if(pcurrent_chunk->freq_smooth == 0) { // If smooth time is zero, set now
-            CurrFreq = pcurrent_chunk->freq_Hz;
-            IPin.SetFrequencyHz(CurrFreq);
+            curr_freq = pcurrent_chunk->freq_Hz;
+            ipin.SetFrequencyHz(curr_freq);
             pcurrent_chunk++;   // goto next
         }
         else {
-            if     (CurrFreq < pcurrent_chunk->freq_Hz) CurrFreq += 100;
-            else if(CurrFreq > pcurrent_chunk->freq_Hz) CurrFreq -= 100;
-            IPin.SetFrequencyHz(CurrFreq);
+            if     (curr_freq < pcurrent_chunk->freq_Hz) curr_freq += 100;
+            else if(curr_freq > pcurrent_chunk->freq_Hz) curr_freq -= 100;
+            ipin.SetFrequencyHz(curr_freq);
             // Check if completed now
-            if(CurrFreq == pcurrent_chunk->freq_Hz) pcurrent_chunk++;
+            if(curr_freq == pcurrent_chunk->freq_Hz) pcurrent_chunk++;
             else { // Not completed
                 // Calculate time to next adjustment
-                uint32_t Delay = (pcurrent_chunk->freq_smooth / (CurrFreq+4)) + 1;
+                uint32_t Delay = (pcurrent_chunk->freq_smooth / (curr_freq+4)) + 1;
                 SetupDelay(Delay);
                 return sltBreak;
             } // Not completed
@@ -39,13 +39,13 @@ private:
         return sltProceed;
     }
 public:
-    Beeper(const PwmSetup_t APinSetup) : BaseSequencer(), IPin(APinSetup) {}
-    void Init() { IPin.Init(); }
+    Beeper(const PwmSetup APinSetup) : BaseSequencer(), ipin(APinSetup) {}
+    void Init() { ipin.Init(); }
     void Beep(uint32_t Freq_Hz, uint8_t Volume) {
-        IPin.SetFrequencyHz(Freq_Hz);
-        IPin.Set(Volume);
+        ipin.SetFrequencyHz(Freq_Hz);
+        ipin.Set(Volume);
     }
-    void Off() { IPin.Set(0); }
+    void Off() { ipin.Set(0); }
 };
 
 #endif //BEEPER_H__
