@@ -310,7 +310,7 @@ void VirtualTimer::Set(systime_t delay, vtfunc_t acallback, void *param) {
 void TmrEvtCallback(void *p) {
     Sys::LockFromIRQ();
     EvtTimer *vt = (EvtTimer*)p;
-    EvtQMain.SendNowOrExitI(EvtMsg_t(vt->evt_id));
+    evt_q_main.SendNowOrExitI(EvtMsg(vt->evt_id));
     if(vt->tmr_type == vt->Type::Periodic) vt->StartI();
     Sys::UnlockFromIRQ();
 }
@@ -620,7 +620,7 @@ void Semaphore::Signal() {
 
 // Setup the context switching frame represented by an McuIntCtx_t structure
 #define SETUP_CONTEXT(pThd, pThdFunc) {                                      \
-    (pThd)->IntCtx = (McuIntCtx_t*)((uint8_t*)(pThd) - sizeof(McuIntCtx_t)); \
+    (pThd)->IntCtx = (McuIntCtx*)((uint8_t*)(pThd) - sizeof(McuIntCtx)); \
     (pThd)->IntCtx->r4 = (regarm_t)(pThdFunc);                               \
     (pThd)->IntCtx->lr = (regarm_t)_port_thread_start;                       \
 }

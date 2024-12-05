@@ -16,7 +16,7 @@
 // Universal callback to run IrqHandler by timer
 void VTmrUniversalCb(void *p) {
     Sys::LockFromIRQ();
-    ((IrqHandler_t*)p)->IIrqHandlerI();
+    ((IrqHandler*)p)->IIrqHandlerI();
     Sys::UnlockFromIRQ();
 }
 
@@ -119,38 +119,38 @@ void Seed(uint32_t Seed) { next = Seed; }
 
 } // namespace
 
-namespace gpio { // ========================== GPIO ============================
+namespace Gpio { // ========================== GPIO ============================
 
-void SetupOut(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode OutMode, const Speed ASpeed) {
-    RCU->EnGpio(PGpio);
+void SetupOut(GPIO_TypeDef *pgpio, const uint32_t PinN, const OutMode OutMode, const Speed ASpeed) {
+    RCU->EnGpio(pgpio);
     uint32_t CtlMode = ((uint32_t)OutMode << 2) | ((uint32_t)ASpeed & 0b11UL);
-    PGpio->SetCtlMode(PinN, CtlMode);
-    if(ASpeed == speed120MHz) PGpio->SPD |= 1UL << PinN;
-    else PGpio->SPD &= ~(1UL << PinN);
+    pgpio->SetCtlMode(PinN, CtlMode);
+    if(ASpeed == speed120MHz) pgpio->SPD |= 1UL << PinN;
+    else pgpio->SPD &= ~(1UL << PinN);
 }
 
-void SetupInput(GPIO_TypeDef *PGpio, const uint32_t PinN, const PullUpDown PullUpDown) {
-    RCU->EnGpio(PGpio);
-    if(PullUpDown == PullNone) PGpio->SetCtlMode(PinN, 0b0100UL); // Floating input
+void SetupInput(GPIO_TypeDef *pgpio, const uint32_t PinN, const PullUpDown PullUpDown) {
+    RCU->EnGpio(pgpio);
+    if(PullUpDown == PullNone) pgpio->SetCtlMode(PinN, 0b0100UL); // Floating input
     else {
-        PGpio->SetCtlMode(PinN, 0b1000); // Input with pullup/pulldown
-        if(PullUpDown == PullDown) PGpio->OCTL &= ~(1UL << PinN);
-        else PGpio->OCTL |= 1UL << PinN;
+        pgpio->SetCtlMode(PinN, 0b1000); // Input with pullup/pulldown
+        if(PullUpDown == PullDown) pgpio->OCTL &= ~(1UL << PinN);
+        else pgpio->OCTL |= 1UL << PinN;
     }
 }
 
-void SetupAnalog(GPIO_TypeDef *PGpio, const uint32_t PinN) {
-    RCU->EnGpio(PGpio);
-    PGpio->SetCtlMode(PinN, 0); // Clear both mode and cnf
+void SetupAnalog(GPIO_TypeDef *pgpio, const uint32_t PinN) {
+    RCU->EnGpio(pgpio);
+    pgpio->SetCtlMode(PinN, 0); // Clear both mode and cnf
 }
 
-void SetupAlterFunc(GPIO_TypeDef *PGpio, const uint32_t PinN, const OutMode OutMode, const Speed ASpeed) {
-    RCU->EnGpio(PGpio);
+void SetupAlterFunc(GPIO_TypeDef *pgpio, const uint32_t PinN, const OutMode OutMode, const Speed ASpeed) {
+    RCU->EnGpio(pgpio);
     RCU->EnAFIO();
     uint32_t CtlMode = ((uint32_t)OutMode << 2) | 0b1000UL | ((uint32_t)ASpeed & 0b11UL);
-    PGpio->SetCtlMode(PinN, CtlMode);
-    if(ASpeed == speed120MHz) PGpio->SPD |= 1UL << PinN;
-    else PGpio->SPD &= ~(1UL << PinN);
+    pgpio->SetCtlMode(PinN, CtlMode);
+    if(ASpeed == speed120MHz) pgpio->SPD |= 1UL << PinN;
+    else pgpio->SPD &= ~(1UL << PinN);
 }
 
 } // namespace Gpio
@@ -161,7 +161,7 @@ extern "C" {
 extern void PrintfCNow(const char *format, ...);
 
 #if INDIVIDUAL_EXTI_IRQ_REQUIRED
-IrqHandler_t* ExtiIrqHandler[16];
+IrqHandler* ExtiIrqHandler[16];
 #else
 ftVoidVoid ExtiIrqHandler[5], ExtiIrqHandler_9_5, ExtiIrqHandler_15_10;
 #endif // INDIVIDUAL_EXTI_IRQ_REQUIRED
@@ -313,14 +313,14 @@ void i2c_t::Standby() {
         Nvic::DisableVector(I2C1_ER_IRQn);
     }
     // Disable GPIOs
-    gpio::SetupAnalog(PGpioScl, PinScl);
-    gpio::SetupAnalog(PGpioSda, PinSda);
+    Gpio::SetupAnalog(PGpioScl, PinScl);
+    Gpio::SetupAnalog(PGpioSda, PinSda);
 }
 
 void i2c_t::Resume() {
     // GPIO
-    gpio::SetupAlterFunc(PGpioScl, PinScl, gpio::OpenDrain, gpio::speed50MHz);
-    gpio::SetupAlterFunc(PGpioSda, PinSda, gpio::OpenDrain, gpio::speed50MHz);
+    Gpio::SetupAlterFunc(PGpioScl, PinScl, Gpio::OpenDrain, Gpio::speed50MHz);
+    Gpio::SetupAlterFunc(PGpioSda, PinSda, Gpio::OpenDrain, Gpio::speed50MHz);
 #if I2C_USE_SEMAPHORE
     chBSemObjectInit(&BSemaphore, NOT_TAKEN);
 #endif
@@ -453,13 +453,13 @@ retv i2c_t::WriteRead(uint8_t Addr, uint8_t *WPtr,  uint32_t WLength, uint8_t *R
         pi2c->ClearAddrFlag();
         // Prepare context
         IAddr = Addr << 1; // Addr shifted & WriteBit (LSB = 0)
-        IBufW.Ptr = WPtr;
+        IBufW.ptr = WPtr;
         IBufW.Sz = WLength;
-        IBufR.Ptr = RPtr;
+        IBufR.ptr = RPtr;
         IBufR.Sz = RLength;
         // Start transmission
         Sys::Lock();
-        PThd = Sys::GetSelfThd();
+        pthd = Sys::GetSelfThd();
         pi2c->EnAllIRQs();
         pi2c->Enable();
         pi2c->SendStart();
@@ -512,7 +512,7 @@ void i2c_t::OnTransmissionEnd(retv Rslt) {
     pi2c->SendStop();
     DisableAndClearIRQs();
     Sys::LockFromIRQ();
-    Sys::WakeI(&PThd, Rslt);
+    Sys::WakeI(&pthd, Rslt);
     Sys::UnlockFromIRQ();
 }
 
@@ -549,8 +549,8 @@ void i2c_t::IProcessIRQ() {
         // TX buf empty, send bytes until flag is set
         if(stat0 & I2C_STAT0_TBE) {
             while(IBufW.Sz > 0 and (pi2c->STAT0 & I2C_STAT0_TBE)) { // Fill i2c buf until flag allows it
-                pi2c->SendData(*IBufW.Ptr);
-                IBufW.Ptr++;
+                pi2c->SendData(*IBufW.ptr);
+                IBufW.ptr++;
                 IBufW.Sz--;
             }
             if(IBufW.Sz == 0) { // Tx buf ended
@@ -560,8 +560,8 @@ void i2c_t::IProcessIRQ() {
         }
         // RX buf contains data
         if(stat0 & I2C_STAT0_RBNE) {
-            *IBufR.Ptr = pi2c->GetData();
-            IBufR.Ptr++;
+            *IBufR.ptr = pi2c->GetData();
+            IBufR.ptr++;
             IBufR.Sz--;
             if(IBufR.Sz == 0) OnTransmissionEnd(retv::Ok);
             else if(IBufR.Sz == 1) {
@@ -629,12 +629,12 @@ void DMA_t::Init(volatile void* PeriphAddr, uint32_t AMode) const {
     SetMode(AMode);
 }
 
-void DMA_t::Init(volatile void* PeriphAddr, void* MemAddr, uint32_t AMode, uint16_t Cnt) const {
+void DMA_t::Init(volatile void* PeriphAddr, void* MemAddr, uint32_t AMode, uint16_t cnt) const {
     Init();
     SetPeriphAddr(PeriphAddr);
     SetMemoryAddr(MemAddr);
     SetMode(AMode);
-    SetTransferDataCnt(Cnt);
+    SetTransferDataCnt(cnt);
 }
 
 void DMA_t::ClearIrq() const { // DMA0: chnls [0;6]; DMA1: chnls [7;11]
@@ -694,7 +694,7 @@ static void DmaIrqHandler(void *p, uint32_t flags) {
     Sys::UnlockFromIRQ();
 }
 
-void Init(const Params& Setup) {
+void Init(const params& Setup) {
     IDoneCallback = Setup.DoneCallbackI;
     // Clock
     RCU->SetAdcPsc(Setup.AdcClkPrescaler);
@@ -706,7 +706,7 @@ void Init(const Params& Setup) {
     ADC0->SetSequenceLength(Setup.Channels.size());
     uint32_t SeqIndx = 0;    // First sequence item is 0
     for(auto& Chnl : Setup.Channels) {
-        if(Chnl.GPIO != nullptr) gpio::SetupAnalog(Chnl.GPIO, Chnl.Pin);
+        if(Chnl.GPIO != nullptr) Gpio::SetupAnalog(Chnl.GPIO, Chnl.Pin);
         ADC0->SetChannelSampleTime(Chnl.ChannelN, Setup.SampleTime);
         ADC0->SetSequenceItem(SeqIndx++, Chnl.ChannelN);
     }
@@ -749,14 +749,14 @@ uint32_t Adc2mV(uint32_t AdcChValue, uint32_t VrefValue) {
 #endif
 
 #if 1 // ================================= SPI =================================
-void Spi_t::Setup(BitOrder BitOrdr, cpol CPOL, cpha CPHA, int32_t Bitrate_Hz, BitNumber BitNum) const {
+void SpiHw::Setup(BitOrder BitOrdr, Cpol CPOL, Cpha CPHA, int32_t Bitrate_Hz, BitNumber BitNum) const {
     RCU->EnSpi(PSpi); // Clocking
     // Mode: Master, NSS software controlled and is 1, 8bit, NoCRC, FullDuplex
     PSpi->CTL0 = SPI_CTL0_SWNSSEN | SPI_CTL0_SWNSS | SPI_CTL0_MSTMOD;
     PSpi->CTL1 = 0; // All irqs and DMA are disabled
     if(BitOrdr == BitOrder::LSB) PSpi->CTL0 |= SPI_CTL0_LF;    // MSB/LSB
-    if(CPOL == cpol::IdleHigh)   PSpi->CTL0 |= SPI_CTL0_CKPL;  // CPOL
-    if(CPHA == cpha::SecondEdge) PSpi->CTL0 |= SPI_CTL0_CKPH;  // CPHA
+    if(CPOL == Cpol::IdleHigh)   PSpi->CTL0 |= SPI_CTL0_CKPL;  // CPOL
+    if(CPHA == Cpha::SecondEdge) PSpi->CTL0 |= SPI_CTL0_CKPH;  // CPHA
     // Baudrate
     int32_t div;
     if(PSpi == SPI0) div = Clk::APB2FreqHz / Bitrate_Hz;
@@ -773,16 +773,16 @@ void Spi_t::Setup(BitOrder BitOrdr, cpol CPOL, cpha CPHA, int32_t Bitrate_Hz, Bi
     if(BitNum == BitNumber::n16) PSpi->CTL0 |= SPI_CTL0_FF16;
 }
 
-void Spi_t::EnQuadWrite() {
+void SpiHw::EnQuadWrite() {
     PSpi->WaitForTBEHiAndTransLo();
     PSpi->QCTL = SPI_QCTL_QMOD;
 }
 
-void Spi_t::EnQuadRead() {
+void SpiHw::EnQuadRead() {
     PSpi->WaitForTransLo();
     PSpi->QCTL = SPI_QCTL_QMOD | SPI_QCTL_QRD;
 }
-void Spi_t::DisQuad() {
+void SpiHw::DisQuad() {
     PSpi->WaitForTBEHiAndTransLo();
     PSpi->QCTL = 0;
 }
@@ -892,11 +892,11 @@ void LockOptionBytes() {
     LockFlash();
 }
 
-retv WriteOptionByteSPC(uint32_t Value) {
+retv WriteOptionByteSPC(uint32_t value) {
     FMC->WS &= ~FMC_WS_PGW; // Clear PGW to enable 32-bit write access to Flash
-    // Prepare DWORD to write: put Value to SPC and ~Value to SPC_N
-    Value = Value & 0xFFUL; // Leave LSByte only
-    uint32_t dw32 = (OPTBYTES->SPC_USER32 & 0xFFFF0000) | Value | ((Value ^ 0xFFUL) << 8);
+    // Prepare DWORD to write: put value to SPC and ~value to SPC_N
+    value = value & 0xFFUL; // Leave LSByte only
+    uint32_t dw32 = (OPTBYTES->SPC_USER32 & 0xFFFF0000) | value | ((value ^ 0xFFUL) << 8);
     ClearPendingFlags();
     UnlockOptionBytes();
     retv Rslt = WaitForLastOperation(FLASH_ProgramTimeout);
@@ -1017,11 +1017,11 @@ void ClearPending(IRQn_Type IrqN) { NVIC->ICPR[(uint32_t)IrqN >> 5] = 1 << ((uin
 } // namespace
 
 #if 1 // ========================== HW Timer ===================================
-void HwTim::SetInputFreqChangingPrescaler(uint32_t FreqHz) const {
+void TimHw::SetInputFreqChangingPrescaler(uint32_t FreqHz) const {
     itmr->PSC = (Clk::GetTimInputFreq(itmr) / FreqHz) - 1;
 }
 
-void HwTim::SetUpdateFreqChangingPrescaler(uint32_t FreqHz) const {
+void TimHw::SetUpdateFreqChangingPrescaler(uint32_t FreqHz) const {
     // Figure out input timer freq
     uint32_t UpdFreqMax = Clk::GetTimInputFreq(itmr) / (GetTopValue() + 1);
     uint32_t Psc = UpdFreqMax / FreqHz;
@@ -1031,7 +1031,7 @@ void HwTim::SetUpdateFreqChangingPrescaler(uint32_t FreqHz) const {
     GenerateUpdateEvt();
 }
 
-void HwTim::SetUpdateFreqChangingTopValue(uint32_t FreqHz) const {
+void TimHw::SetUpdateFreqChangingTopValue(uint32_t FreqHz) const {
     uint32_t UpdFreqMax = Clk::GetTimInputFreq(itmr) / (GetPrescaler() + 1);
     uint32_t TopVal  = (UpdFreqMax / FreqHz);
     if(TopVal != 0) TopVal--;
@@ -1040,7 +1040,7 @@ void HwTim::SetUpdateFreqChangingTopValue(uint32_t FreqHz) const {
     GenerateUpdateEvt();
 }
 
-void HwTim::SetUpdateFreqChangingBoth(uint32_t FreqHz) const {
+void TimHw::SetUpdateFreqChangingBoth(uint32_t FreqHz) const {
     uint32_t Psc = (Clk::GetTimInputFreq(itmr) / FreqHz) / 0x10000;
     SetPrescaler(Psc);
     SetUpdateFreqChangingTopValue(FreqHz);
@@ -1050,12 +1050,12 @@ void HwTim::SetUpdateFreqChangingBoth(uint32_t FreqHz) const {
 // PWM
 void PinOutputPWM_t::Init() const {
     // GPIO
-    gpio::SetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType);
+    Gpio::SetupAlterFunc(ISetup.pgpio, ISetup.Pin, ISetup.output_mode);
     // Timer
     RCU->EnTimer(ISetup.PTimer);
     ISetup.PTimer->CCHP = 0xC000;
     ISetup.PTimer->CTL0 |= 1UL << 7; // Auto-reload shadow enable
-    ISetup.PTimer->SetTopValue(ISetup.TopValue);
+    ISetup.PTimer->SetTopValue(ISetup.top_value);
     uint32_t tmp = (ISetup.Inverted == invInverted)? 0b111UL : 0b110UL; // PWM mode 1 or 2
     switch(ISetup.TimerChnl) {
         case 0:

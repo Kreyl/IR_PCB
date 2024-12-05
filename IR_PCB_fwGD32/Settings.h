@@ -2,7 +2,7 @@
  * Settings.h
  *
  *  Created on: 20.11.2022
- *      Author: layst
+ *      Author: Kreyl
  */
 
 #ifndef SETTINGS_H_
@@ -225,8 +225,8 @@ private:
     static constexpr const char* kGrpBehavior = "Behavior";
 public:
     // IDs
-    ValueMinMax player_id { 0, 0, 127, kGrpIDs, "PlayerID", "Player ID, must be unique" };
-    ValueMinMax team_id   { 0, 0,  3,  kGrpIDs, "TeamID", "Team ID, must be unique" };
+    ValueMinMax player_id          {  0, 0, 127, kGrpIDs, "PlayerID", "Player ID, must be unique" };
+    ValueMinMax team_id            {  0, 0,   3, kGrpIDs, "TeamID", "Team ID, must be unique" };
     ValueMinMaxDef super_damage_id { 70, 0, 127, kGrpIDs, "SuperDamageID", "A shot from him completely removes all hits" };
     // Counts
     ValueMinMaxDefInf hit_cnt          { 4, 1, 254, kGrpCounts, "HitCnt", "Number of hits, can be unlimited" };
@@ -237,7 +237,7 @@ public:
     ValueMinMaxDef magaz_reload_delay_s {   4, 0,   60, kGrpDelays, "MagazReloadDelay", "Interval between autoreloading of magazines, s" };
     ValueMinMaxDef min_delay_btw_hits_s {   0, 0,   60, kGrpDelays, "MinDelayBetwHits", "Minimum delay between hits loss, s (when 0, it is possible to loose all within a second)" };
     // IR RX
-    ValueMinMaxDef ir_rx_deviation { 150, 1, 600, kGrpIrRx, "Deviation", "Deviation of received pulse length, us. Larger is more tolerant" };
+    ValueMinMaxDef ir_rx_deviation      { 150, 1,  600, kGrpIrRx, "Deviation", "Deviation of received pulse length, us. Larger is more tolerant" };
     // IR TX
     ValueMinMaxDef ir_tx_pwr  {     90,     1,    255, kGrpIrTx, "TXPwr", "Power of IR output" };
     ValueMinMaxDef ir_tx_freq {  56000, 30000,  56000, kGrpIrTx, "TXFreq", "IR transmission modulation frequency, Hz" };

@@ -1,8 +1,8 @@
 /*
  * app_classes.h
  *
- *  Created on: 1 сент. 2024 г.
- *      Author: layst
+ *  Created on: 1.09.2024
+ *      Author: Kreyl
  */
 
 #ifndef APP_CLASSES_H_
@@ -21,18 +21,18 @@ enum class AppEvt : uint8_t {
 };
 
 union AppMsg {
-    uint32_t dword;
+    uint32_t dw32;
     struct {
         uint16_t data16;
         uint8_t data8;
         AppEvt evt;
     } __attribute__((__packed__));
 
-    AppMsg& operator = (const AppMsg &Right) {
-        dword = Right.dword;
+    AppMsg& operator = (const AppMsg &right) {
+        dw32 = right.dw32;
         return *this;
     }
-    AppMsg() : dword(0) {}
+    AppMsg() : dw32(0) {}
     AppMsg(AppEvt aevt) : data16(0), data8(0), evt(aevt) {}
     AppMsg(AppEvt aevt, uint16_t adata16) : data16(adata16), evt(aevt) {}
     AppMsg(AppEvt aevt, uint8_t adata8, uint16_t adata16) : data16(adata16), data8(adata8), evt(aevt) {}
@@ -52,9 +52,9 @@ private:
     friend void PulserCallback(void *p);
     void IOnTmrDone() { SetLo(); }
 public:
-    PulserPin(GPIO_TypeDef *APGPIO, uint16_t APin) : Pin_t(APGPIO, APin) {}
-    void Init() { Pin_t::SetupOut(gpio::PushPull); }
-    void PulseI(uint32_t Dur);
+    PulserPin(GPIO_TypeDef *apgpio, uint16_t apin) : Pin_t(apgpio, apin) {}
+    void Init() { Pin_t::SetupOut(Gpio::PushPull); }
+    void PulseI(uint32_t dur);
     void ResetI();
     void SetHi() { Pin_t::SetHi(); }
     void SetLo() { Pin_t::SetLo(); }
@@ -73,21 +73,21 @@ private:
     uint32_t pin_n;
     PinMode mode;
 public:
-    CustomOutPin(GPIO_TypeDef *apgpio, uint32_t apin_n) :
-        pgpio(apgpio), pin_n(apin_n), mode(PinMode::PushPullActiveHi) {}
+    CustomOutPin(GPIO_TypeDef *apgpio, uint32_t apin) :
+        pgpio(apgpio), pin_n(apin), mode(PinMode::PushPullActiveHi) {}
 
     void SetActive() {
         if(mode == PinMode::PushPullActiveHi or mode == PinMode::OpenDrainActiveHi)
-            gpio::SetHi(pgpio, pin_n);
+            Gpio::SetHi(pgpio, pin_n);
         else
-            gpio::SetLo(pgpio, pin_n);
+            Gpio::SetLo(pgpio, pin_n);
     }
 
     void SetInactive() {
         if(mode == PinMode::PushPullActiveHi or mode == PinMode::OpenDrainActiveHi)
-            gpio::SetLo(pgpio, pin_n);
+            Gpio::SetLo(pgpio, pin_n);
         else
-            gpio::SetHi(pgpio, pin_n);
+            Gpio::SetHi(pgpio, pin_n);
     }
 
     void SetActive(bool be_active) {
@@ -105,11 +105,11 @@ public:
     void SetMode(PinMode amode) {
         mode = amode;
         pgpio->SPD &= ~(1UL << pin_n); // No need in 120 MHz speed
-        uint32_t ctl_mode = static_cast<uint32_t>(gpio::Speed::speed10MHz) & 0b11UL;
+        uint32_t ctl_mode = static_cast<uint32_t>(Gpio::Speed::speed10MHz) & 0b11UL;
         if(mode == PinMode::PushPullActiveHi or mode == PinMode::PushPullActiveLo)
-            ctl_mode |= static_cast<uint32_t>(gpio::OutMode::PushPull) << 2;
+            ctl_mode |= static_cast<uint32_t>(Gpio::OutMode::PushPull) << 2;
         else
-            ctl_mode |= static_cast<uint32_t>(gpio::OutMode::OpenDrain) << 2;
+            ctl_mode |= static_cast<uint32_t>(Gpio::OutMode::OpenDrain) << 2;
         pgpio->SetCtlMode(pin_n, ctl_mode);
     }
 
@@ -124,8 +124,8 @@ class InputPinIrqTimed : public PinIrq {
 private:
     systime_t start_time_st = 0;
 public:
-    InputPinIrqTimed(GPIO_TypeDef *apgpio, uint16_t apin_n, gpio::PullUpDown apull_up_down):
-        PinIrq(apgpio, apin_n, apull_up_down, InputPinIrqHandlerI) {}
+    InputPinIrqTimed(GPIO_TypeDef *apgpio, uint16_t apin, Gpio::PullUpDown apull_up_down):
+        PinIrq(apgpio, apin, apull_up_down, InputPinIrqHandlerI) {}
     void Init() {
         PinIrq::Init(ttRising);
         CleanIrqFlag();
@@ -156,19 +156,19 @@ Capture: period    pulse width
 
 void PwmInputTimCallback(void *p);
 
-class PwmInputPin : private HwTim {
+class PwmInputPin : private TimHw {
 private:
     GPIO_TypeDef *pgpio;
     uint16_t pin_n;
-    gpio::PullUpDown pull_up_down;
+    Gpio::PullUpDown pull_up_down;
     VirtualTimer vtmr;
     friend void PwmInputTimCallback(void *p);
 
     void TimerCallback() {
         Sys::LockFromIRQ(); // The callback is invoked outside the kernel critical zone
         // Are there new values?
-        bool ch0_capture_occured = HwTim::itmr->INTF & TIM_INTF_CH0IF;
-        bool ch1_capture_occured = HwTim::itmr->INTF & TIM_INTF_CH1IF;
+        bool ch0_capture_occured = TimHw::itmr->INTF & TIM_INTF_CH0IF;
+        bool ch1_capture_occured = TimHw::itmr->INTF & TIM_INTF_CH1IF;
         if(!ch0_capture_occured and !ch1_capture_occured) { // No new values
             if(pwm_duty != 0) { // There was an impulse before and now it has gone
                 pwm_duty = 0; // Means no pulses
@@ -178,8 +178,8 @@ private:
         // Both width and period are captured. Ignore if only one value is done.
         else if(ch0_capture_occured and ch1_capture_occured) {
             // Calc new duty
-            int32_t period = HwTim::itmr->CH0CV;
-            int32_t pulse_width = HwTim::itmr->CH1CV;
+            int32_t period = TimHw::itmr->CH0CV;
+            int32_t pulse_width = TimHw::itmr->CH1CV;
             int32_t new_pwm_duty = (period == 0)? 0 : (100UL * pulse_width) / period;
             // Check if changed
             int32_t diff = pwm_duty - new_pwm_duty;
@@ -196,29 +196,29 @@ private:
 public:
     volatile int32_t pwm_duty=0;
 
-    PwmInputPin(GPIO_TypeDef *apgpio, uint16_t apin_n, gpio::PullUpDown apull_up_down,
-            TIM_TypeDef *aptimer) : HwTim(aptimer),
-                pgpio(apgpio), pin_n(apin_n), pull_up_down(apull_up_down) {}
+    PwmInputPin(GPIO_TypeDef *apgpio, uint16_t apin, Gpio::PullUpDown apull_up_down,
+            TIM_TypeDef *aptimer) : TimHw(aptimer),
+                pgpio(apgpio), pin_n(apin), pull_up_down(apull_up_down) {}
 
     void Init() {
-        gpio::SetupInput(pgpio, pin_n, pull_up_down);
-        HwTim::Init();
-        HwTim::SetTopValue(0xFFFF); // Maximum
+        Gpio::SetupInput(pgpio, pin_n, pull_up_down);
+        TimHw::Init();
+        TimHw::SetTopValue(0xFFFF); // Maximum
         // === Input0 === on the rising edge, perform a capture and restart
-        HwTim::SetInputActiveEdge(0, RiseFall::Rising); // CI0FE0 is Active Rising (CI1FE0 also, but not used)
+        TimHw::SetInputActiveEdge(0, RiseFall::Rising); // CI0FE0 is Active Rising (CI1FE0 also, but not used)
         // Setup input mode for Channel0: capture Input0 (IS0 = CI0FE0)
-        HwTim::SetChnlMode(0, HwTim::ChnlMode::CI0FE0); // Chnl0 is input, capture on Input0's CI0FE0 signal
+        TimHw::SetChnlMode(0, TimHw::ChnlMode::CI0FE0); // Chnl0 is input, capture on Input0's CI0FE0 signal
         // Restart timer on trigger; trigger is CI0FE0
-        HwTim::SetTriggerInput(HwTim::TriggerIn::CI0FE0); // Use Input0's CI0FE0 as TriggerIn
-        HwTim::SelectSlaveMode(HwTim::SlaveMode::Restart); // Configure slave mode controller in Restart mode
-        HwTim::EnChnl(0); // Enable capture on channel 0
+        TimHw::SetTriggerInput(TimHw::TriggerIn::CI0FE0); // Use Input0's CI0FE0 as TriggerIn
+        TimHw::SelectSlaveMode(TimHw::SlaveMode::Restart); // Configure slave mode controller in Restart mode
+        TimHw::EnChnl(0); // Enable capture on channel 0
         // === Input1 === on the falling edge, perform capture
-        HwTim::SetInputActiveEdge(1, RiseFall::Falling); // CI0FE1 is Active Falling (CI1FE1 also, but not used)
+        TimHw::SetInputActiveEdge(1, RiseFall::Falling); // CI0FE1 is Active Falling (CI1FE1 also, but not used)
         // Setup input mode for Channel1: capture Input0 (IS1 = CI0FE1)
-        HwTim::SetChnlMode(1, HwTim::ChnlMode::CI0FE1); // Chnl0 is input, capture on Input0's CI0FE1 signal
-        HwTim::EnChnl(1); // Enable capture on channel 1
+        TimHw::SetChnlMode(1, TimHw::ChnlMode::CI0FE1); // Chnl0 is input, capture on Input0's CI0FE1 signal
+        TimHw::EnChnl(1); // Enable capture on channel 1
         // === Start Timer ===
-        HwTim::Enable();
+        TimHw::Enable();
         vtmr.Set(TIME_MS2I(INPUT_PWM_CHECK_PERIOD_ms), PwmInputTimCallback, this);
     }
 };

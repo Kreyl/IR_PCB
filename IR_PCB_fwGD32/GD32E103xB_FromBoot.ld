@@ -4,7 +4,7 @@ __main_stack_size__     = 0x0400;
 __process_stack_size__  = 0x0400;
 
 MEMORY {
-    flash (xr)   : org = 0x08000000, len = 128k
+    flash (xr)   : org = 0x08006000, len = 104k
     ram   (xrw)  : org = 0x20000000, len = 32k
 }
 

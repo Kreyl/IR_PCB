@@ -16,7 +16,7 @@ private:
     const PinOutputPWM_t ipin;
     uint32_t curr_freq = 0;
     void ISwitchOff() { ipin.Set(0); }
-    SequencerLoopTask_t ISetup() {
+    SequencerLoopTask ISetup() {
         ipin.Set(pcurrent_chunk->volume);
         if(pcurrent_chunk->freq_smooth == 0) { // If smooth time is zero, set now
             curr_freq = pcurrent_chunk->freq_Hz;

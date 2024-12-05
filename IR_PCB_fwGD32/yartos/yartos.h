@@ -202,13 +202,13 @@ struct Thread {
 };
 
 #define THD_IRQ_REQUIRED_STACK  64 // Per-thread stack overhead for interrupts servicing.
-#define THD_REQUIRED_STACK_SZ   (sizeof(McuIntCtx_t) + sizeof(McuExtCtx_t) + (size_t)THD_IRQ_REQUIRED_STACK)
+#define THD_REQUIRED_STACK_SZ   (sizeof(McuIntCtx) + sizeof(McuIntCtx) + (size_t)THD_IRQ_REQUIRED_STACK)
 #define MEM_ALIGN_MASK(a)       ((size_t)(a) - 1UL) // Alignment mask constant. Alignment must be a power of two
 #define MEM_ALIGN_PREV(p, a)    ((size_t)(p) & ~MEM_ALIGN_MASK(a))
 #define MEM_ALIGN_NEXT(p, a)    MEM_ALIGN_PREV((size_t)(p) + MEM_ALIGN_MASK(a), (a))
 #define MEM_IS_ALIGNED(p, a)    (((size_t)(p) & MEM_ALIGN_MASK(a)) == 0U)
 #define STACK_ALIGN             sizeof(stkalign_t)
-#define THD_WORKSPACE_SZ(n)     MEM_ALIGN_NEXT(sizeof(Thread_t) + THD_REQUIRED_STACK_SZ + (n), sizeof(stkalign_t))
+#define THD_WORKSPACE_SZ(n)     MEM_ALIGN_NEXT(sizeof(Thread) + THD_REQUIRED_STACK_SZ + (n), sizeof(stkalign_t))
 
 // Static working area allocation: used to allocate a static thread working area aligned as both position and size.
 #define THD_WORKSPACE(WsName, Sz) stkalign_t WsName[THD_WORKSPACE_SZ(Sz) / sizeof(stkalign_t)]

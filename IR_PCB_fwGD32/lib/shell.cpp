@@ -2,7 +2,7 @@
 #include "shell.h"
 #include "yartos.h"
 
-extern CmdUart_t dbg_uart;
+extern CmdUart dbg_uart;
 
 void Printf(const char *format, ...) {
     va_list args;
@@ -13,11 +13,11 @@ void Printf(const char *format, ...) {
     va_end(args);
 }
 
-void Printf(CmdUart_t &AUart, const char *format, ...) {
+void Printf(CmdUart &auart, const char *format, ...) {
     va_list args;
     va_start(args, format);
     Sys::Lock();
-    AUart.IVsPrintf(format, args);
+    auart.IVsPrintf(format, args);
     Sys::Unlock();
     va_end(args);
 }
@@ -48,7 +48,7 @@ void PrintfC(const char *format, ...) {
 } // extern C
 
 
-class PrintToBuf_t : public PrintfHelper {
+class PrintToBuf : public PrintfHelper {
 public:
     char *S;
     retv IPutChar(char c) {
@@ -58,15 +58,15 @@ public:
     void IStartTransmissionIfNotYet() {}
 };
 
-char* PrintfToBuf(char* PBuf, const char *format, ...) {
-    PrintToBuf_t PtB;
-    PtB.S = PBuf;
+char* PrintfToBuf(char* pbuf, const char *format, ...) {
+    PrintToBuf print_to_buf;
+    print_to_buf.S = pbuf;
     va_list args;
     va_start(args, format);
-    PtB.IVsPrintf(format, args);
+    print_to_buf.IVsPrintf(format, args);
     va_end(args);
-    *PtB.S = 0;
-    return PtB.S;
+    *print_to_buf.S = 0;
+    return print_to_buf.S;
 }
 
 #if PRINTF_FLOAT_EN

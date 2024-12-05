@@ -9,9 +9,9 @@
 class LedOnOff {
 protected:
     Pin_t ipin;
-    gpio::OutMode output_mode;
+    Gpio::OutMode output_mode;
 public:
-    LedOnOff(GPIO_TypeDef *apgpio, uint16_t apin, gpio::OutMode aoutput_mode) :
+    LedOnOff(GPIO_TypeDef *apgpio, uint16_t apin, Gpio::OutMode aoutput_mode) :
         ipin(apgpio, apin), output_mode(aoutput_mode) {}
     void Init() {
         ipin.SetupOut(output_mode);
@@ -26,13 +26,13 @@ public:
 class LedBlinker : public BaseSequencer<BaseChunk>, public LedOnOff {
 protected:
     void ISwitchOff() { Off(); }
-    SequencerLoopTask_t ISetup() {
+    SequencerLoopTask ISetup() {
         ipin.Set(pcurrent_chunk->value);
         pcurrent_chunk++;   // Always increase
         return sltProceed;  // Always proceed
     }
 public:
-    LedBlinker(GPIO_TypeDef *apgpio, uint16_t apin, gpio::OutMode aoutput_mode) :
+    LedBlinker(GPIO_TypeDef *apgpio, uint16_t apin, Gpio::OutMode aoutput_mode) :
         BaseSequencer(), LedOnOff(apgpio, apin, aoutput_mode) {}
 };
 #endif
@@ -44,7 +44,7 @@ protected:
     uint32_t ICurrentValue;
     const uint32_t PWMFreq;
     void ISwitchOff() { Set(0); }
-    SequencerLoopTask_t ISetup() {
+    SequencerLoopTask ISetup() {
         if(ICurrentValue != pcurrent_chunk->brightness) {
             if(pcurrent_chunk->value == 0) {     // If smooth time is zero,
                 ICurrentValue = pcurrent_chunk->brightness;
@@ -114,7 +114,7 @@ class LedRgbBlinker_t : public BaseSequencer<LedRGBChunk_t> {
 protected:
     PinOutputPushPull_t R, G, B;
     void ISwitchOff() { SetColor(clBlack); }
-    SequencerLoopTask_t ISetup() {
+    SequencerLoopTask ISetup() {
         SetColor(IPCurrentChunk->Color);
         IPCurrentChunk++;   // Always increase
         return sltProceed;  // Always proceed
@@ -146,9 +146,9 @@ protected:
         SetColor(clBlack);
         ICurrColor = clBlack;
     }
-    SequencerLoopTask_t ISetup() {
+    SequencerLoopTask ISetup() {
         if(ICurrColor != IPCurrentChunk->Color) {
-            if(IPCurrentChunk->Value == 0) {     // If smooth time is zero,
+            if(IPCurrentChunk->value == 0) {     // If smooth time is zero,
                 SetColor(IPCurrentChunk->Color); // set color now,
                 ICurrColor = IPCurrentChunk->Color;
                 IPCurrentChunk++;                // and goto next chunk
@@ -160,7 +160,7 @@ protected:
                 if(ICurrColor == IPCurrentChunk->Color) IPCurrentChunk++;
                 else { // Not completed
                     // Calculate time to next adjustment
-                    uint32_t Delay = ICurrColor.DelayToNextAdj(IPCurrentChunk->Color, IPCurrentChunk->Value);
+                    uint32_t Delay = ICurrColor.DelayToNextAdj(IPCurrentChunk->Color, IPCurrentChunk->value);
                     SetupDelay(Delay);
                     return sltBreak;
                 } // Not completed
@@ -262,9 +262,9 @@ protected:
         SetColor(clBlack);
         ICurrColor.V = 0;
     }
-    SequencerLoopTask_t ISetup() {
+    SequencerLoopTask ISetup() {
         if(ICurrColor != IPCurrentChunk->Color) {
-            if(IPCurrentChunk->Value == 0) {     // If smooth time is zero,
+            if(IPCurrentChunk->value == 0) {     // If smooth time is zero,
                 SetColor(IPCurrentChunk->Color); // set color now,
                 ICurrColor = IPCurrentChunk->Color;
                 IPCurrentChunk++;                // and goto next chunk
@@ -276,7 +276,7 @@ protected:
                 if(ICurrColor == IPCurrentChunk->Color) IPCurrentChunk++;
                 else { // Not completed
                     // Calculate time to next adjustment
-                    uint32_t Delay = ICurrColor.DelayToNextAdj(IPCurrentChunk->Color, IPCurrentChunk->Value);
+                    uint32_t Delay = ICurrColor.DelayToNextAdj(IPCurrentChunk->Color, IPCurrentChunk->value);
                     SetupDelay(Delay);
                     return sltBreak;
                 } // Not completed

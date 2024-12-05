@@ -2,7 +2,7 @@
  * ir_pkt.cpp
  *
  *  Created on: 1 июл. 2024 г.
- *      Author: layst
+ *      Author: Kreyl
  */
 
 #include "ir_pkt.h"

@@ -2,7 +2,7 @@
  * kl_string.cpp
  *
  *  Created on: 5 дек. 2020 г.
- *      Author: layst
+ *      Author: Kreyl
  */
 
 #include "kl_string.h"

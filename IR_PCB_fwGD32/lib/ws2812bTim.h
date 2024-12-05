@@ -32,7 +32,7 @@
 #define NPX_DMA             DMA1_Channel1 // Tim4 Update
 
 static const NpxParams NParams{NPX_PARAMS, NPX_DMA, NPX_LED_CNT, NpxParams::ClrType::RGB};
-Neopixels_t Leds{&NpxParams};
+Neopixels Leds{&NpxParams};
 */
 
 #include "gd_lib.h"
@@ -42,46 +42,46 @@ Neopixels_t Leds{&NpxParams};
 
 #define TICK_DUR_ns     20UL    // For 50MHz. Tune this.
 
-typedef std::vector<Color_t> ColorBuf_t;
+typedef std::vector<Color_t> ColorBuf;
 
 struct NpxParams {
     enum class ClrType {RGB=24UL, RGBW=32UL}; // RGB is 3 bytes = 24bits, RGBW is 4bytes = 32bits
-    GPIO_TypeDef *PGpio;
-    uint16_t Pin;
-    TIM_TypeDef *PTim;
-    uint32_t TimChnl;
-    DMAChannel_t *DmaChnlTx;
-    uint32_t NpxCnt;
-    ClrType Type;
+    GPIO_TypeDef *pgpio;
+    uint16_t pin_n;
+    TIM_TypeDef *ptim;
+    uint32_t tim_chnl;
+    DMAChannel_t *dma_chnl_tx;
+    uint32_t npx_cnt;
+    ClrType clr_type;
     NpxParams(
-            GPIO_TypeDef *APGpio, uint32_t APin,
-            TIM_TypeDef *APTim, uint32_t ATimChnl,
-            DMAChannel_t *ADmaChnlTx,
-            uint32_t NpxCnt, ClrType AType) :
-                PGpio(APGpio), Pin(APin), PTim(APTim), TimChnl(ATimChnl),
-                DmaChnlTx(ADmaChnlTx), NpxCnt(NpxCnt), Type(AType) {}
+            GPIO_TypeDef *apGpio, uint32_t apin,
+            TIM_TypeDef *aptim, uint32_t atim_chnl,
+            DMAChannel_t *adma_chnl_tx,
+            uint32_t npx_cnt, ClrType AType) :
+                pgpio(apGpio), pin_n(apin), ptim(aptim), tim_chnl(atim_chnl),
+                dma_chnl_tx(adma_chnl_tx), npx_cnt(npx_cnt), clr_type(AType) {}
 };
 
 
-class Neopixels_t {
+class Neopixels {
 private:
-    const NpxParams *Params;
-    uint32_t IBitBufCnt = 0;
-    uint16_t *IBitBuf = nullptr;
-    HwTim Tim;
-    DMA_t DmaTx;
+    const NpxParams *params;
+    uint32_t ibitbuf_cnt = 0;
+    uint16_t *ibitbuf = nullptr;
+    TimHw itim;
+    DMA_t dma_tx;
     void OnDmaDone();
     friend void NpxDmaDone(void *p, uint32_t flags);
 public:
-    bool TransmitDone = false;
-    ftVoidVoid OnTransmitEnd = nullptr;
-    Neopixels_t(const NpxParams *APParams);
+    bool transmit_done = false;
+    ftVoidVoid cb_on_transmit_end = nullptr;
+    Neopixels(const NpxParams *apparams);
     void SetCurrentColors();
-    ColorBuf_t ClrBuf;
+    ColorBuf clr_buf;
     void Init();
-    void SetAll(Color_t Clr) { std::fill(ClrBuf.begin(), ClrBuf.end(), Clr); }
+    void SetAll(Color_t clr) { std::fill(clr_buf.begin(), clr_buf.end(), clr); }
     bool AreOff() {
-        for(auto &IClr : ClrBuf) if(IClr != clBlack) return false;
+        for(auto &iclr : clr_buf) if(iclr != clBlack) return false;
         return true;
     }
 };

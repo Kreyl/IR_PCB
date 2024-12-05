@@ -1,7 +1,7 @@
 /*
  * kl_fs_common.cpp
  *
- *  Created on: 30 ���. 2016 �.
+ *  Created on: 2016
  *      Author: Kreyl
  */
 
@@ -10,63 +10,63 @@
 
 // Variables
 FILINFO file_info;
-DIR Dir;
+DIR dir;
 FIL common_file;
 static char istr[SD_STRING_SZ];
 
 #if 1 // ============================== Common =================================
-retv TryOpenFileRead(const char *Filename, FIL *PFile) {
-//    Printf("%S: %S; %X\r", __FUNCTION__, Filename, PFile);
-    FRESULT rslt = f_open(PFile, Filename, FA_READ);
+retv TryOpenFileRead(const char *filename, FIL *pfile) {
+//    Printf("%S: %S; %X\r", __FUNCTION__, filename, pfile);
+    FRESULT rslt = f_open(pfile, filename, FA_READ);
     if(rslt == FR_OK) {
         // Check if zero file
-        if(f_size(PFile) == 0) {
-            f_close(PFile);
-            Printf("Empty file %S\r", Filename);
+        if(f_size(pfile) == 0) {
+            f_close(pfile);
+            Printf("Empty file %S\r", filename);
             return retv::Empty;
         }
         return retv::Ok;
     }
     else {
-        if (rslt == FR_NO_FILE) Printf("%S: not found\r", Filename);
+        if (rslt == FR_NO_FILE) Printf("%S: not found\r", filename);
         else Printf("OpenFile error: %u\r", rslt);
         return retv::Fail;
     }
 }
 
-retv TryOpenFileRewrite(const char *Filename, FIL *PFile) {
-    FRESULT rslt = f_open(PFile, Filename, FA_WRITE+FA_CREATE_ALWAYS);
+retv TryOpenFileRewrite(const char *filename, FIL *pfile) {
+    FRESULT rslt = f_open(pfile, filename, FA_WRITE+FA_CREATE_ALWAYS);
     if(rslt == FR_OK) return retv::Ok;
     else {
-        Printf("%S open error: %u\r", Filename, rslt);
+        Printf("%S open error: %u\r", filename, rslt);
         return retv::Fail;
     }
 }
 
-void CloseFile(FIL *PFile) {
-    f_close(PFile);
+void CloseFile(FIL *pfile) {
+    f_close(pfile);
 }
 
-retv CheckFileNotEmpty(FIL *PFile) {
-    if(f_size(PFile) == 0) {
+retv CheckFileNotEmpty(FIL *pfile) {
+    if(f_size(pfile) == 0) {
         Printf("Empty file\r");
         return retv::Empty;
     }
     else return retv::Ok;
 }
 
-retv TryRead(FIL *PFile, void *Ptr, uint32_t Sz) {
-    uint32_t ReadSz=0;
-    uint8_t r = f_read(PFile, Ptr, Sz, &ReadSz);
-    return (r == FR_OK and ReadSz == Sz)? retv::Ok : retv::Fail;
+retv TryRead(FIL *pfile, void *ptr, uint32_t sz) {
+    uint32_t read_sz=0;
+    uint8_t r = f_read(pfile, ptr, sz, &read_sz);
+    return (r == FR_OK and read_sz == sz)? retv::Ok : retv::Fail;
 }
 
-retv ReadLine(FIL *PFile, char* S, uint32_t MaxLen) {
-    uint32_t Len = 0, Rcv;
+retv ReadLine(FIL *pfile, char* S, uint32_t max_len) {
+    uint32_t len = 0, rcvd_len;
     char c, str[2];
-    while(Len < MaxLen-1) {
-        if(f_read(PFile, str, 1, &Rcv) != FR_OK) return retv::Fail;
-        if(Rcv != 1) return retv::EndOfFile;
+    while(len < max_len-1) {
+        if(f_read(pfile, str, 1, &rcvd_len) != FR_OK) return retv::Fail;
+        if(rcvd_len != 1) return retv::EndOfFile;
         c = str[0];
         if(c == '\r' or c == '\n') {    // End of line
             *S = '\0';
@@ -74,56 +74,56 @@ retv ReadLine(FIL *PFile, char* S, uint32_t MaxLen) {
         }
         else {
             *S++ = c;
-            Len++;
+            len++;
         }
     } // while
     *S = '\0';
     return retv::Ok;
 }
 
-bool DirExists(const char* DirName) {
-    FRESULT Rslt = f_opendir(&Dir, DirName);
-    return (Rslt == FR_OK);
+bool DirExists(const char* dir_name) {
+    FRESULT rslt = f_opendir(&dir, dir_name);
+    return (rslt == FR_OK);
 }
 
-bool DirExistsAndContains(const char* DirName, const char* Extension) {
-    if(f_opendir(&Dir, DirName) == FR_OK) {
+bool DirExistsAndContains(const char* dir_name, const char* extension) {
+    if(f_opendir(&dir, dir_name) == FR_OK) {
         while(true) {
             // Empty names before reading
             *file_info.fname = 0;
 #if _USE_LFN
             *file_info.altname = 0;
 #endif
-            if(f_readdir(&Dir, &file_info) != FR_OK) return false;
+            if(f_readdir(&dir, &file_info) != FR_OK) return false;
             if((file_info.fname[0] == 0)
 #if _USE_LFN
                     and (file_info.altname[0] == 0)
 #endif
             ) return false;   // No files left
-            else { // Filename ok, check if not dir
+            else { // filename ok, check if not dir
                 if(!(file_info.fattrib & AM_DIR)) {
                     // Check the ext
 #if _USE_LFN
-                    char *FName = (file_info.fname[0] == 0)? file_info.altname : file_info.fname;
+                    char *fname = (file_info.fname[0] == 0)? file_info.altname : file_info.fname;
 #else
-                    char *FName = file_info.fname;
+                    char *fname = file_info.fname;
 #endif
-                    uint32_t Len = strlen(FName);
-                    if(Len > 4) {
-                        if(strncasecmp(&FName[Len-3], Extension, 3) == 0) return true;
-                    } // if Len>4
+                    uint32_t len = strlen(fname);
+                    if(len > 4) {
+                        if(strncasecmp(&fname[len-3], extension, 3) == 0) return true;
+                    } // if len>4
                 } // if not dir
-            } // Filename ok
+            } // filename ok
         } // while
     }
     else return false;
 }
 
-retv CountFilesInDir(const char* DirName, const char* Extension, uint32_t *PCnt) {
-    *PCnt = 0;
-    FRESULT Rslt = f_opendir(&Dir, DirName);
-//    Printf("f_opendir %S: %u\r", DirName, Rslt);
-    if(Rslt != FR_OK) return retv::Fail;
+retv CountFilesInDir(const char* dir_name, const char* extension, uint32_t *pcnt) {
+    *pcnt = 0;
+    FRESULT rslt = f_opendir(&dir, dir_name);
+//    Printf("f_opendir %S: %u\r", dir_name, rslt);
+    if(rslt != FR_OK) return retv::Fail;
     while(true) {
         // Empty names before reading
         *file_info.fname = 0;
@@ -131,83 +131,83 @@ retv CountFilesInDir(const char* DirName, const char* Extension, uint32_t *PCnt)
         *file_info.altname = 0;
 #endif
 
-        Rslt = f_readdir(&Dir, &file_info);
-        if(Rslt != FR_OK) return retv::Fail;
+        rslt = f_readdir(&dir, &file_info);
+        if(rslt != FR_OK) return retv::Fail;
         if((file_info.fname[0] == 0)
 #if _USE_LFN
                     and (file_info.altname[0] == 0)
 #endif
         ) return retv::Ok;   // No files left
-        else { // Filename ok, check if not dir
+        else { // filename ok, check if not dir
             if(!(file_info.fattrib & AM_DIR)) {
                 // Check Ext
 #if _USE_LFN
-                char *FName = (file_info.fname[0] == 0)? file_info.altname : file_info.fname;
+                char *fname = (file_info.fname[0] == 0)? file_info.altname : file_info.fname;
 #else
-                char *FName = file_info.fname;
+                char *fname = file_info.fname;
 #endif
-//                Printf("%S\r", FName);
-                uint32_t Len = strlen(FName);
-                if(Len > 4) {
-                    if(strncasecmp(&FName[Len-3], Extension, 3) == 0) (*PCnt)++;
-                } // if Len>4
+//                Printf("%S\r", fname);
+                uint32_t len = strlen(fname);
+                if(len > 4) {
+                    if(strncasecmp(&fname[len-3], extension, 3) == 0) (*pcnt)++;
+                } // if len>4
             } // if not dir
-        } // Filename ok
+        } // filename ok
     }
     return retv::Ok;
 }
 
-retv CountDirsStartingWith(const char* Path, const char* DirNameStart, uint32_t *PCnt) {
-    FRESULT Rslt = f_opendir(&Dir, Path);
-    if(Rslt != FR_OK) return retv::Fail;
-    *PCnt = 0;
-    int Len = strlen(DirNameStart);
+retv CountDirsStartingWith(const char* path, const char* dir_name_start, uint32_t *pcnt) {
+    FRESULT rslt = f_opendir(&dir, path);
+    if(rslt != FR_OK) return retv::Fail;
+    *pcnt = 0;
+    int len = strlen(dir_name_start);
     while(true) {
         // Empty names before reading
         *file_info.fname = 0;
 #if _USE_LFN
         *file_info.altname = 0;
 #endif
-        Rslt = f_readdir(&Dir, &file_info);
-        if(Rslt != FR_OK) return retv::Fail;
+        rslt = f_readdir(&dir, &file_info);
+        if(rslt != FR_OK) return retv::Fail;
         if((file_info.fname[0] == 0)
 #if _USE_LFN
                     and (file_info.altname[0] == 0)
 #endif
         ) return retv::Ok;   // Nothing left
-        else { // Filename ok, check if dir
+        else { // filename ok, check if dir
             if(file_info.fattrib & AM_DIR) {
-                // Check if starts with DirNameStart
+                // Check if starts with dir_name_start
 #if _USE_LFN
-                char *FName = (file_info.fname[0] == 0)? file_info.altname : file_info.fname;
+                char *fname = (file_info.fname[0] == 0)? file_info.altname : file_info.fname;
 #else
-                char *FName = file_info.fname;
+                char *fname = file_info.fname;
 #endif
-//                Printf("%S\r", FName);
-                if(strncasecmp(FName, DirNameStart, Len) == 0) (*PCnt)++;
+//                Printf("%S\r", fname);
+                if(strncasecmp(fname, dir_name_start, len) == 0) (*pcnt)++;
             } // if dir
-        } // Filename ok
+        } // filename ok
     }
     return retv::Ok;
 }
 #endif
 
 namespace ini { // =================== ini file operations =====================
-void WriteSection(FIL *PFile, const char *ASection) {
-    f_printf(PFile, "[%S]\r\n", ASection);
+void WriteSection(FIL *pfile, const char *psection) {
+    f_printf(pfile, "[%S]\r\n", psection);
 }
-void WriteString(FIL *PFile, const char *AKey, char *AValue) {
-    f_printf(PFile, "%S=%S\r\n", AKey, AValue);
+void WriteString(FIL *pfile, const char *akey, char *pvalue) {
+    f_printf(pfile, "%S=%S\r\n", akey, pvalue);
 }
-void WriteInt32(FIL *PFile, const char *AKey, const int32_t AValue) {
-    f_printf(PFile, "%S=%D\r\n", AKey, AValue);
+void WriteInt32(FIL *pfile, const char *akey, const int32_t pvalue) {
+    f_printf(pfile, "%S=%D\r\n", akey, pvalue);
 }
-void WriteNewline(FIL *PFile) {
-    f_putc('\r', PFile);
-    f_putc('\n', PFile);
+void WriteNewline(FIL *pfile) {
+    f_putc('\r', pfile);
+    f_putc('\n', pfile);
 }
-void WriteComment(FIL *PFile, const char* Str) {
-    f_printf(PFile, "# %S\r\n", Str);
+void WriteComment(FIL *pfile, const char* S) {
+    f_printf(pfile, "# %S\r\n", S);
 }
 
 
@@ -225,17 +225,17 @@ static inline char* striptrailing(char *S) {
     return S;
 }
 
-retv ReadString(const char *AFileName, const char *ASection, const char *AKey, char **PPOutput) {
+retv ReadString(const char *afilename, const char *psection, const char *akey, char **ppoutput) {
     FRESULT rslt;
-//    Printf("%S %S %S %S\r", __FUNCTION__, AFileName, ASection, AKey);
+//    Printf("%S %S %S %S\r", __FUNCTION__, afilename, psection, akey);
     // Open file
-    rslt = f_open(&common_file, AFileName, FA_READ+FA_OPEN_EXISTING);
+    rslt = f_open(&common_file, afilename, FA_READ+FA_OPEN_EXISTING);
     if(rslt != FR_OK) {
         if (rslt == FR_NO_FILE) {
-            Printf("%S: not found\r", AFileName);
+            Printf("%S: not found\r", afilename);
             return retv::NotFound;
         }
-        else Printf("%S: openFile error: %u\r", AFileName, rslt);
+        else Printf("%S: openFile error: %u\r", afilename, rslt);
         return retv::Fail;
     }
     // Check if zero file
@@ -245,96 +245,96 @@ retv ReadString(const char *AFileName, const char *ASection, const char *AKey, c
         return retv::Empty;
     }
     // Move through file one line at a time until a section is matched or EOF.
-    char *StartP, *EndP = nullptr;
-    int32_t len = strlen(ASection);
+    char *pstart, *pend = nullptr;
+    int32_t len = strlen(psection);
     do {
         if(f_gets(istr, SD_STRING_SZ, &common_file) == nullptr) {
-            Printf("iniNoSection %S\r", ASection);
+            Printf("iniNoSection %S\r", psection);
             f_close(&common_file);
             return retv::Fail;
         }
-        StartP = skipleading(istr);
-        if((*StartP != '[') or (*StartP == ';') or (*StartP == '#')) continue;
-        EndP = strchr(StartP, ']');
-        if((EndP == NULL) or ((int32_t)(EndP-StartP-1) != len)) continue;
-    } while (strncmp(StartP+1, ASection, len) != 0);
+        pstart = skipleading(istr);
+        if((*pstart != '[') or (*pstart == ';') or (*pstart == '#')) continue;
+        pend = strchr(pstart, ']');
+        if((pend == NULL) or ((int32_t)(pend-pstart-1) != len)) continue;
+    } while (strncmp(pstart+1, psection, len) != 0);
 
     // Section found, find the key
-    len = strlen(AKey);
+    len = strlen(akey);
     do {
-        if(!f_gets(istr, SD_STRING_SZ, &common_file) or *(StartP = skipleading(istr)) == '[') {
-            Printf("iniNoKey %S\r", AKey);
+        if(!f_gets(istr, SD_STRING_SZ, &common_file) or *(pstart = skipleading(istr)) == '[') {
+            Printf("iniNoKey %S\r", akey);
             f_close(&common_file);
             return retv::Fail;
         }
-        StartP = skipleading(istr);
-        if((*StartP == ';') or (*StartP == '#')) continue;
-        EndP = strchr(StartP, '=');
-        if(EndP == NULL) continue;
-    } while(((int32_t)(skiptrailing(EndP, StartP)-StartP) != len or strncmp(StartP, AKey, len) != 0));
+        pstart = skipleading(istr);
+        if((*pstart == ';') or (*pstart == '#')) continue;
+        pend = strchr(pstart, '=');
+        if(pend == NULL) continue;
+    } while(((int32_t)(skiptrailing(pend, pstart)-pstart) != len or strncmp(pstart, akey, len) != 0));
     f_close(&common_file);
 
     // Process Key's value
-    StartP = skipleading(EndP + 1);
+    pstart = skipleading(pend + 1);
     // Remove a trailing comment
-    uint8_t isstring = 0;
-    for(EndP = StartP; (*EndP != '\0') and (((*EndP != ';') and (*EndP != '#')) or isstring) and ((uint32_t)(EndP - StartP) < SD_STRING_SZ); EndP++) {
-        if (*EndP == '"') {
-            if (*(EndP + 1) == '"') EndP++;     // skip "" (both quotes)
-            else isstring = !isstring; // single quote, toggle isstring
+    uint8_t is_string = 0;
+    for(pend = pstart; (*pend != '\0') and (((*pend != ';') and (*pend != '#')) or is_string) and ((uint32_t)(pend - pstart) < SD_STRING_SZ); pend++) {
+        if (*pend == '"') {
+            if (*(pend + 1) == '"') pend++;     // skip "" (both quotes)
+            else is_string = !is_string; // single quote, toggle is_string
         }
-        else if (*EndP == '\\' && *(EndP + 1) == '"') EndP++; // skip \" (both quotes)
+        else if (*pend == '\\' && *(pend + 1) == '"') pend++; // skip \" (both quotes)
     } // for
-    *EndP = '\0';   // Terminate at a comment
-    striptrailing(StartP);
-    *PPOutput = StartP;
+    *pend = '\0';   // Terminate at a comment
+    striptrailing(pstart);
+    *ppoutput = pstart;
     return retv::Ok;
 }
 
-retv ReadStringTo(const char *AFileName, const char *ASection, const char *AKey, char *POutput, uint32_t MaxLen) {
+retv ReadStringTo(const char *afilename, const char *psection, const char *akey, char *poutput, uint32_t max_len) {
     char *S;
-    if(ReadString(AFileName, ASection, AKey, &S) == retv::Ok) {
+    if(ReadString(afilename, psection, akey, &S) == retv::Ok) {
         // Copy what was read
-        if(strlen(S) > (MaxLen-1)) {
-            strncpy(POutput, S, (MaxLen-1));
-            POutput[MaxLen-1] = 0;  // terminate string
+        if(strlen(S) > (max_len-1)) {
+            strncpy(poutput, S, (max_len-1));
+            poutput[max_len-1] = 0;  // terminate string
         }
-        else strcpy(POutput, S);
+        else strcpy(poutput, S);
         return retv::Ok;
     }
     else return retv::Fail;
 }
 
-retv HexToUint(char *S, uint8_t AMaxLength, uint32_t *AOutput) {
-    *AOutput = 0;
+retv HexToUint(char *S, uint8_t amax_len, uint32_t *poutput) {
+    *poutput = 0;
     char c;
     uint8_t b=0;
-    for(uint8_t i=0; i<AMaxLength; i++) {
+    for(uint8_t i=0; i<amax_len; i++) {
         c = *S++;
         if (c == 0) return retv::Ok;    // end of string
         // Shift result
-        *AOutput <<= 4;
+        *poutput <<= 4;
         // Get next digit
         if     ((c >= '0') && (c <= '9')) b = c-'0';
         else if((c >= 'A') && (c <= 'F')) b = c-'A'+10;
         else if((c >= 'a') && (c <= 'f')) b = c-'a'+10;
         else return retv::Fail;  // not a hex digit
-        *AOutput += b;
+        *poutput += b;
     }
     return retv::Ok;
 }
 
-retv ReadColor (const char *AFileName, const char *ASection, const char *AKey, Color_t *AOutput) {
+retv ReadColor (const char *afilename, const char *psection, const char *akey, Color_t *poutput) {
     char *S;
-    if(ReadString(AFileName, ASection, AKey, &S) == retv::Ok) {
+    if(ReadString(afilename, psection, akey, &S) == retv::Ok) {
         if(strlen(S) != 6) return retv::BadValue;
         uint32_t N=0;
         if(HexToUint(&S[0], 2, &N) != retv::Ok) return retv::Fail;
-        AOutput->R = N;
+        poutput->R = N;
         if(HexToUint(&S[2], 2, &N) != retv::Ok) return retv::Fail;
-        AOutput->G = N;
+        poutput->G = N;
         if(HexToUint(&S[4], 2, &N) != retv::Ok) return retv::Fail;
-        AOutput->B = N;
+        poutput->B = N;
         return retv::Ok;
     }
     else return retv::Fail;
@@ -344,10 +344,10 @@ retv ReadColor (const char *AFileName, const char *ASection, const char *AKey, C
 
 namespace csv { // =================== csv file operations =====================
 #define CSV_DELIMITERS  " ,;={}\t\r\n"
-__unused static char *csvCurToken;
+__unused static char *csv_curr_token;
 
-retv OpenFile(const char *AFileName) {
-    return TryOpenFileRead(AFileName, &common_file);
+retv OpenFile(const char *afilename) {
+    return TryOpenFileRead(afilename, &common_file);
 }
 void RewindFile() {
     f_lseek(&common_file, 0);
@@ -366,82 +366,82 @@ retv ReadNextLine() {
 //            Printf("csvNoMoreData\r");
             return retv::EndOfFile;
         }
-        csvCurToken = strtok(istr, CSV_DELIMITERS);
-        if(*csvCurToken == '#' or *csvCurToken == 0) continue; // Skip comments and empty lines
+        csv_curr_token = strtok(istr, CSV_DELIMITERS);
+        if(*csv_curr_token == '#' or *csv_curr_token == 0) continue; // Skip comments and empty lines
         else return retv::Ok;
     }
 }
 
-retv GetNextToken(char** POutput) {
-    // First time, return csvCurToken, as it was set in ReadNextLine
-    if(csvCurToken != nullptr) {
-        *POutput = csvCurToken;
-        csvCurToken = nullptr;
+retv GetNextToken(char** poutput) {
+    // First time, return csv_curr_token, as it was set in ReadNextLine
+    if(csv_curr_token != nullptr) {
+        *poutput = csv_curr_token;
+        csv_curr_token = nullptr;
     }
-    else *POutput = strtok(NULL, CSV_DELIMITERS);
-    return (**POutput == '\0')? retv::Empty : retv::Ok;
+    else *poutput = strtok(NULL, CSV_DELIMITERS);
+    return (**poutput == '\0')? retv::Empty : retv::Ok;
 }
 
-retv GetNextCellString(char* POutput) {
-    char *Token;
-    if(GetNextToken(&Token) == retv::Ok) {
+retv GetNextCellString(char* poutput) {
+    char *token;
+    if(GetNextToken(&token) == retv::Ok) {
         // Skip leading quotes
-        char *StartP = Token;
-        while(*StartP == '"' and *StartP != '\0') StartP++;
-        char *EndP = Token + strlen(Token) - 1;
-        while(*EndP == '"' and EndP > Token) EndP--;
-        int32_t Len = EndP - StartP + 1;
-        if(Len > 0) strncpy(POutput, StartP, Len);
-        else *POutput = '\0';
+        char *pstart = token;
+        while(*pstart == '"' and *pstart != '\0') pstart++;
+        char *pend = token + strlen(token) - 1;
+        while(*pend == '"' and pend > token) pend--;
+        int32_t len = pend - pstart + 1;
+        if(len > 0) strncpy(poutput, pstart, len);
+        else *poutput = '\0';
         return retv::Ok;
     }
     else return retv::Fail;
 }
 
-retv FindFirstCell(const char* Name) {
+retv FindFirstCell(const char* name) {
     while(true) {
         if(ReadNextLine() != retv::Ok) break;
-//        Printf("Token: %S\r", csvCurToken);
-        if(strcasecmp(csvCurToken, Name) == 0) {
-            csvCurToken = strtok(NULL, CSV_DELIMITERS);
+//        Printf("token: %S\r", csv_curr_token);
+        if(strcasecmp(csv_curr_token, name) == 0) {
+            csv_curr_token = strtok(NULL, CSV_DELIMITERS);
             return retv::Ok;
         }
     }
     return retv::NotFound;
 }
 
-retv GetNextCell(float *POutput) {
-    char *Token;
-    if(GetNextToken(&Token) == retv::Ok) {
+retv GetNextCell(float *poutput) {
+    char *token;
+    if(GetNextToken(&token) == retv::Ok) {
         char *p;
-        *POutput = strtof(Token, &p);
+        *poutput = strtof(token, &p);
         if(*p == '\0') return retv::Ok;
         else return retv::NotANumber;
     }
     else return retv::Empty;
 }
 
-retv TryLoadParam(char* Token, const char* Name, float *Ptr) {
-    if(strcasecmp(Token, Name) == 0) {
-        if(csv::GetNextCell(Ptr) == retv::Ok){
-//            Printf("  %S: %f\r", Name, *Ptr);
+retv TryLoadParam(char* token, const char* name, float *ptr) {
+    if(strcasecmp(token, name) == 0) {
+        if(csv::GetNextCell(ptr) == retv::Ok){
+//            Printf("  %S: %f\r", name, *ptr);
             return retv::Ok;
         }
-        else Printf("%S load fail\r", Name);
+        else Printf("%S load fail\r", name);
     }
     return retv::Fail;
 }
 
-retv TryLoadString(char* Token, const char* Name, char *Dst, uint32_t MaxLen) {
-    if(strcasecmp(Token, Name) == 0) {
+retv TryLoadString(char* token, const char* name, char *Dst, uint32_t max_len) {
+    if(strcasecmp(token, name) == 0) {
         *Dst = 0;   // Empty Dst
         char *Cell;
         if(GetNextToken(&Cell) == retv::Ok) {
-            uint32_t Len = strlen(Cell);
-            if(Len < MaxLen) strcpy(Dst, Cell);
+            uint32_t len = strlen(Cell);
+            if(len < max_len) strcpy(Dst, Cell);
             else {
-                strncpy(Dst, Cell, MaxLen-1);
-                Dst[MaxLen-1] = 0;
+                strncpy(Dst, Cell, max_len-1);
+                Dst[max_len-1] = 0;
             }
         }
         return retv::Ok;

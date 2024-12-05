@@ -24,7 +24,7 @@
 #define XSTRINGIFY(x)   STRINGIFY(x)
 
 // Virtual class for IRQ handlers and timer callbacks
-class IrqHandler_t {
+class IrqHandler {
 public:
     virtual void IIrqHandlerI() = 0;
 };
@@ -77,7 +77,7 @@ namespace Nvic {
 } // namespace
 
 #if 1 // ========================== HW Timer ===================================
-class HwTim {
+class TimHw {
 protected:
     TIM_TypeDef* itmr;
 public:
@@ -94,7 +94,7 @@ public:
         ToggleOnMatch=0b011UL, ForceLo=0b100UL, ForceHi=0b101UL, PWM0HiLo=0b110UL,
         PWM1LoHi=0b111};
 
-    HwTim(TIM_TypeDef *APTimer) : itmr(APTimer) {}
+    TimHw(TIM_TypeDef *APTimer) : itmr(APTimer) {}
     void Init()    const { RCU->EnTimer(itmr);  }
     void Deinit()  const { RCU->DisTimer(itmr); }
     void Enable()  const { itmr->Enable(); }
@@ -104,13 +104,13 @@ public:
     void SetUpdateFreqChangingPrescaler(uint32_t FreqHz) const;
     void SetUpdateFreqChangingTopValue(uint32_t FreqHz) const;
     void SetUpdateFreqChangingBoth(uint32_t FreqHz) const;
-    void SetTopValue(uint32_t Value) const { itmr->SetTopValue(Value); }
+    void SetTopValue(uint32_t value) const { itmr->SetTopValue(value); }
     uint32_t GetTopValue() const { return itmr->GetTopValue(); }
     void EnableAutoreloadBuffering()  const { itmr->CTL0 |=  TIM_CTL0_ARSE; }
     void DisableAutoreloadBuffering() const { itmr->CTL0 &= ~TIM_CTL0_ARSE; }
     void SetPrescaler(uint32_t PrescalerValue) const { itmr->SetPrescaler(PrescalerValue); }
     uint32_t GetPrescaler() const { return itmr->GetPrescaler(); }
-    void SetCounter(uint32_t Value) const { itmr->CNT = Value; }
+    void SetCounter(uint32_t value) const { itmr->CNT = value; }
     uint32_t GetCounter() const { return itmr->CNT; }
 
     // Compare
@@ -238,7 +238,7 @@ static inline void GetMcuSerialNum(uint32_t Ser[3]) {
     Ser[2] = *(volatile uint32_t *)(0x1FFFF7F0);
 }
 
-namespace gpio { // ========================== GPIO ============================
+namespace Gpio { // ========================== GPIO ============================
 
 enum PullUpDown { PullNone = 0b00, PullUp = 0b01, PullDown = 0b10 };
 enum OutMode    { PushPull = 0, OpenDrain = 1 };
@@ -247,36 +247,36 @@ enum Speed      { speed10MHz=0b01UL, speed2MHz = 0b10UL, speed50MHz = 0b11UL, sp
 
 // ==== Input state ====
 __attribute__((__always_inline__))
-static inline bool IsHi(GPIO_TypeDef *PGpio, uint32_t APin) { return PGpio->ISTAT & (1UL << APin); }
+static inline bool IsHi(GPIO_TypeDef *pgpio, uint32_t APin) { return pgpio->ISTAT & (1UL << APin); }
 __attribute__((__always_inline__))
-static inline bool IsHi(const GPIO_TypeDef *PGpio, uint32_t APin) { return PGpio->ISTAT & (1UL << APin); }
+static inline bool IsHi(const GPIO_TypeDef *pgpio, uint32_t APin) { return pgpio->ISTAT & (1UL << APin); }
 __attribute__((__always_inline__))
-static inline bool IsLo(GPIO_TypeDef *PGpio, uint32_t APin) { return !(PGpio->ISTAT & (1UL << APin)); }
+static inline bool IsLo(GPIO_TypeDef *pgpio, uint32_t APin) { return !(pgpio->ISTAT & (1UL << APin)); }
 __attribute__((__always_inline__))
-static inline bool IsLo(const GPIO_TypeDef *PGpio, uint32_t APin) { return !(PGpio->ISTAT & (1UL << APin)); }
+static inline bool IsLo(const GPIO_TypeDef *pgpio, uint32_t APin) { return !(pgpio->ISTAT & (1UL << APin)); }
 
 // ==== SetHi, SetLo, Toggle ====
 __attribute__((__always_inline__))
-static inline void SetHi(GPIO_TypeDef *PGpio, uint32_t APin) { PGpio->BOP = 1UL << APin; }
+static inline void SetHi(GPIO_TypeDef *pgpio, uint32_t APin) { pgpio->BOP = 1UL << APin; }
 __attribute__((__always_inline__))
-static inline void SetLo(GPIO_TypeDef *PGpio, uint32_t APin) { PGpio->BC = 1UL << APin;  }
+static inline void SetLo(GPIO_TypeDef *pgpio, uint32_t APin) { pgpio->BC = 1UL << APin;  }
 __attribute__((__always_inline__))
-static inline void Toggle(GPIO_TypeDef *PGpio, uint32_t APin) { PGpio->OCTL ^= 1UL << APin; }
+static inline void Toggle(GPIO_TypeDef *pgpio, uint32_t APin) { pgpio->OCTL ^= 1UL << APin; }
 __attribute__((__always_inline__))
-static inline void Set(GPIO_TypeDef *PGpio, uint32_t APin, uint32_t Lvl) {
-    if(Lvl == 0) PGpio->BC = 1UL << APin;
-    else PGpio->BOP = 1UL << APin;
+static inline void Set(GPIO_TypeDef *pgpio, uint32_t APin, uint32_t Lvl) {
+    if(Lvl == 0) pgpio->BC = 1UL << APin;
+    else pgpio->BOP = 1UL << APin;
 }
 
 // ==== Setup ====
-void SetupOut(GPIO_TypeDef *PGpio, const uint32_t PinN,
+void SetupOut(GPIO_TypeDef *pgpio, const uint32_t PinN,
         const OutMode OutMode, const Speed ASpeed = PIN_SPEED_DEFAULT);
 
-void SetupInput(GPIO_TypeDef *PGpio, const uint32_t PinN, const PullUpDown PullUpDown);
+void SetupInput(GPIO_TypeDef *pgpio, const uint32_t PinN, const PullUpDown PullUpDown);
 
-void SetupAnalog(GPIO_TypeDef *PGpio, const uint32_t PinN);
+void SetupAnalog(GPIO_TypeDef *pgpio, const uint32_t PinN);
 
-void SetupAlterFunc(GPIO_TypeDef *PGpio, const uint32_t PinN,
+void SetupAlterFunc(GPIO_TypeDef *pgpio, const uint32_t PinN,
         const OutMode OutMode, const Speed ASpeed = PIN_SPEED_DEFAULT);
 
 } // namespace Gpio
@@ -287,11 +287,11 @@ public:
     uint32_t pin_n;
     Pin_t() : pgpio(nullptr), pin_n(0) {}
     Pin_t(GPIO_TypeDef *APGpio, uint32_t APinN) : pgpio(APGpio), pin_n(APinN) {}
-    inline void SetHi() { gpio::SetHi(pgpio, pin_n); }
-    inline void SetLo() { gpio::SetLo(pgpio, pin_n); }
-    inline void Set(uint32_t lvl) { gpio::Set(pgpio, pin_n, lvl); }
-    void SetupOut(const gpio::OutMode OutMode, const gpio::Speed ASpeed = gpio::speed10MHz) {
-        gpio::SetupOut(pgpio, pin_n, OutMode, ASpeed);
+    inline void SetHi() { Gpio::SetHi(pgpio, pin_n); }
+    inline void SetLo() { Gpio::SetLo(pgpio, pin_n); }
+    inline void Set(uint32_t lvl) { Gpio::Set(pgpio, pin_n, lvl); }
+    void SetupOut(const Gpio::OutMode OutMode, const Gpio::Speed ASpeed = Gpio::speed10MHz) {
+        Gpio::SetupOut(pgpio, pin_n, OutMode, ASpeed);
     }
 };
 
@@ -302,17 +302,17 @@ public:
 */
 
 struct PwmSetup {
-    GPIO_TypeDef *PGpio;
+    GPIO_TypeDef *pgpio;
     uint16_t Pin;
     TIM_TypeDef *PTimer;
     uint32_t TimerChnl;
     Inverted_t Inverted;
-    gpio::OutMode output_mode;
+    Gpio::OutMode output_mode;
     uint32_t top_value;
     PwmSetup(GPIO_TypeDef *APGpio, uint16_t APin,
             TIM_TypeDef *APTimer, uint32_t ATimerChnl,
-            Inverted_t AInverted, gpio::OutMode AOutputType,
-            uint32_t ATopValue) : PGpio(APGpio), Pin(APin), PTimer(APTimer),
+            Inverted_t AInverted, Gpio::OutMode AOutputType,
+            uint32_t ATopValue) : pgpio(APGpio), Pin(APin), PTimer(APTimer),
                     TimerChnl(ATimerChnl), Inverted(AInverted), output_mode(AOutputType),
                     top_value(ATopValue) {}
 };
@@ -320,8 +320,8 @@ struct PwmSetup {
 #if 1 // =========================== External IRQ ==============================
 enum ExtiTrigType_t {ttRising, ttFalling, ttRisingFalling};
 
-/* Make your class descendant of IrqHandler_t:
-class cc1101_t : public IrqHandler_t {
+/* Make your class descendant of IrqHandler:
+class cc1101_t : public IrqHandler {
     const PinIrq_t IGdo0;
     void IIrqHandler() { ... }
     cc1101_t(...) ... IGdo0(APGpio, AGdo0, pudNone, this), ...
@@ -336,7 +336,7 @@ class cc1101_t : public IrqHandler_t {
 // IRQ handlers
 extern "C" {
 #if INDIVIDUAL_EXTI_IRQ_REQUIRED
-extern IrqHandler_t *ExtiIrqHandler[16];
+extern IrqHandler *ExtiIrqHandler[16];
 #else
 extern ftVoidVoid ExtiIrqHandler[5], ExtiIrqHandler_9_5, ExtiIrqHandler_15_10;
 #endif // INDIVIDUAL_EXTI_IRQ_REQUIRED
@@ -346,8 +346,8 @@ class PinIrq {
 public:
     GPIO_TypeDef *pgpio;
     uint16_t pin_n;
-    gpio::PullUpDown pull_up_down;
-    PinIrq(GPIO_TypeDef *APGpio, uint16_t APinN, gpio::PullUpDown APullUpDown, ftVoidVoid PIrqHandler) :
+    Gpio::PullUpDown pull_up_down;
+    PinIrq(GPIO_TypeDef *APGpio, uint16_t APinN, Gpio::PullUpDown APullUpDown, ftVoidVoid PIrqHandler) :
         pgpio(APGpio), pin_n(APinN), pull_up_down(APullUpDown) {
 #if INDIVIDUAL_EXTI_IRQ_REQUIRED
         ExtiIrqHandler[APinN] = PIrqHandler;
@@ -358,7 +358,7 @@ public:
 #endif // INDIVIDUAL_EXTI_IRQ_REQUIRED
     }
 
-    bool IsHi() const { return gpio::IsHi(pgpio, pin_n); }
+    bool IsHi() const { return Gpio::IsHi(pgpio, pin_n); }
 
     void SetTriggerType(ExtiTrigType_t ATriggerType) const {
         uint32_t IrqMsk = 1 << pin_n;
@@ -381,7 +381,7 @@ public:
     // ttRising, ttFalling, ttRisingFalling
     void Init(ExtiTrigType_t ATriggerType) const {
         // Init pin as input
-        gpio::SetupInput(pgpio, pin_n, pull_up_down);
+        Gpio::SetupInput(pgpio, pin_n, pull_up_down);
         // Connect EXTI line to the pin of the port
         uint32_t Indx   = pin_n / 4;            // Indx of EXTICR register
         uint32_t Offset = (pin_n & 0x03UL) * 4; // Offset in EXTICR register
@@ -483,12 +483,12 @@ public:
             uint32_t AIrqPrio = IRQ_PRIO_MEDIUM);
     void Init() const;
     void Init(volatile void* PeriphAddr, uint32_t AMode) const;
-    void Init(volatile void* PeriphAddr, void* MemAddr, uint32_t AMode, uint16_t Cnt) const;
+    void Init(volatile void* PeriphAddr, void* MemAddr, uint32_t AMode, uint16_t cnt) const;
     void SetPeriphAddr(volatile void* Addr) const { PChnl->CPADDR  = (uint32_t)Addr; }
     void SetMemoryAddr(void* Addr)          const { PChnl->CMADDR  = (uint32_t)Addr; }
     void* GetMemoryAddr()                   const { return (void*)PChnl->CMADDR; }
     void SetMode(uint32_t AMode)            const { PChnl->CTL = AMode; }
-    void SetTransferDataCnt(uint16_t Cnt)   const { PChnl->CNT = Cnt; }
+    void SetTransferDataCnt(uint16_t cnt)   const { PChnl->CNT = cnt; }
     uint16_t GetTransferDataCnt()           const { return PChnl->CNT; }
 
     void Enable()                           const { PChnl->CTL |=  DMA_CHNL_EN; }
@@ -511,7 +511,7 @@ struct Channel_t {
 };
 
 
-struct Params {
+struct params {
     AdcPsc AdcClkPrescaler; // ADC clock must be within [0.1; 40] MHz
     AdcSampleTime SampleTime;
     AdcOversamplingRatio OversamplingRatio;
@@ -520,7 +520,7 @@ struct Params {
     std::vector<Channel_t> Channels;
 };
 
-void Init(const Params& Setup);
+void Init(const params& Setup);
 void StartMeasurement();
 uint32_t GetResult(uint32_t AChannel);
 uint32_t Adc2mV(uint32_t AdcChValue, uint32_t VrefValue);
@@ -529,15 +529,15 @@ uint32_t Adc2mV(uint32_t AdcChValue, uint32_t VrefValue);
 #endif
 
 #if 1 // ============================== SPI ====================================
-class Spi_t {
+class SpiHw {
 public:
     SPI_TypeDef *PSpi;
-    Spi_t(SPI_TypeDef *ASpi) : PSpi(ASpi) {}
-    enum class cpha {FirstEdge, SecondEdge};
-    enum class cpol {IdleLow, IdleHigh};
+    SpiHw(SPI_TypeDef *ASpi) : PSpi(ASpi) {}
+    enum class Cpha {FirstEdge, SecondEdge};
+    enum class Cpol {IdleLow, IdleHigh};
     enum class BitNumber {n8, n16};
     // Example: boMSB, cpolIdleLow, cphaFirstEdge, sbFdiv2, bitn8
-    void Setup(BitOrder BitOrdr, cpol CPOL, cpha CPHA,
+    void Setup(BitOrder BitOrdr, Cpol CPOL, Cpha CPHA,
             int32_t Bitrate_Hz, BitNumber BitNum = BitNumber::n8) const;
 
     void Enable()        { PSpi->Enable(); }
@@ -583,13 +583,13 @@ public:
     void EnQuadWrite();
     void DisQuad();
 
-//    void Transmit(uint8_t Params, uint8_t *ptr, uint32_t Len) const {
+//    void Transmit(uint8_t params, uint8_t *ptr, uint32_t Len) const {
 //        PSpi->Disable();
 ////        PSpi->CR1 = SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_MSTR;
-////        if(Params & 0x80) PSpi->CR1 |= SPI_CR1_LSBFIRST; // 0 = MSB, 1 = LSB
-////        if(Params & 0x40) PSpi->CR1 |= SPI_CR1_CPOL;     // 0 = IdleLow, 1 = IdleHigh
-////        if(Params & 0x20) PSpi->CR1 |= SPI_CR1_CPHA;     // 0 = FirstEdge, 1 = SecondEdge
-////        PSpi->CR1 |= (Params & 0x07) << 3; // Setup divider
+////        if(params & 0x80) PSpi->CR1 |= SPI_CR1_LSBFIRST; // 0 = MSB, 1 = LSB
+////        if(params & 0x40) PSpi->CR1 |= SPI_CR1_CPOL;     // 0 = IdleLow, 1 = IdleHigh
+////        if(params & 0x20) PSpi->CR1 |= SPI_CR1_CPHA;     // 0 = FirstEdge, 1 = SecondEdge
+////        PSpi->CR1 |= (params & 0x07) << 3; // Setup divider
 ////        PSpi->CR2 = ((uint16_t)0b0111 << 8);
 ////        (void)PSpi->SR; // Read Status reg to clear some flags
 //        // Do it
@@ -651,7 +651,7 @@ public:
     void Set(uint32_t AValue) const { ISetup.PTimer->SetChnlValue(ISetup.TimerChnl, AValue); }
 //    uint32_t Get() const { return *TMR_PCCR(ITmr, ISetup.TimerChnl); }
     void Init() const;
-//    void Deinit() const { Timer_t::Deinit(); PinSetupAnalog(ISetup.PGpio, ISetup.Pin); }
+//    void Deinit() const { Timer_t::Deinit(); PinSetupAnalog(ISetup.pgpio, ISetup.Pin); }
     void SetFrequencyHz(uint32_t FreqHz) const { // Set freq changing prescaler
         // Figure out input timer freq
         uint32_t UpdFreqMax = Clk::GetTimInputFreq(ISetup.PTimer) / (ISetup.PTimer->CAR + 1);
@@ -662,14 +662,14 @@ public:
         ISetup.PTimer->CNT = 0;  // Reset counter to start from scratch
         ISetup.PTimer->GenerateUpdateEvt();
     }
-    void SetTopValue(uint32_t Value) const { ISetup.PTimer->SetTopValue(Value); }
+    void SetTopValue(uint32_t value) const { ISetup.PTimer->SetTopValue(value); }
 //    void SetTmrClkFreq(uint32_t FreqHz) const { Timer_t::SetTmrClkFreq(FreqHz); }
 //    void SetPrescaler(uint32_t PrescalerValue) const { Timer_t::SetPrescaler(PrescalerValue); }
     PinOutputPWM_t(const PwmSetup &ASetup) : ISetup(ASetup) {}
-//    PinOutputPWM_t(GPIO_TypeDef *PGpio, uint16_t Pin,
+//    PinOutputPWM_t(GPIO_TypeDef *pgpio, uint16_t Pin,
 //            TIM_TypeDef *PTimer, uint32_t TimerChnl,
 //            Inverted_t Inverted, Gpio::OutMode_t OutputType, uint32_t TopValue) :
-//                PGpio(PGpio), Pin(Pin), ITmr(PTimer), TimerChnl(TimerChnl),
+//                pgpio(pgpio), Pin(Pin), ITmr(PTimer), TimerChnl(TimerChnl),
 //                Inverted(Inverted), OutputType(OutputType), TopValue(TopValue) {}
 };
 

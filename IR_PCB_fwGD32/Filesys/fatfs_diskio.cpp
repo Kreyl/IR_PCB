@@ -79,10 +79,10 @@ DRESULT disk_ioctl (
     case CTRL_SYNC:
         return RES_OK;
     case GET_SECTOR_COUNT: /* Get number of sectors on the drive */
-        *((DWORD *)buff) = MsdMem::BlockCnt;
+        *((DWORD *)buff) = MsdMem::block_cnt;
         return RES_OK;
     case GET_SECTOR_SIZE: /* Get size of sector for generic read/write */
-        *((WORD *)buff) = MsdMem::BlockSz;
+        *((WORD *)buff) = MsdMem::block_sz;
         return RES_OK;
     case GET_BLOCK_SIZE: /* Get internal block size in unit of sector */
         *((DWORD *)buff) = 256; /* 512b blocks in one erase block */

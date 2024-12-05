@@ -51,15 +51,15 @@ struct BeepChunk : public BaseChunk {
 void VTmrUniversalCb(void* p);
 
 template <class TChunk>
-class BaseSequencer : private IrqHandler_t {
+class BaseSequencer : private IrqHandler {
 protected:
-    enum SequencerLoopTask_t {sltProceed, sltBreak};
+    enum SequencerLoopTask {sltProceed, sltBreak};
     VirtualTimer itmr;
     const TChunk *pstart_chunk, *pcurrent_chunk, *inext_chunk = nullptr;
     int32_t repeat_counter = -1;
-    EvtMsg_t ievt_msg;
+    EvtMsg ievt_msg;
     virtual void ISwitchOff() = 0;
-    virtual SequencerLoopTask_t ISetup() = 0;
+    virtual SequencerLoopTask ISetup() = 0;
     void SetupDelay(uint32_t ms) { itmr.SetI(TIME_MS2I(ms), VTmrUniversalCb, this); }
 
     // Process sequence
@@ -72,10 +72,10 @@ protected:
                     break;
 
                 case Chunk::Wait: { // Start timer, pointing to next chunk
-                        uint32_t Delay = pcurrent_chunk->time_ms;
+                        uint32_t delay = pcurrent_chunk->time_ms;
                         pcurrent_chunk++;
-                        if(Delay != 0) {
-                            SetupDelay(Delay);
+                        if(delay != 0) {
+                            SetupDelay(delay);
                             return;
                         }
                     }
@@ -95,13 +95,13 @@ protected:
 
                 case Chunk::Goto:
                     pcurrent_chunk = pstart_chunk + pcurrent_chunk->chunk_to_jump_to;
-                    if(ievt_msg.ID != EvtId::None) EvtQMain.SendNowOrExitI(ievt_msg);
+                    if(ievt_msg.id != EvtId::None) evt_q_main.SendNowOrExitI(ievt_msg);
                     SetupDelay(1);
                     return;
                     break;
 
                 case Chunk::End:
-                    if(ievt_msg.ID != EvtId::None) EvtQMain.SendNowOrExitI(ievt_msg);
+                    if(ievt_msg.id != EvtId::None) evt_q_main.SendNowOrExitI(ievt_msg);
                     if(inext_chunk == nullptr) { // There is nothing next
                         pstart_chunk = nullptr;
                         pcurrent_chunk = nullptr;
@@ -118,7 +118,7 @@ protected:
         } // while
     } // IProcessSequenceI
 public:
-    void SetupSeqEndEvt(EvtMsg_t AEvtMsg) { ievt_msg = AEvtMsg; }
+    void SetupSeqEndEvt(EvtMsg AEvtMsg) { ievt_msg = AEvtMsg; }
 
     void StartOrRestartI(const TChunk *PChunk) {
         repeat_counter = -1;

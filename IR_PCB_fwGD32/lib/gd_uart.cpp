@@ -17,7 +17,7 @@
 void UartDmaTxIrqHandler(void *p, uint32_t flags) { ((BaseUart_t*)p)->IRQDmaTxHandler(); }
 
 void BaseUart_t::IRQDmaTxHandler() {
-    DmaTx.Disable(); // Registers may be changed only when stream is disabled
+    dma_tx.Disable(); // Registers may be changed only when stream is disabled
     IFullSlotsCount -= ITransSize;
     PRead += ITransSize;
     if(PRead >= (TXBuf + UART_TXBUF_SZ)) PRead = TXBuf; // Circulate pointer
@@ -32,10 +32,10 @@ void BaseUart_t::ISendViaDMA() {
     ITransSize = MIN_(IFullSlotsCount, PartSz);
     if(ITransSize != 0) {
         ITxDmaIsIdle = false;
-        DmaTx.SetMemoryAddr(PRead);
-        DmaTx.SetTransferDataCnt(ITransSize);
+        dma_tx.SetMemoryAddr(PRead);
+        dma_tx.SetTransferDataCnt(ITransSize);
         params->Uart->STAT0 &= ~USART_STAT0_TC; // Clear TC flag
-        DmaTx.Enable();
+        dma_tx.Enable();
     }
 }
 
@@ -59,7 +59,7 @@ void BaseUart_t::IStartTransmissionIfNotYet() {
 }
 
 retv BaseUart_t::GetByte(uint8_t *b) {
-    int32_t WIndx = UART_RXBUF_SZ - DmaRx.GetTransferDataCnt();
+    int32_t WIndx = UART_RXBUF_SZ - dma_rx.GetTransferDataCnt();
     int32_t BytesCnt = WIndx - RIndx;
     if(BytesCnt < 0) BytesCnt += UART_RXBUF_SZ;
     if(BytesCnt == 0) return retv::Empty;
@@ -74,14 +74,14 @@ void BaseUart_t::Init() {
     OnClkChange();  // Setup baudrate
 
     // ==== TX ====
-    gpio::SetupAlterFunc(params->PGpioTx, params->PinTx, gpio::PushPull, gpio::speed50MHz);
-    DmaTx.Init(&params->Uart->DATA, UART_DMA_TX_MODE);
+    Gpio::SetupAlterFunc(params->PGpioTx, params->PinTx, Gpio::PushPull, Gpio::speed50MHz);
+    dma_tx.Init(&params->Uart->DATA, UART_DMA_TX_MODE);
     ITxDmaIsIdle = true;
 
     // ==== RX ====
-    gpio::SetupInput(params->PGpioRx, params->PinRx, gpio::PullUp);
-    DmaRx.Init(&params->Uart->DATA, IRxBuf, UART_DMA_RX_MODE, UART_RXBUF_SZ);
-    DmaRx.Enable();
+    Gpio::SetupInput(params->PGpioRx, params->PinRx, Gpio::PullUp);
+    dma_rx.Init(&params->Uart->DATA, IRxBuf, UART_DMA_RX_MODE, UART_RXBUF_SZ);
+    dma_rx.Enable();
 
     // UART Regs setup
     params->Uart->CTL0 = USART_CTL0_TEN | USART_CTL0_REN;     // TX & RX en, 8bit, no parity
@@ -99,7 +99,7 @@ void BaseUart_t::OnClkChange() {
 
 void BaseUart_t::StopTx() {
     params->Uart->CTL0 &= ~USART_CTL0_UEN; // Disable UART
-    DmaTx.DisableAndClearIRQ();
+    dma_tx.DisableAndClearIRQ();
     ITxDmaIsIdle = true;
     PRead = TXBuf;
     PWrite = TXBuf;

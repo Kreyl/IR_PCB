@@ -10,15 +10,15 @@
 #include "Settings.h"
 
 #if IR_TX_ENABLED // ========================== IR TX ==========================
-namespace irLed {
+namespace IRLed {
 
 #define IRLED_DMA_MODE  DMA_PRIO_HIGH | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE
 
-HwTim SamplingTmr{TMR_DAC_SMPL};
-ftVoidVoid ICallbackI = nullptr;
-static uint32_t TransactionSz;
+TimHw sampling_tmr{TMR_DAC_SMPL};
+ftVoidVoid icallbackI = nullptr;
+static uint32_t transaction_sz;
 static void DmaTxEndIrqHandler(void *p, uint32_t flags);
-static const DMA_t DmaTx {DAC_DMA, DmaTxEndIrqHandler, nullptr, IRQ_PRIO_MEDIUM};
+static const DMA_t dma_tx {DAC_DMA, DmaTxEndIrqHandler, nullptr, IRQ_PRIO_MEDIUM};
 // Samples count
 static struct {
     int32_t header, space, one, zero, pause;
@@ -27,37 +27,37 @@ static struct {
 // DAC buf: reserve size fo 56kHz (969)
 #define DAC_BUF_SZ          999UL
 
-union DacSamplePair_t {
-    uint32_t W32;
+union DacSamplePair {
+    uint32_t dw32;
     struct {
-        uint8_t OnPwr1;
-        uint8_t OffPwr1;
-        uint8_t OnPwr2;
-        uint8_t OffPwr2;
+        uint8_t on_pwr1;
+        uint8_t off_pwr1;
+        uint8_t on_pwr2;
+        uint8_t off_pwr2;
     } __attribute__((packed));
-    DacSamplePair_t& operator = (const DacSamplePair_t& Right) {
-        W32 = Right.W32;
+    DacSamplePair& operator = (const DacSamplePair& right) {
+        dw32 = right.dw32;
         return *this;
     }
-    DacSamplePair_t() : W32(0) {}
-    DacSamplePair_t(uint8_t Pwr) : OnPwr1(Pwr), OffPwr1(0), OnPwr2(Pwr), OffPwr2(0) {}
+    DacSamplePair() : dw32(0) {}
+    DacSamplePair(uint8_t pwr) : on_pwr1(pwr), off_pwr1(0), on_pwr2(pwr), off_pwr2(0) {}
 } __attribute__((packed));
 
-DacSamplePair_t DacBuf[DAC_BUF_SZ];
+DacSamplePair dac_buf[DAC_BUF_SZ];
 
 static void DmaTxEndIrqHandler(void *p, uint32_t flags) {
     Sys::LockFromIRQ();
-    SamplingTmr.Disable();
-    DmaTx.Disable();
-    if(ICallbackI) ICallbackI();
+    sampling_tmr.Disable();
+    dma_tx.Disable();
+    if(icallbackI) icallbackI();
     Sys::UnlockFromIRQ();
 }
 
 static inline void StartTx() {
-    DmaTx.SetMemoryAddr(DacBuf);
-    DmaTx.SetTransferDataCnt(TransactionSz);
-    DmaTx.Enable();
-    SamplingTmr.Enable();
+    dma_tx.SetMemoryAddr(dac_buf);
+    dma_tx.SetTransferDataCnt(transaction_sz);
+    dma_tx.Enable();
+    sampling_tmr.Enable();
 }
 
 void Init() {
@@ -65,7 +65,7 @@ void Init() {
     // Once the DAC channel is enabled, the corresponding GPIO pin is automatically
     // connected to the DAC converter. In order to avoid parasitic consumption,
     // the GPIO pin should be configured in analog.
-    gpio::SetupAnalog(IR_LED);
+    Gpio::SetupAnalog(IR_LED);
     // ==== DAC ====
     RCU->EnDAC();
     DAC->SetTrigger0(DAC_TypeDef::Trigger::Tim6TRGO);
@@ -73,15 +73,15 @@ void Init() {
     DAC->EnDma0();
     DAC->Enable0();
     // ==== DMA ====
-    DmaTx.Init(&DAC->DAC0_R8DH, IRLED_DMA_MODE);
+    dma_tx.Init(&DAC->DAC0_R8DH, IRLED_DMA_MODE);
     // ==== Sampling timer ====
-    SamplingTmr.Init();
-    SamplingTmr.SelectMasterMode(HwTim::MasterMode::Update);
+    sampling_tmr.Init();
+    sampling_tmr.SelectMasterMode(TimHw::MasterMode::Update);
 }
 
 void SetCarrierFreq(uint32_t carrier_freq_Hz) {
     uint32_t sampling_freq_Hz = carrier_freq_Hz * 2;
-    SamplingTmr.SetUpdateFreqChangingTopValue(sampling_freq_Hz);
+    sampling_tmr.SetUpdateFreqChangingTopValue(sampling_freq_Hz);
     // Every SamplePair contains 4 actual samples
     samples_cnt.header = (((kIr::Header_us * carrier_freq_Hz) + 1999999L) / 2000000L);
     samples_cnt.space  = (((kIr::Space_us  * carrier_freq_Hz) + 1999999L) / 2000000L);
@@ -93,36 +93,36 @@ void SetCarrierFreq(uint32_t carrier_freq_Hz) {
     if(N > DAC_BUF_SZ) Printf("IR TX DAC Buf Sz too small: %d < %d\r\n", DAC_BUF_SZ, N);
 }
 
-// Power is 8-bit DAC value
-void TransmitWord(uint16_t wData, int32_t BitCnt, uint8_t Power, ftVoidVoid CallbackI) {
-    ICallbackI = CallbackI;
+// power is 8-bit DAC value
+void TransmitWord(uint16_t data, int32_t bit_cnt, uint8_t power, ftVoidVoid callbackI) {
+    icallbackI = callbackI;
     // ==== Fill buffer depending on data ====
-    DacSamplePair_t *p = DacBuf, ISampleCarrier{Power}, ISampleSpace{0};
+    DacSamplePair *p = dac_buf, sample_carrier{power}, sample_space{0};
     int32_t i, j;
     // Put header
-    for(i=0; i<samples_cnt.header; i++) *p++ = ISampleCarrier;
-    for(i=0; i<samples_cnt.space; i++)  *p++ = ISampleSpace;
+    for(i=0; i<samples_cnt.header; i++) *p++ = sample_carrier;
+    for(i=0; i<samples_cnt.space; i++)  *p++ = sample_space;
     // Put data
-    for(j=0; j<BitCnt; j++) {
+    for(j=0; j<bit_cnt; j++) {
         // Carrier
-        if(wData & 0x8000) { for(i=0; i<samples_cnt.one;  i++) *p++ = ISampleCarrier; }
-        else               { for(i=0; i<samples_cnt.zero; i++) *p++ = ISampleCarrier; }
+        if(data & 0x8000) { for(i=0; i<samples_cnt.one;  i++) *p++ = sample_carrier; }
+        else               { for(i=0; i<samples_cnt.zero; i++) *p++ = sample_carrier; }
         // space
-        for(i=0; i<samples_cnt.space; i++)  *p++ = ISampleSpace;
-        wData <<= 1;
+        for(i=0; i<samples_cnt.space; i++)  *p++ = sample_space;
+        data <<= 1;
     }
     // Put pause
-    for(i=0; i<samples_cnt.pause; i++) *p++ = ISampleSpace;
+    for(i=0; i<samples_cnt.pause; i++) *p++ = sample_space;
     // ==== Start transmission ====
-    TransactionSz = (p - DacBuf) * 4; // Every sample pair contains 4 actual samples
+    transaction_sz = (p - dac_buf) * 4; // Every sample pair contains 4 actual samples
     StartTx();
 }
 
 void ResetI() {
-    DmaTx.Disable();
-    SamplingTmr.Disable();
+    dma_tx.Disable();
+    sampling_tmr.Disable();
     DAC->PutDataR0(0);
-    SamplingTmr.GenerateUpdateEvt();
+    sampling_tmr.GenerateUpdateEvt();
 }
 } // namespace
 #endif
@@ -142,26 +142,26 @@ ____        _____________________
  Trigger  Capture
  Reset    CCR1 => Capture IRQ
 */
-namespace irRcvr {
+namespace IRRcvr {
 
 ftVoidU8U16 callbackI;
-HwTim tmr_rx{TMR_IR_RX};
+TimHw tmr_rx{TMR_IR_RX};
 
 void Init() {
-    gpio::SetupInput(IR_RX_DATA_PIN, gpio::PullUp);
+    Gpio::SetupInput(IR_RX_DATA_PIN, Gpio::PullUp);
     tmr_rx.Init();
     tmr_rx.DisableAutoreloadBuffering(); // To put there timeout immediately
     tmr_rx.SetTopValue(0xFFFF); // Maximum, just to start
     tmr_rx.SetUpdateSrcOvfOnly();
     tmr_rx.SetInputFreqChangingPrescaler(1000000);  // Input Freq: 1 MHz => one tick = 1 uS
     // Setup input mode for Channel0: capture Input1 (not Input0) on rising edge
-    tmr_rx.SetChnlMode(0, HwTim::ChnlMode::CI1FE0); // Chnl0 is input, capture on Input1's CI1FE0 signal
+    tmr_rx.SetChnlMode(0, TimHw::ChnlMode::CI1FE0); // Chnl0 is input, capture on Input1's CI1FE0 signal
     tmr_rx.SetInputActiveEdge(0, RiseFall::Rising); // CI1FE0 is Active Rising (CI0FE0 is the same, but it is not used)
     // Reset timer on trigger; trigger is falling edge on CI1FE1
-    tmr_rx.SetTriggerInput(HwTim::TriggerIn::CI1FE1); // Use Input1's CI1FE1 as TriggerIn
+    tmr_rx.SetTriggerInput(TimHw::TriggerIn::CI1FE1); // Use Input1's CI1FE1 as TriggerIn
     tmr_rx.SetInputActiveEdge(1, RiseFall::Falling);
     // Configure slave mode controller in Restart mode
-    tmr_rx.SelectSlaveMode(HwTim::SlaveMode::Restart);
+    tmr_rx.SelectSlaveMode(TimHw::SlaveMode::Restart);
     // Enable the capture on channel 0
     tmr_rx.EnChnl(0);
     // IRQ
@@ -196,7 +196,7 @@ static void ProcessIrqI(uint32_t flags, uint32_t dur) {
     }
     else { // Not header
         // Check if timeout occured, i.e. update IRQ fired
-        if(HwTim::IsUpdateFlagSet(flags)) OnReceptionDone();
+        if(TimHw::IsUpdateFlagSet(flags)) OnReceptionDone();
         else if(bit_indx != -1) { // No timeout; ignore received if not after header, or if bad length is received previously
             uint32_t bit;
             if     (IsLike<uint32_t>(dur, kIr::Zero_us, *settings.ir_rx_deviation)) bit = 0UL;
@@ -221,9 +221,9 @@ extern "C"
 void TMR_IR_RX_IRQ_HNDLR() {
     Sys::IrqPrologue();
     Sys::LockFromIRQ();
-    uint32_t flags = irRcvr::tmr_rx.GetIrqFlags();
-    irRcvr::tmr_rx.ClearAllIrqFlags();
-    irRcvr::ProcessIrqI(flags, irRcvr::tmr_rx.GetChnl0Value());
+    uint32_t flags = IRRcvr::tmr_rx.GetIrqFlags();
+    IRRcvr::tmr_rx.ClearAllIrqFlags();
+    IRRcvr::ProcessIrqI(flags, IRRcvr::tmr_rx.GetChnl0Value());
     Sys::UnlockFromIRQ();
     Sys::IrqEpilogue();
 }

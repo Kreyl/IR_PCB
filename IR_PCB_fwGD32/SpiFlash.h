@@ -10,6 +10,7 @@
 
 #include "gd32e11x_kl.h"
 #include "gd_lib.h"
+#include "yartos.h"
 
 /* ReadData allows 50Mhz only, so it is not implemented. Read method uses
  * Fast Read instead. For voltages below 3v0, set 104MHz. */
@@ -22,39 +23,39 @@
 
 #define SPIFLASH_TIMEOUT_ms     999UL
 
-class SpiFlash_t {
+class SpiFlash {
 private:
-    Spi_t spi;
-    Pin_t Nss{FLASH_NSS};
-    DMA_t DmaTx, DmaRx;
-    Thread* PThd = nullptr;
-    uint8_t WriteCmdRead1Byte(uint8_t Cmd);
-    void WriteCmdAndAddr(uint8_t Cmd, uint32_t Addr);
+    SpiHw spi;
+    Pin_t nss_pin{FLASH_NSS};
+    DMA_t dma_tx, dma_rx;
+    Thread* pthd = nullptr;
+    uint8_t WriteCmdRead1Byte(uint8_t cmd);
+    void WriteCmdAndAddr(uint8_t cmd, uint32_t addr);
     void WriteEnable();
     retv BusyWait();
-    friend void SpiFlashDmaCb(void *p, uint32_t W32);
+    friend void SpiFlashDmaCb(void *p, uint32_t dw32);
 public:
-    SpiFlash_t(SPI_TypeDef *pspi);
+    SpiFlash(SPI_TypeDef *pspi);
     void Init();
 
-    struct MemParams_t {
-        uint32_t SectorCnt = 0, SectorSz = 0;
+    struct MemParams {
+        uint32_t sector_cnt = 0, sector_sz = 0;
     };
 
-    MemParams_t GetParams();
+    MemParams GetParams();
 
     // ==== Instructions ====
     // Read / Write / Erase
-    retv Read(uint32_t Addr, uint8_t *PBuf, uint32_t ALen);
-    retv ReadQ(uint32_t Addr, uint8_t *PBuf, uint32_t ALen);
+    retv Read(uint32_t addr, uint8_t *pbuf, uint32_t alen);
+    retv ReadQ(uint32_t addr, uint8_t *pbuf, uint32_t alen);
 
-    retv WritePage(uint32_t Addr, uint8_t *PBuf, uint32_t ALen);
-    retv WritePageQ(uint32_t Addr, uint8_t *PBuf, uint32_t ALen);
+    retv WritePage(uint32_t addr, uint8_t *pbuf, uint32_t alen);
+    retv WritePageQ(uint32_t addr, uint8_t *pbuf, uint32_t alen);
 
-    retv EraseSector4k(uint32_t Addr);
-    retv EraseBlock32k(uint32_t Addr);
-    retv EraseBlock64k(uint32_t Addr);
-    retv EraseAndWriteSector4k(uint32_t Addr, uint8_t *PBuf);
+    retv EraseSector4k(uint32_t addr);
+    retv EraseBlock32k(uint32_t addr);
+    retv EraseBlock64k(uint32_t addr);
+    retv EraseAndWriteSector4k(uint32_t addr, uint8_t *pbuf);
 
     // Control
     void Reset();

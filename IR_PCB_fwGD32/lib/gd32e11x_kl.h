@@ -508,11 +508,11 @@ struct TIM_TypeDef {
 
     void Enable()  { CTL0 |=  TIM_CTL0_CEN; }
     void Disable() { CTL0 &= ~TIM_CTL0_CEN; }
-    void SetTopValue(uint32_t Value) { CAR = Value; }
+    void SetTopValue(uint32_t value) { CAR = value; }
     uint32_t GetTopValue() { return CAR; }
     void SetPrescaler(uint32_t psc) { PSC = psc; }
     uint32_t GetPrescaler() { return PSC; }
-    void SetChnlValue(const uint32_t Chnl, uint32_t Value) { *(uint32_t*)(&CH0CV + Chnl) = Value; }
+    void SetChnlValue(const uint32_t Chnl, uint32_t value) { *(uint32_t*)(&CH0CV + Chnl) = value; }
     void GenerateUpdateEvt() { SWEVG = (1UL << 0); }
 };
 
@@ -646,7 +646,7 @@ struct SPI_TypeDef {
 
 #if 1 // =========================== Debug MCU =================================
 struct DBGMCU_TypeDef {
-    volatile uint32_t ID;  /*!< 0x00 MCU device ID code */
+    volatile uint32_t id;  /*!< 0x00 MCU device ID code */
     volatile uint32_t CTL; /*!< 0x04 Debug MCU configuration register */
 
     void StopTmrInDbg(const TIM_TypeDef *PTimer) {
@@ -873,12 +873,12 @@ struct RCU_TypeDef {
         else if(PUart == UART4)  APB1EN |= 1UL << 20;
     }
 
-    void EnGpio(const GPIO_TypeDef *PGpio) {
-        if     (PGpio == GPIOA) APB2EN |= 1UL << 2;
-        else if(PGpio == GPIOB) APB2EN |= 1UL << 3;
-        else if(PGpio == GPIOC) APB2EN |= 1UL << 4;
-        else if(PGpio == GPIOD) APB2EN |= 1UL << 5;
-        else if(PGpio == GPIOE) APB2EN |= 1UL << 6;
+    void EnGpio(const GPIO_TypeDef *pgpio) {
+        if     (pgpio == GPIOA) APB2EN |= 1UL << 2;
+        else if(pgpio == GPIOB) APB2EN |= 1UL << 3;
+        else if(pgpio == GPIOC) APB2EN |= 1UL << 4;
+        else if(pgpio == GPIOD) APB2EN |= 1UL << 5;
+        else if(pgpio == GPIOE) APB2EN |= 1UL << 6;
     }
 
     void EnTimer(const TIM_TypeDef *PTimer) {

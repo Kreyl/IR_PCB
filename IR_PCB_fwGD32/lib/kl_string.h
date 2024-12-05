@@ -2,7 +2,7 @@
  * kl_string.h
  *
  *  Created on: 5 дек. 2020 г.
- *      Author: layst
+ *      Author: Kreyl
  */
 
 #ifndef KL_STRING_H_

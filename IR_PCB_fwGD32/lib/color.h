@@ -77,7 +77,7 @@ public:
     };
     bool operator == (const Color_t &AColor) const { return (DWord32 == AColor.DWord32); }
     bool operator != (const Color_t &AColor) const { return (DWord32 != AColor.DWord32); }
-    Color_t& operator = (const Color_t &Right) { DWord32 = Right.DWord32; return *this; }
+    Color_t& operator = (const Color_t &right) { DWord32 = right.DWord32; return *this; }
 
     void ApplyGammaCorrectionRGB() {
         R = gamma8[R];
@@ -510,7 +510,7 @@ struct ColorHSV_t {
         H = AH; S = AS; V = AV;
     }
 
-    ColorHSV_t& operator = (const ColorHSV_t &Right) { DWord32 = Right.DWord32; return *this; }
+    ColorHSV_t& operator = (const ColorHSV_t &right) { DWord32 = right.DWord32; return *this; }
     bool operator == (const ColorHSV_t &AColor) const { return (DWord32 == AColor.DWord32); }
     bool operator != (const ColorHSV_t &AColor) const { return (DWord32 != AColor.DWord32); }
 

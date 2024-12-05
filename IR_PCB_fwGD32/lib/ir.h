@@ -26,16 +26,16 @@ inline const uint32_t InterBitTimeot_us = 900UL; // For reception: after rising 
 #if IR_TX_ENABLED // ========================== IR TX ==========================
 #define IR_MAX_PWR          255     // Top DAC value
 
-namespace irLed {
+namespace IRLed {
     void Init();
     void SetCarrierFreq(uint32_t carrier_freq_Hz);
-    void TransmitWord(uint16_t wData, int32_t BitCnt, uint8_t Power, ftVoidVoid CallbackI);
+    void TransmitWord(uint16_t data, int32_t bit_cnt, uint8_t power, ftVoidVoid callbackI);
     void ResetI();
 } // namespace
 #endif
 
 #if IR_RX_ENABLED // ========================== IR RX ==========================
-namespace irRcvr {
+namespace IRRcvr {
     void Init();
     extern ftVoidU8U16 callbackI;
 } // namespace

@@ -21,50 +21,50 @@
 
 enum ProcessDataResult_t {pdrProceed, pdrNewCmd};
 
-class Cmd_t {
+class Cmd {
 private:
-    char IString[CMD_BUF_SZ];
-    char* Remainer = nullptr;
-    uint32_t Cnt;
-    bool Completed;
-    systime_t LastCharTimestamp = 0;
+    char istring[CMD_BUF_SZ];
+    char* remainer = nullptr;
+    uint32_t cnt;
+    bool completed;
+    systime_t last_char_timestamp = 0;
     bool IsSpace(char c) { return (c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r' || c == ' '); }
     bool IsDigit(char c) { return c >= '0' and c <= '9'; }
 public:
-    char *Name;
+    char *name;
     ProcessDataResult_t PutChar(char c) {
         // Reset cmd: (1) if it was completed and after that new char arrived (2) if new char has come after long pause
-        if(Completed or Sys::TimeElapsedSince(LastCharTimestamp) > TIME_MS2I(PREV_CHAR_TIMEOUT_ms)) {
-            Completed = false;
-            Cnt = 0;
+        if(completed or Sys::TimeElapsedSince(last_char_timestamp) > TIME_MS2I(PREV_CHAR_TIMEOUT_ms)) {
+            completed = false;
+            cnt = 0;
         }
-        LastCharTimestamp = Sys::GetSysTimeX();
+        last_char_timestamp = Sys::GetSysTimeX();
         // Process char
-        if(c == '\b') { if(Cnt > 0) Cnt--; }    // do backspace
+        if(c == '\b') { if(cnt > 0) cnt--; }    // do backspace
         else if((c == '\r') or (c == '\n')) {   // end of line, check if cmd completed
-            if(Cnt != 0) {  // if cmd is not empty
-                IString[Cnt] = 0; // End of string
-                Name = kl_strtok(IString, DELIMITERS, &Remainer);
-                Completed = true;
+            if(cnt != 0) {  // if cmd is not empty
+                istring[cnt] = 0; // End of string
+                name = kl_strtok(istring, DELIMITERS, &remainer);
+                completed = true;
                 return pdrNewCmd;
             }
         }
-        else if(Cnt < (CMD_BUF_SZ-1)) IString[Cnt++] = c;  // Add char if buffer not full
+        else if(cnt < (CMD_BUF_SZ-1)) istring[cnt++] = c;  // Add char if buffer not full
         return pdrProceed;
     }
 
-    char* GetNextString() { return kl_strtok(nullptr, DELIMITERS, &Remainer); }
+    char* GetNextString() { return kl_strtok(nullptr, DELIMITERS, &remainer); }
 
-    char* GetRemainder() { return Remainer; }
+    char* GetRemainder() { return remainer; }
 
     template <typename T>
-    retv GetNext(T *POutput) {
+    retv GetNext(T *poutput) {
         char* S = GetNextString();
         if(S) {
             char *p;
             int32_t dw32 = kl_strtol(S, &p, 0);
             if(*p == '\0') {
-                *POutput = (T)dw32;
+                *poutput = (T)dw32;
                 return retv::Ok;
             }
             else return retv::NotANumber;
@@ -72,45 +72,45 @@ public:
         return retv::Fail;
     }
 
-    retv GetNextU8(uint8_t *POutput) {
+    retv GetNextU8(uint8_t *poutput) {
         char* S = GetNextString();
         if(S) {
             char *p;
             uint8_t v = strtoul(S, &p, 0);
-            if(*p == '\0') { *POutput = v; return retv::Ok; }
+            if(*p == '\0') { *poutput = v; return retv::Ok; }
             else return retv::NotANumber;
         }
         return retv::Fail;
     }
 
-    retv GetNextU16(uint16_t *POutput) {
+    retv GetNextU16(uint16_t *poutput) {
         char* S = GetNextString();
         if(S) {
             char *p;
             uint16_t v = strtoul(S, &p, 0);
-            if(*p == '\0') { *POutput = v; return retv::Ok; }
+            if(*p == '\0') { *poutput = v; return retv::Ok; }
             else return retv::NotANumber;
         }
         return retv::Fail;
     }
 
-    retv GetNextI16(int16_t *POutput) {
+    retv GetNextI16(int16_t *poutput) {
         char* S = GetNextString();
         if(S) {
             char *p;
             int16_t v = kl_strtol(S, &p, 0);
-            if(*p == '\0') { *POutput = v; return retv::Ok; }
+            if(*p == '\0') { *poutput = v; return retv::Ok; }
             else return retv::NotANumber;
         }
         return retv::Fail;
     }
 
-    retv GetNextI32(int32_t *POutput) {
+    retv GetNextI32(int32_t *poutput) {
         char* S = GetNextString();
         if(S) {
             char *p;
             int32_t v = kl_strtol(S, &p, 0);
-            if(*p == '\0') { *POutput = v; return retv::Ok; }
+            if(*p == '\0') { *poutput = v; return retv::Ok; }
             else return retv::NotANumber;
         }
         return retv::Fail;
@@ -141,7 +141,7 @@ public:
             }
 
             // Get next token
-            char *tok = kl_strtok(nullptr, DELIMITERS, &Remainer);
+            char *tok = kl_strtok(nullptr, DELIMITERS, &remainer);
             if(tok == nullptr) goto End;
 
             // Command decoding
@@ -227,25 +227,25 @@ public:
     }
 
 #if PRINTF_FLOAT_EN
-    uint8_t GetNextFloat(float *POutput) {
+    uint8_t GetNextFloat(float *poutput) {
         char* S = GetNextString();
         if(!S) return retv::Fail;
         char *p;
         float f = strtof(S, &p);
         if(*p == '\0') {
-            *POutput = f;
+            *poutput = f;
             return retv::Ok;
         }
         else return retvNotANumber;
     }
 
-    uint8_t GetNextDouble(double *POutput) {
+    uint8_t GetNextDouble(double *poutput) {
         char* S = GetNextString();
         if(!S) return retv::Fail;
         char *p;
         double f = strtod(S, &p);
         if(*p == '\0') {
-            *POutput = f;
+            *poutput = f;
             return retv::Ok;
         }
         else return retvNotANumber;
@@ -253,47 +253,47 @@ public:
 #endif
 
     template <typename T>
-    retv GetArray(T *Ptr, int32_t Len) {
-        for(int32_t i=0; i<Len; i++) {
-            T Number;
-            retv r = GetNext<T>(&Number);
-            if(r == retv::Ok) *Ptr++ = Number;
+    retv GetArray(T *ptr, int32_t len) {
+        for(int32_t i=0; i<len; i++) {
+            T number;
+            retv r = GetNext<T>(&number);
+            if(r == retv::Ok) *ptr++ = number;
             else return r;
         }
         return retv::Ok;
     }
 
-    retv GetClrRGB(Color_t *PClr) {
-        if(GetNext<uint8_t>(&PClr->R) != retv::Ok) return retv::Fail;
-        if(GetNext<uint8_t>(&PClr->G) != retv::Ok) return retv::Fail;
-        if(GetNext<uint8_t>(&PClr->B) != retv::Ok) return retv::Fail;
+    retv GetClrRGB(Color_t *pclr) {
+        if(GetNext<uint8_t>(&pclr->R) != retv::Ok) return retv::Fail;
+        if(GetNext<uint8_t>(&pclr->G) != retv::Ok) return retv::Fail;
+        if(GetNext<uint8_t>(&pclr->B) != retv::Ok) return retv::Fail;
         return retv::Ok;
     }
 
-    retv GetClrRGBW(Color_t *PClr) {
-        if(GetNext<uint8_t>(&PClr->R) != retv::Ok) return retv::Fail;
-        if(GetNext<uint8_t>(&PClr->G) != retv::Ok) return retv::Fail;
-        if(GetNext<uint8_t>(&PClr->B) != retv::Ok) return retv::Fail;
-        if(GetNext<uint8_t>(&PClr->W) != retv::Ok) return retv::Fail;
+    retv GetClrRGBW(Color_t *pclr) {
+        if(GetNext<uint8_t>(&pclr->R) != retv::Ok) return retv::Fail;
+        if(GetNext<uint8_t>(&pclr->G) != retv::Ok) return retv::Fail;
+        if(GetNext<uint8_t>(&pclr->B) != retv::Ok) return retv::Fail;
+        if(GetNext<uint8_t>(&pclr->W) != retv::Ok) return retv::Fail;
         return retv::Ok;
     }
 
-    retv GetClrHSV(ColorHSV_t *PClr) {
-        if(GetNext<uint16_t>(&PClr->H) != retv::Ok) return retv::Fail;
-        if(GetNext<uint8_t>(&PClr->S) != retv::Ok) return retv::Fail;
-        if(GetNext<uint8_t>(&PClr->V) != retv::Ok) return retv::Fail;
+    retv GetClrHSV(ColorHSV_t *pclr) {
+        if(GetNext<uint16_t>(&pclr->H) != retv::Ok) return retv::Fail;
+        if(GetNext<uint8_t>(&pclr->S) != retv::Ok) return retv::Fail;
+        if(GetNext<uint8_t>(&pclr->V) != retv::Ok) return retv::Fail;
         return retv::Ok;
     }
 
-    /*  int32_t Indx, Value;
-        if(PCmd->GetParams<int32_t>(2, &Indx, &Value) == retv::Ok) {...}
+    /*  int32_t Indx, value;
+        if(PCmd->GetParams<int32_t>(2, &Indx, &value) == retv::Ok) {...}
         else PShell->Ack(retvCmdError);    */
     template <typename T>
-    retv GetParams(uint8_t Cnt, ...) {
+    retv GetParams(uint8_t cnt, ...) {
         retv Rslt = retv::Ok;
         va_list args;
-        va_start(args, Cnt);
-        while(Cnt--) {
+        va_start(args, cnt);
+        while(cnt--) {
             T* ptr = va_arg(args, T*);
             Rslt = GetNext<T>(ptr);
             if(Rslt != retv::Ok) break;
@@ -302,11 +302,11 @@ public:
         return Rslt;
     }
 
-    bool NameIs(const char *SCmd) { return (kl_strcasecmp(Name, SCmd) == 0); }
-    Cmd_t() {
-        Cnt = 0;
-        Completed = false;
-        Name = nullptr;
+    bool NameIs(const char *S) { return (kl_strcasecmp(name, S) == 0); }
+    Cmd() {
+        cnt = 0;
+        completed = false;
+        name = nullptr;
     }
 };
 
@@ -334,7 +334,7 @@ public:
 
 class Shell : public PrintfHelper {
 public:
-	Cmd_t Cmd;
+	Cmd cmd;
     void Ok()  { Print("Ok\r\n"); }
     void BadParam() { Print("BadParam\r\n"); }
     void CRCError() { Print("CRCError\r\n"); }
@@ -344,15 +344,15 @@ public:
     void Timeout()  { Print("Timeout\r\n");  }
     void NoAnswer() { Print("NoAnswer\r\n"); }
     void Overflow() { Print("Overflow\r\n"); }
-	virtual retv ReceiveBinaryToBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_ms) = 0;
-	virtual retv TransmitBinaryFromBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_ms) = 0;
+	virtual retv ReceiveBinaryToBuf(uint8_t *ptr, uint32_t len, uint32_t timeout_ms) = 0;
+	virtual retv TransmitBinaryFromBuf(uint8_t *ptr, uint32_t len, uint32_t timeout_ms) = 0;
 };
 
 // Functions
-class CmdUart_t;
+class CmdUart;
 
 void Printf(const char *format, ...);
-void Printf(CmdUart_t &AUart, const char *format, ...);
+void Printf(CmdUart &auart, const char *format, ...);
 void PrintfI(const char *format, ...);
 void PrintfEOL();
 void PrintfNow(const char *S);

@@ -61,14 +61,14 @@ public:
     }
 
     uint32_t GetMany(T *p, uint32_t ALength) {
-        uint32_t Cnt = 0;
-        while(FullCnt != 0 and Cnt < ALength) {
+        uint32_t cnt = 0;
+        while(FullCnt != 0 and cnt < ALength) {
             *p++ = *PRead++;
             if(PRead >= (IBuf + Sz)) PRead = IBuf;
-            Cnt++;
+            cnt++;
             FullCnt--;
         }
-        return Cnt; // return how many items were written
+        return cnt; // return how many items were written
     }
 
     Buf_t GetContinuousChunkAndDoNotRemove() {
@@ -115,16 +115,16 @@ public:
     }
 
     // Put anyway
-    void PutI(T Value) {
-        *PWrite = Value;
+    void PutI(T value) {
+        *PWrite = value;
         PWrite++;
         if(PWrite > (IBuf + Sz - 1)) PWrite = IBuf; // Circulate buffer
         FullCnt++;
     }
 
-    retv PutIfNotOverflow(T Value) {
+    retv PutIfNotOverflow(T value) {
         if(FullCnt < Sz) {
-            *PWrite++ = Value;
+            *PWrite++ = value;
             if(PWrite > (IBuf + Sz - 1)) PWrite = IBuf; // Circulate buffer
             FullCnt++;
             return retv::Ok;
@@ -248,9 +248,9 @@ public:
     bool IsFullBufPresent() { return FullBufCnt != 0; }
 
     // Put if not overflow
-    retv Put(T Value) {
+    retv Put(T value) {
         if(FullBufCnt >= BufCnt and FullSlotsCnt >= Sz) return retv::Overflow;
-        Buf[BufIndxW][FullSlotsCnt++] = Value;
+        Buf[BufIndxW][FullSlotsCnt++] = value;
         if(FullSlotsCnt >= Sz) {
             FullSlotsCnt = 0;
             BufIndxW++;
@@ -294,17 +294,17 @@ template <typename T, uint32_t Sz>
 class CountingBuf_t {
 private:
     T IBuf[Sz];
-    uint32_t Cnt;
+    uint32_t cnt;
 public:
-    void Add(T Value) {
-        for(uint32_t i=0; i<Cnt; i++) {
-            if(IBuf[i] == Value) return;   // do not add what exists
+    void Add(T value) {
+        for(uint32_t i=0; i<cnt; i++) {
+            if(IBuf[i] == value) return;   // do not add what exists
         }
-        IBuf[Cnt] = Value;
-        Cnt++;
+        IBuf[cnt] = value;
+        cnt++;
     }
-    uint32_t GetCount() { return Cnt; }
-    void Clear() { Cnt = 0; }
+    uint32_t GetCount() { return cnt; }
+    void Clear() { cnt = 0; }
 };
 #endif
 
@@ -312,30 +312,30 @@ public:
 template <typename T, uint32_t sz>
 class LifoNumber_t {
 protected:
-    uint32_t Cnt=0;
+    uint32_t cnt=0;
     T IBuf[sz];
 public:
-    uint8_t Put(T Value) {
-        if(Cnt == sz) return retvOverflow;
-        IBuf[Cnt] = Value;
-        Cnt++;
+    uint8_t Put(T value) {
+        if(cnt == sz) return retvOverflow;
+        IBuf[cnt] = value;
+        cnt++;
         return retvOk;
     }
 
     uint8_t Get(T *p) {
-        if(Cnt == 0) return retvEmpty;
-        Cnt--;
-        *p = IBuf[Cnt];
+        if(cnt == 0) return retvEmpty;
+        cnt--;
+        *p = IBuf[cnt];
         return retvOk;
     }
 
     uint8_t GetAndDoNotRemove(T *p) {
-        if(Cnt == 0) return retvEmpty;
-        *p = IBuf[Cnt-1];
+        if(cnt == 0) return retvEmpty;
+        *p = IBuf[cnt-1];
         return retvOk;
     }
 
-    inline uint32_t GetFullCount()  { return Cnt; }
+    inline uint32_t GetFullCount()  { return cnt; }
 };
 
 #endif
@@ -366,7 +366,7 @@ class StorageWValidity_t {
 private:
     T IBuf[sz];
     bool IsValid[sz];
-    uint32_t Cnt = 0;
+    uint32_t cnt = 0;
 
     uint32_t GetValidByIndx(uint32_t Indx) {
         uint32_t FIndx = 0;
@@ -380,28 +380,28 @@ private:
     }
 public:
     T* Add() {
-        if(Cnt >= sz) return nullptr;
+        if(cnt >= sz) return nullptr;
         else {
             // Find empty slot: iterate all valid ones
             uint32_t FIndx = 0;
             while(IsValid[FIndx]) FIndx++;
             IsValid[FIndx] = true; // Validate
-            Cnt++;
+            cnt++;
             return &IBuf[FIndx];
         }
     }
 
     T* operator[](const uint32_t Indx) {
-        if(Indx >= Cnt) return nullptr;
+        if(Indx >= cnt) return nullptr;
         else return &IBuf[GetValidByIndx(Indx)];
     }
 
     void Remove(const uint32_t Indx) {
-        if(Indx < Cnt) {
+        if(Indx < cnt) {
             int32_t FIndx = GetValidByIndx(Indx);
             if(IsValid[FIndx]) {
                 IsValid[FIndx] = false;
-                Cnt--;
+                cnt--;
             }
         }
     }
@@ -411,7 +411,7 @@ public:
             if(ptr == &IBuf[i]) {
                 if(IsValid[i]) {
                     IsValid[i] = false;
-                    Cnt--;
+                    cnt--;
                 }
                 return;
             }
@@ -420,10 +420,10 @@ public:
 
     void RemoveAll() {
         for(uint32_t i=0; i<sz; i++) IsValid[i] = false;
-        Cnt = 0;
+        cnt = 0;
     }
 
-    int32_t GetCnt() { return Cnt; }
+    int32_t GetCnt() { return cnt; }
 };
 #endif
 
@@ -433,21 +433,21 @@ private:
     uint32_t AllocatedCnt = 0;
     uint32_t MaxCnt = 0xFFFFFFFF;
 public:
-    uint32_t Cnt = 0;
+    uint32_t cnt = 0;
     char **Strings = nullptr;
 
     uint8_t AddAndCopyString(const char* S) {
         // Append array of pointers if needed
-        if(Cnt == AllocatedCnt) {
-            if(AllocateCnt(Cnt + 1) != retvOk) return retvOutOfMemory;
+        if(cnt == AllocatedCnt) {
+            if(AllocateCnt(cnt + 1) != retvOk) return retvOutOfMemory;
         }
         // Copy string
         uint32_t Len = strlen(S);
         if(Len > 0) {
-            Strings[Cnt] = (char*)malloc(Len + 1);
-            if(!Strings[Cnt]) return retvFail;
-            strcpy(Strings[Cnt], S);
-            Cnt++;
+            Strings[cnt] = (char*)malloc(Len + 1);
+            if(!Strings[cnt]) return retvFail;
+            strcpy(Strings[cnt], S);
+            cnt++;
         }
         return retvOk;
     }
@@ -466,9 +466,9 @@ public:
     // Delete all strings, delete array of pointers
     void Clear() {
         if(Strings) {
-            for(uint32_t i=0; i<Cnt; i++) if(Strings[i]) free(Strings[i]);
+            for(uint32_t i=0; i<cnt; i++) if(Strings[i]) free(Strings[i]);
             free(Strings);
-            Cnt = 0;
+            cnt = 0;
             Strings = nullptr;
         }
     }
@@ -480,7 +480,7 @@ public:
 
     ~Stringlist_t() {
         if(Strings) {
-            for(uint32_t i=0; i<Cnt; i++) if(Strings[i]) free(Strings[i]);
+            for(uint32_t i=0; i<cnt; i++) if(Strings[i]) free(Strings[i]);
             free(Strings);
         }
     }
@@ -493,16 +493,16 @@ class IdList_t {
 private:
     T IBuf[sz];
 public:
-    uint32_t Cnt = 0, CurrIndx = 0;
+    uint32_t cnt = 0, CurrIndx = 0;
 
     void Clear() {
-        Cnt = 0;
+        cnt = 0;
         CurrIndx = 0;
     }
 
     uint8_t Add(T AValue) {
-        if(Cnt < sz) {
-            IBuf[Cnt++] = AValue;
+        if(cnt < sz) {
+            IBuf[cnt++] = AValue;
             return retvOk;
         }
         else return retvOverflow;
@@ -518,23 +518,23 @@ public:
     void Remove(T AValue) {
         uint32_t FIndx = 0;
         while(true) {
-            if(FIndx >= Cnt) return; // Not found
+            if(FIndx >= cnt) return; // Not found
             if(IBuf[FIndx] == AValue) break;
             FIndx++;
         }
         // Found, replace it
-        while((FIndx + 1) < Cnt) {
+        while((FIndx + 1) < cnt) {
             IBuf[FIndx] = IBuf[FIndx+1];
             FIndx++;
         }
-        Cnt--;
-        if(CurrIndx >= Cnt) CurrIndx = Cnt-1;
+        cnt--;
+        if(CurrIndx >= cnt) CurrIndx = cnt-1;
     }
 
     T GetCurrent() { return IBuf[CurrIndx]; }
     void MoveToNext() {
         CurrIndx++;
-        if(CurrIndx >= Cnt) CurrIndx = 0;
+        if(CurrIndx >= cnt) CurrIndx = 0;
     }
 
     T operator[](const uint32_t Indx) { return IBuf[Indx]; }

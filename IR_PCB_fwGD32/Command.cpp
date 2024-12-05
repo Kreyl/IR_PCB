@@ -2,7 +2,7 @@
  * Command.cpp
  *
  *  Created on: 13/01/2024г.
- *        Author: layst
+ *        Author: Kreyl
  */
 
 #include "shell.h"
@@ -14,23 +14,23 @@
 #include "led.h"
 
 typedef void (*ftVoidPShell)(Shell *pshell);
-extern const char* FWVersion;
+extern const char* kBuildTime;
 __attribute__((unused))
-extern Neopixels_t NpxLeds;
+extern Neopixels npx_leds;
 
 extern void Reboot();
 
-class ShellCmd_t {
+class ShellCmd {
 public:
-    const char *Name, *Help;
-    ftVoidPShell Dispatcher;
-    ShellCmd_t(const char* AName, ftVoidPShell ADispatcher, const char* AHelp) :
-        Name(AName), Help(AHelp), Dispatcher(ADispatcher) {}
+    const char *name, *help;
+    ftVoidPShell dispatcher;
+    ShellCmd(const char* aname, ftVoidPShell adispatcher, const char* ahelp) :
+        name(aname), help(ahelp), dispatcher(adispatcher) {}
 };
 
 // Dispatchers
 static void DoPing(Shell *pshell) { pshell->Ok(); }
-static void DoVersion(Shell *pshell) { pshell->Print("%S %S\r", APP_NAME, FWVersion); }
+static void DoVersion(Shell *pshell) { pshell->Print("%S %S\r", APP_NAME, kBuildTime); }
 static void DoReboot(Shell *pshell) { Reboot(); }
 
 #if 1 // ====================== Testing related ================================
@@ -46,7 +46,7 @@ static const int32_t sinbuf[] = {
 #define SIN_SZ    36
 
 void TestIrRxCallbackI(uint8_t bit_cnt, uint16_t rcvd) { PrintfI("RX: 0x%X\r", rcvd); }
-void I2SDmaDoneCbI() {
+void cb_I2S_dma_doneI() {
     if(is_testing and tst_indx == 0) {
         Codec::TransmitBuf((void*)sinbuf, SIN_SZ);
     }
@@ -55,15 +55,15 @@ void I2SDmaDoneCbI() {
 static void DoTest(Shell *pshell) {
     is_testing = true;
     beeped = false;
-    irRcvr::callbackI = TestIrRxCallbackI;
+    IRRcvr::callbackI = TestIrRxCallbackI;
     // Gpios
-    gpio::SetupOut(Gpio1, gpio::PushPull, gpio::speed2MHz);
-    gpio::SetupOut(Gpio2, gpio::PushPull, gpio::speed2MHz);
-    gpio::SetupOut(Gpio3, gpio::PushPull, gpio::speed2MHz);
-    gpio::SetupOut(Gpio4, gpio::PushPull, gpio::speed2MHz);
+    Gpio::SetupOut(Gpio1, Gpio::PushPull, Gpio::speed2MHz);
+    Gpio::SetupOut(Gpio2, Gpio::PushPull, Gpio::speed2MHz);
+    Gpio::SetupOut(Gpio3, Gpio::PushPull, Gpio::speed2MHz);
+    Gpio::SetupOut(Gpio4, Gpio::PushPull, Gpio::speed2MHz);
     // Audio codec
     if(Codec::SetupSampleRate(48000) == retv::Ok) {
-        Codec::I2SDmaDoneCbI = I2SDmaDoneCbI;
+        Codec::cb_I2S_dma_doneI = cb_I2S_dma_doneI;
         Codec::TransmitBuf((void*)sinbuf, SIN_SZ);
     }
     else Printf("FS setup fail\r");
@@ -82,7 +82,7 @@ static void GetSettings(Shell *pshell) {
 }
 
 static void Set(Shell *pshell) {
-    Cmd_t *pcmd = &pshell->Cmd;
+    Cmd *pcmd = &pshell->cmd;
     const char* name;
     uint32_t v, N = 0;
     bool found;
@@ -122,7 +122,7 @@ static void LoadSettings(Shell *pshell) {
 }
 
 static void IrTx(Shell *pshell) {
-    Cmd_t *pcmd = &pshell->Cmd;
+    Cmd *pcmd = &pshell->cmd;
     int32_t pwr, bit_indx = 16; // Fill word starting from MSB
     uint16_t word = 0;
     if(pcmd->GetNext(&pwr).NotOk()) { pshell->BadParam(); return; }
@@ -137,7 +137,7 @@ static void IrTx(Shell *pshell) {
     uint32_t bit_cnt = 16 - bit_indx;
     if(bit_cnt == 0) { pshell->BadParam(); return; }
     Printf("Word16: 0x%X; bit number: %u\r", word, bit_cnt);
-    irLed::TransmitWord(word, bit_cnt, pwr, nullptr);
+    IRLed::TransmitWord(word, bit_cnt, pwr, nullptr);
     pshell->Ok();
 }
 
@@ -157,7 +157,7 @@ static void CmdStop(Shell *pshell) {
 }
 
 //static void CtrlSet(Shell *pshell) {
-//    Cmd_t *pcmd = &pshell->Cmd;
+//    Cmd *pcmd = &pshell->cmd;
 //    int32_t sta; // Fill word starting from MSB
 //    if(pcmd->GetNext(&sta) != retv::Ok) { pshell->BadParam(); return; }
 //    if(sta == 0) gpio::SetLo(Gpio3);
@@ -169,7 +169,7 @@ static void CmdStop(Shell *pshell) {
 #if 0 // ==== Debug ====
 static void CtrlSet(Shell *pshell) {
     uint32_t In[2] = { 0, 0, };
-    if(pshell->Cmd.GetParams<uint32_t>(2, &In[0], &In[1]) == retv::Ok) {
+    if(pshell->cmd.GetParams<uint32_t>(2, &In[0], &In[1]) == retv::Ok) {
         SetInputs(In);
         pshell->Ok();
     }
@@ -177,12 +177,12 @@ static void CtrlSet(Shell *pshell) {
 }
 
 static void Npx(Shell *pshell) {
-    Cmd_t *PCmd = &pshell->Cmd;
+    Cmd *pcmd = &pshell->cmd;
     Color_t clr;
-    if(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.SetAll(clr);
+    if(pcmd->GetClrRGB(&clr) == retv::Ok) npx_leds.SetAll(clr);
 //        uint32_t i=0;
-//        while(PCmd->GetClrRGB(&clr) == retv::Ok) NpxLeds.ClrBuf[i++] = clr;
-    NpxLeds.SetCurrentColors();
+//        while(pcmd->GetClrRGB(&clr) == retv::Ok) npx_leds.clr_buf[i++] = clr;
+    npx_leds.SetCurrentColors();
 }
 #endif
 
@@ -190,9 +190,9 @@ static void Npx(Shell *pshell) {
 //extern LedSmooth side_LEDs[SIDE_LEDS_CNT];
 
 //static void SetLed(Shell *pshell) {
-//    Cmd_t *PCmd = &pshell->Cmd;
+//    Cmd *pcmd = &pshell->cmd;
 //    uint32_t v;
-//    if(PCmd->GetNext(&v) == retv::Ok) {
+//    if(pcmd->GetNext(&v) == retv::Ok) {
 //        side_LEDs[0].Set(v);
 //        pshell->Ok();
 //    }
@@ -204,7 +204,7 @@ static void Npx(Shell *pshell) {
 //}
 
 // Commands
-static const ShellCmd_t cmds[] = {
+static const ShellCmd cmds[] = {
         {"Ping",    DoPing,    "Just to ask if anyone is there"},
         {"Version", DoVersion, "Show firmware version"},
         {"Test",    DoTest,    "Start hardware testing"},
@@ -230,16 +230,16 @@ static const ShellCmd_t cmds[] = {
 
 // Processing
 void OnCmd(Shell *pshell) {
-    Cmd_t *PCmd = &pshell->Cmd;
+    Cmd *pcmd = &pshell->cmd;
     // Show help if needed
-    if(PCmd->NameIs("Help")) {
+    if(pcmd->NameIs("Help")) {
         pshell->Print("==== Commands available ====\r\n");
-        for(auto &SCmd : cmds) pshell->Print("%S: %S\r\n", SCmd.Name, SCmd.Help);
+        for(auto &scmd : cmds) pshell->Print("%S: %S\r\n", scmd.name, scmd.help);
     }
     else {
-        for(auto &SCmd : cmds) {
-            if(PCmd->NameIs(SCmd.Name)) {
-                SCmd.Dispatcher(pshell);
+        for(auto &scmd : cmds) {
+            if(pcmd->NameIs(scmd.name)) {
+                scmd.dispatcher(pshell);
                 return;
             }
         }

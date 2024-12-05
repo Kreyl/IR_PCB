@@ -2,7 +2,7 @@
  * app.cpp
  *
  *  Created on: 14.08.2023
- *      Author: layst
+ *      Author: Kreyl
  */
 
 #include "app.h"
@@ -21,7 +21,7 @@
 int32_t hit_cnt, rounds_cnt, magazines_cnt;
 extern Beeper beeper;
 extern bool is_testing;
-extern CmdUart_t dbg_uart;
+extern CmdUart dbg_uart;
 extern UsbMsdCdc usb_msd_cdc;
 static bool burst_from_cmd = false;
 
@@ -292,6 +292,7 @@ void ProcessRxPkt(IRPkt rx_pkt) {
 VirtualTimer fire_tmr;
 IRPkt pkt_tx;
 systime_t fire_start_time_st;
+static bool is_firing;
 
 // ==== Delay subsystem ====
 void TmrCallback(void *p) {
@@ -312,10 +313,8 @@ void StartDelay_ms(int32_t delay_ms, AppEvt aevt) {
 
 void OnIrTxEndI() { evt_q_app.SendNowOrExitI(AppEvt::EndOfIrTx); }
 
-bool IsFiring;
-
 void Fire() {
-    IsFiring = true;
+    is_firing = true;
     if(settings.transmit_what_rcvd.IsEnabled()) pkt_tx = last_rcvd_pkt;
     else {
         if(!settings.rounds_in_magaz.IsInfinity()) rounds_cnt--;
@@ -342,7 +341,7 @@ void Fire() {
     pkt_tx.Print((Shell*)&dbg_uart, "PktTx");
     pkt_tx.Print((Shell*)&usb_msd_cdc, "PktTx");
 
-    irLed::TransmitWord(pkt_tx.word16, pkt_tx.bits_cnt, *settings.ir_tx_pwr, OnIrTxEndI);
+    IRLed::TransmitWord(pkt_tx.word16, pkt_tx.bits_cnt, *settings.ir_tx_pwr, OnIrTxEndI);
     fire_start_time_st = Sys::GetSysTimeX();
     Indication::Shot();
 }
@@ -350,13 +349,13 @@ void Fire() {
 
 void Reset(bool quiet) {
     Sys::Lock();
-    irLed::ResetI();
+    IRLed::ResetI();
     output_hits_present.SetMode(settings.pin_mode_gpio3.GetMode());
     output_hits_present.SetActive();
 //    OutPulseOnHit.ResetI();  // Removed to implement PWM input
     input_burst_fire.CleanIrqFlag();
     input_single_fire.CleanIrqFlag();
-    IsFiring = false;
+    is_firing = false;
     burst_from_cmd = false;
     rounds_cnt = *settings.rounds_in_magaz;
     magazines_cnt = *settings.magazines_cnt;
@@ -364,13 +363,13 @@ void Reset(bool quiet) {
     hit_cnt = *settings.hit_cnt;
     prev_hit_time_st = Sys::GetSysTimeX();
     // IR tx
-    irLed::SetCarrierFreq(*settings.ir_tx_freq);
+    IRLed::SetCarrierFreq(*settings.ir_tx_freq);
     Sys::Unlock();
     Indication::Reset(quiet);
 }
 
 // ==================================== Thread =================================
-static THD_WORKSPACE(waAppThread, 256);
+static THD_WORKSPACE(wa_app_thread, 256);
 static void AppThread() {
     while(true) {
         AppMsg msg = evt_q_app.Fetch(TIME_INFINITE);
@@ -385,12 +384,12 @@ static void AppThread() {
 
         else if(hit_cnt > 0) switch(msg.evt) { // Do nothing if no hits left
             case AppEvt::StartFire:
-                if(!IsFiring and rounds_cnt > 0) Fire();
+                if(!is_firing and rounds_cnt > 0) Fire();
                 break;
 
             case AppEvt::NewPwmData:
 //                Printf("pwm %u\r", input_pwm.pwm_duty);
-                if(input_pwm.pwm_duty > PWM_DUTY_SINGLE_FIRE_percent and !IsFiring and rounds_cnt > 0) Fire();
+                if(input_pwm.pwm_duty > PWM_DUTY_SINGLE_FIRE_percent and !is_firing and rounds_cnt > 0) Fire();
                 break;
 
             case AppEvt::EndOfIrTx: // Tx of several same pkts just ended
@@ -398,7 +397,7 @@ static void AppThread() {
                 break;
 
             case AppEvt::EndOfDelayBetweenShots:
-                IsFiring = false;
+                is_firing = false;
                 if(rounds_cnt > 0) { // Fire if needed and there are rounds left
                     if(DoBurstFire()) Fire();
                 }
@@ -429,7 +428,7 @@ static void AppThread() {
 void AppInit() {
     evt_q_app.Init();
     // Control pins init
-//    output_hits_ended.SetupOut(gpio::OutMode::PushPull);
+//    output_hits_ended.SetupOut(Gpio::OutMode::PushPull);
     output_hits_present.Init(); // Mode and Active will be set inside Reset()
 //    OutPulseOnHit.Init(); // Removed to implement PWM input
     input_burst_fire.Init();
@@ -437,7 +436,7 @@ void AppInit() {
     input_pwm.Init();
     Reset();
     // Create and start thread
-    Sys::CreateThd(waAppThread, sizeof(waAppThread), NORMALPRIO, AppThread);
+    Sys::CreateThd(wa_app_thread, sizeof(wa_app_thread), NORMALPRIO, AppThread);
     // Start eternal fire if needed
     if(settings.fire_always.IsEnabled()) {
         burst_from_cmd = true;

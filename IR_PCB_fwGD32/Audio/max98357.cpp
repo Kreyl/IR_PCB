@@ -2,7 +2,7 @@
  * max98357.cpp
  *
  *  Created on: 18.09.2022 г.
- *      Author: layst
+ *      Author: Kreyl
  */
 
 #include "max98357.h"
@@ -16,21 +16,21 @@ LRCLK ONLY supports 8kHz, 16kHz, 32kHz, 44.1kHz, 48kHz, 88.2kHz and 96kHz.
 
 #if 1 // =========================== SAI defins ================================
 // Clock
-struct I2SClkSetup_t {
-    uint32_t Fs, Prediv1;
-    Pll2Multi Pll2Mf;
-    uint32_t Div, OF;
+struct I2SClkSetup {
+    uint32_t Fs, prediv1;
+    Pll2Multi pll2_mf;
+    uint32_t div, OF;
 };
 
 #if CRYSTAL_FREQ_HZ == 12000000UL
-static const I2SClkSetup_t ClkSetup[] = {
-        {.Fs= 8000, .Prediv1=2, .Pll2Mf=Pll2Multi::mul08, .Div=187, .OF=1},
-        {.Fs=16000, .Prediv1=2, .Pll2Mf=Pll2Multi::mul16, .Div=187, .OF=1},
-        {.Fs=32000, .Prediv1=3, .Pll2Mf=Pll2Multi::mul16, .Div= 62, .OF=1},
-        {.Fs=44100, .Prediv1=2, .Pll2Mf=Pll2Multi::mul08, .Div= 34, .OF=0},
-        {.Fs=48000, .Prediv1=2, .Pll2Mf=Pll2Multi::mul16, .Div= 62, .OF=1},
-        {.Fs=88200, .Prediv1=2, .Pll2Mf=Pll2Multi::mul08, .Div= 17, .OF=0},
-        {.Fs=96000, .Prediv1=5, .Pll2Mf=Pll2Multi::mul16, .Div= 12, .OF=1},
+static const I2SClkSetup kClkSetup[] = {
+        {.Fs= 8000, .prediv1=2, .pll2_mf=Pll2Multi::mul08, .div=187, .OF=1},
+        {.Fs=16000, .prediv1=2, .pll2_mf=Pll2Multi::mul16, .div=187, .OF=1},
+        {.Fs=32000, .prediv1=3, .pll2_mf=Pll2Multi::mul16, .div= 62, .OF=1},
+        {.Fs=44100, .prediv1=2, .pll2_mf=Pll2Multi::mul08, .div= 34, .OF=0},
+        {.Fs=48000, .prediv1=2, .pll2_mf=Pll2Multi::mul16, .div= 62, .OF=1},
+        {.Fs=88200, .prediv1=2, .pll2_mf=Pll2Multi::mul08, .div= 17, .OF=0},
+        {.Fs=96000, .prediv1=5, .pll2_mf=Pll2Multi::mul16, .div= 12, .OF=1},
 };
 #else
 #error "No freq divider setup for selected crystal"
@@ -42,25 +42,25 @@ static const I2SClkSetup_t ClkSetup[] = {
 // DMA Tx Completed IRQ
 static void DmaTxEndIrqHandler(void *p, uint32_t flags);
 
-static const DMA_t DmaTx {I2S_DMA_TX, DmaTxEndIrqHandler, nullptr, IRQ_PRIO_VERYHIGH};
+static const DMA_t dma_tx {I2S_DMA_TX, DmaTxEndIrqHandler, nullptr, IRQ_PRIO_VERYHIGH};
 
 static void DmaTxEndIrqHandler(void *p, uint32_t flags) {
 //    Sys::LockFromIRQ();
-    if(Codec::I2SDmaDoneCbI) Codec::I2SDmaDoneCbI();
+    if(Codec::cb_I2S_dma_doneI) Codec::cb_I2S_dma_doneI();
 //    Sys::UnlockFromIRQ();
 }
 
 namespace Codec {
 
-ftVoidVoid I2SDmaDoneCbI = nullptr;
+ftVoidVoid cb_I2S_dma_doneI = nullptr;
 
 void Init() {
     // === GPIOs ===
-    gpio::SetupAlterFunc(AU_LRCK, gpio::PushPull); // Left/Right (Frame sync) clock output
-    gpio::SetupAlterFunc(AU_BCLK, gpio::PushPull); // Bit clock output
-    gpio::SetupAlterFunc(AU_SDIN, gpio::PushPull); // SAI_A is Master Transmitter
-    gpio::SetupOut(AU_SDMODE, gpio::PushPull);
-    gpio::SetHi(AU_SDMODE); // Enable device, use Left channel
+    Gpio::SetupAlterFunc(AU_LRCK, Gpio::PushPull); // left/right (Frame sync) clock output
+    Gpio::SetupAlterFunc(AU_BCLK, Gpio::PushPull); // Bit clock output
+    Gpio::SetupAlterFunc(AU_SDIN, Gpio::PushPull); // SAI_A is Master Transmitter
+    Gpio::SetupOut(AU_SDMODE, Gpio::PushPull);
+    Gpio::SetHi(AU_SDMODE); // Enable device, use left channel
     Sys::SleepMilliseconds(18);
     // === Clock ===
     RCU->EnSpi(AU_SPI);
@@ -73,23 +73,23 @@ void Init() {
             I2S_CTL_STD_I2S | I2S_CTL_MASTER_TX | I2S_CTL_I2SSEL;
     // ==== DMA ====
     AU_SPI->EnTxDma();
-    DmaTx.Init(&AU_SPI->DATA, I2S_DMATX_MODE);
+    dma_tx.Init(&AU_SPI->DATA, I2S_DMATX_MODE);
 }
 
-void TransmitBuf(void *Buf, uint32_t Sz16) {
-    DmaTx.Disable();
-    DmaTx.SetMemoryAddr(Buf);
-    DmaTx.SetTransferDataCnt(Sz16);
-    DmaTx.Enable();
+void TransmitBuf(void *buf, uint32_t sz16) {
+    dma_tx.Disable();
+    dma_tx.SetMemoryAddr(buf);
+    dma_tx.SetTransferDataCnt(sz16);
+    dma_tx.Enable();
     AU_SPI->EnableI2S(); // Start tx
 }
 
 bool IsTransmitting() {
-    return (DmaTx.GetTransferDataCnt() != 0);
+    return (dma_tx.GetTransferDataCnt() != 0);
 }
 
 void Stop() {
-    DmaTx.Disable();
+    dma_tx.Disable();
     AU_SPI->DisableI2S();
     RCU->DisablePll2();
 }
@@ -98,11 +98,11 @@ void Stop() {
 retv SetupSampleRate(uint32_t Fs) {
     Stop();
 //    PrintfI("Fs: %u\r", Fs);
-    for(auto& stp : ClkSetup) {
-        if(stp.Fs == Fs) { // setup for Fs found, apply it
-            RCU->SetPrediv1(stp.Prediv1);
-            RCU->SetPll2Multi(stp.Pll2Mf);
-            AU_SPI->I2SPSC = (stp.OF << 8) | stp.Div;
+    for(auto& setup : kClkSetup) {
+        if(setup.Fs == Fs) { // setup for Fs found, apply it
+            RCU->SetPrediv1(setup.prediv1);
+            RCU->SetPll2Multi(setup.pll2_mf);
+            AU_SPI->I2SPSC = (setup.OF << 8) | setup.div;
             if(RCU->EnablePll2() == retv::Ok) return retv::Ok;
             else {
                 PrintfI("I2S PLL fail\r");

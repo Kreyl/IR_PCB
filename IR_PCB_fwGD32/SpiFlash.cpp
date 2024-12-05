@@ -19,57 +19,57 @@
 #define DMA_TX_MODE_IRQ_INC DMA_PRIO_HIGH | DMA_MEMSZ_8_BIT | DMA_PERSZ_8_BIT | \
     DMA_MEM_INC | DMA_DIR_MEM2PER | DMA_TCIE
 
-void SpiFlashDmaCb(void *p, uint32_t W32) {
+void SpiFlashDmaCb(void *p, uint32_t dw32) {
     Sys::LockFromIRQ();
-    Sys::WakeI(&((SpiFlash_t*)p)->PThd, retv::Ok);
+    Sys::WakeI(&((SpiFlash*)p)->pthd, retv::Ok);
     Sys::UnlockFromIRQ();
 }
 
-SpiFlash_t::SpiFlash_t(SPI_TypeDef *pspi) : spi(pspi),
-        DmaTx(SPIFLASH_DMA_TX, SpiFlashDmaCb, this),
-        DmaRx(SPIFLASH_DMA_RX, SpiFlashDmaCb, this)
+SpiFlash::SpiFlash(SPI_TypeDef *pspi) : spi(pspi),
+        dma_tx(SPIFLASH_DMA_TX, SpiFlashDmaCb, this),
+        dma_rx(SPIFLASH_DMA_RX, SpiFlashDmaCb, this)
         {}
 
-void SpiFlash_t::Init() {
+void SpiFlash::Init() {
     // Init GPIO
-    Nss.SetupOut(gpio::PushPull, gpio::speed50MHz);
-    Nss.SetHi();
-    gpio::SetupAlterFunc(FLASH_SCK,  gpio::PushPull, gpio::speed50MHz);
-    gpio::SetupAlterFunc(FLASH_MISO, gpio::PushPull, gpio::speed50MHz);
-    gpio::SetupAlterFunc(FLASH_MOSI, gpio::PushPull, gpio::speed50MHz);
-    gpio::SetupAlterFunc(FLASH_IO2,  gpio::PushPull, gpio::speed50MHz);
-    gpio::SetupAlterFunc(FLASH_IO3,  gpio::PushPull, gpio::speed50MHz);
+    nss_pin.SetupOut(Gpio::PushPull, Gpio::speed50MHz);
+    nss_pin.SetHi();
+    Gpio::SetupAlterFunc(FLASH_SCK,  Gpio::PushPull, Gpio::speed50MHz);
+    Gpio::SetupAlterFunc(FLASH_MISO, Gpio::PushPull, Gpio::speed50MHz);
+    Gpio::SetupAlterFunc(FLASH_MOSI, Gpio::PushPull, Gpio::speed50MHz);
+    Gpio::SetupAlterFunc(FLASH_IO2,  Gpio::PushPull, Gpio::speed50MHz);
+    Gpio::SetupAlterFunc(FLASH_IO3,  Gpio::PushPull, Gpio::speed50MHz);
     // ==== SPI ====    MSB first, master, ClkLowIdle, FirstEdge, BitNum = 8
-    spi.Setup(BitOrder::MSB, Spi_t::cpol::IdleLow, Spi_t::cpha::FirstEdge, SPIFLASH_CLK_FREQ_Hz);
-//    spi.Setup(BitOrder::MSB, Spi_t::cpol::IdleLow, Spi_t::cpha::FirstEdge, 1000000);
+    spi.Setup(BitOrder::MSB, SpiHw::Cpol::IdleLow, SpiHw::Cpha::FirstEdge, SPIFLASH_CLK_FREQ_Hz);
+//    spi.Setup(BitOrder::MSB, SpiHw::Cpol::IdleLow, SpiHw::Cpha::FirstEdge, 1000000);
     spi.Enable();
     // ==== DMA ====
-    DmaRx.Init();
-    DmaRx.SetPeriphAddr(&spi.PSpi->DATA);
-    DmaRx.SetMode(DMA_RX_MODE);
-    DmaTx.Init();
-    DmaTx.SetPeriphAddr(&spi.PSpi->DATA);
+    dma_rx.Init();
+    dma_rx.SetPeriphAddr(&spi.PSpi->DATA);
+    dma_rx.SetMode(DMA_RX_MODE);
+    dma_tx.Init();
+    dma_tx.SetPeriphAddr(&spi.PSpi->DATA);
 }
 
-SpiFlash_t::MemParams_t SpiFlash_t::GetParams() {
-    MemParams_t r;
+SpiFlash::MemParams SpiFlash::GetParams() {
+    MemParams r;
     // Read JEDEC ID
     uint32_t JID;
-    Nss.SetLo();
-    spi.WriteRead(0x9F); // Cmd code Read JEDEC ID
+    nss_pin.SetLo();
+    spi.WriteRead(0x9F); // cmd code Read JEDEC ID
     JID = spi.WriteRead(0x00); // MfgId
     JID = (JID << 8) | spi.WriteRead(0x00); // MemType
     JID = (JID << 8) | spi.WriteRead(0x00); // Capacity
-    Nss.SetHi();
+    nss_pin.SetHi();
 //    Printf("JID: 0x%X\r", JID);
     switch(JID) {
         case 0xEF4016: // W25Q32
-            r.SectorCnt = 1024UL;
-            r.SectorSz = 4096UL;
+            r.sector_cnt = 1024UL;
+            r.sector_sz = 4096UL;
             break;
         case 0xEF4017: // W25Q64
-            r.SectorCnt = 2048UL;
-            r.SectorSz = 4096UL;
+            r.sector_cnt = 2048UL;
+            r.sector_sz = 4096UL;
             break;
         default: Printf("Unknown Flash JID: 0x%X\r", JID); break;
     } // switch
@@ -77,27 +77,27 @@ SpiFlash_t::MemParams_t SpiFlash_t::GetParams() {
 }
 
 #if 1 // ======================= Read / Write / Erase ==========================
-retv SpiFlash_t::Read(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
-    Nss.SetLo();
-    WriteCmdAndAddr(0x0B, Addr); // Cmd FastRead
+retv SpiFlash::Read(uint32_t addr, uint8_t *pbuf, uint32_t alen) {
+    nss_pin.SetLo();
+    WriteCmdAndAddr(0x0B, addr); // cmd FastRead
     spi.WriteRead(0x00); // 8 dummy clocks
     // ==== Read Data ====
     spi.ClearRxBuf();
     spi.Disable();
     spi.SetRxOnly();   // Will not set if enabled
     spi.EnRxDma();
-    DmaRx.SetMemoryAddr(PBuf);
-    DmaRx.SetTransferDataCnt(ALen);
+    dma_rx.SetMemoryAddr(pbuf);
+    dma_rx.SetTransferDataCnt(alen);
     // Start
     Sys::Lock();
-    PThd = Sys::GetSelfThd();
-    DmaRx.Enable();
+    pthd = Sys::GetSelfThd();
+    dma_rx.Enable();
     spi.Enable();
     retv r = Sys::SleepS(TIME_MS2I(270)); // Wait IRQ
     // Will be here after timeout or IRQ
-    DmaRx.Disable();
+    dma_rx.Disable();
     Sys::Unlock();
-    Nss.SetHi();
+    nss_pin.SetHi();
     spi.Disable();
     spi.SetFullDuplex();   // Remove read-only mode
     spi.DisRxDma();
@@ -107,15 +107,15 @@ retv SpiFlash_t::Read(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
     return r;
 }
 
-retv SpiFlash_t::ReadQ(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
-    Nss.SetLo();
+retv SpiFlash::ReadQ(uint32_t addr, uint8_t *pbuf, uint32_t alen) {
+    nss_pin.SetLo();
     spi.WriteRead(0xEB); // Write cmd in single mode
     spi.ClearRxBuf();
     spi.EnQuadWrite();
-    // Send Addr and 2 dummy clocks
-    spi.WriteRead(0xFF & (Addr >> 16));
-    spi.WriteRead(0xFF & (Addr >> 8));
-    spi.WriteRead(0xFF & (Addr >> 0));
+    // Send addr and 2 dummy clocks
+    spi.WriteRead(0xFF & (addr >> 16));
+    spi.WriteRead(0xFF & (addr >> 8));
+    spi.WriteRead(0xFF & (addr >> 0));
     spi.WriteRead(0xF0); // 2 dummy clocks, must be Fx (see memory datasheet)
     // Switch to read mode
     spi.EnQuadRead();
@@ -123,26 +123,26 @@ retv SpiFlash_t::ReadQ(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
     spi.Write(0x00);
     spi.Write(0x00);
     // ==== Read Data ====
-    DmaRx.SetMemoryAddr(PBuf);
-    DmaRx.SetTransferDataCnt(ALen);
+    dma_rx.SetMemoryAddr(pbuf);
+    dma_rx.SetTransferDataCnt(alen);
     uint8_t Dummy = 0;
-    DmaTx.SetMemoryAddr(&Dummy);
-    DmaTx.SetTransferDataCnt(ALen);
-    DmaTx.SetMode(DMA_TX_MODE_NOIRQ_NOINC);
+    dma_tx.SetMemoryAddr(&Dummy);
+    dma_tx.SetTransferDataCnt(alen);
+    dma_tx.SetMode(DMA_TX_MODE_NOIRQ_NOINC);
     spi.PSpi->WaitForTBEHiAndTransLo();
     spi.ClearRxBuf();
     spi.EnRxTxDma();
     // Start
     Sys::Lock();
-    PThd = Sys::GetSelfThd();
-    DmaRx.Enable();
-    DmaTx.Enable();
+    pthd = Sys::GetSelfThd();
+    dma_rx.Enable();
+    dma_tx.Enable();
     retv r = Sys::SleepS(TIME_MS2I(270)); // Wait IRQ
     // Will be here after timeout or IRQ
-    DmaRx.Disable();
-    DmaTx.Disable();
+    dma_rx.Disable();
+    dma_tx.Disable();
     Sys::Unlock();
-    Nss.SetHi();
+    nss_pin.SetHi();
     spi.DisRxTxDma();
     spi.PSpi->WaitForTBEHiAndTransLo(); // }
     spi.ClearRxBuf();                   // } Clear bufs and flags
@@ -151,86 +151,86 @@ retv SpiFlash_t::ReadQ(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
 }
 
 
-retv SpiFlash_t::WritePage(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
+retv SpiFlash::WritePage(uint32_t addr, uint8_t *pbuf, uint32_t alen) {
     WriteEnable();
-    Nss.SetLo();
-    WriteCmdAndAddr(0x02, Addr);
+    nss_pin.SetLo();
+    WriteCmdAndAddr(0x02, addr);
     // Write data
-    for(uint32_t i=0; i < ALen; i++) spi.WriteRead(*PBuf++);
-    Nss.SetHi();
+    for(uint32_t i=0; i < alen; i++) spi.WriteRead(*pbuf++);
+    nss_pin.SetHi();
     return BusyWait(); // Wait completion
 }
 
-retv SpiFlash_t::WritePageQ(uint32_t Addr, uint8_t *PBuf, uint32_t ALen) {
+retv SpiFlash::WritePageQ(uint32_t addr, uint8_t *pbuf, uint32_t alen) {
     WriteEnable();
-    Nss.SetLo();
+    nss_pin.SetLo();
     spi.WriteRead(0x32); // Write cmd and addr in single mode
-    // Send Addr and 2 dummy clocks
-    spi.WriteRead(0xFF & (Addr >> 16));
-    spi.WriteRead(0xFF & (Addr >> 8));
-    spi.WriteRead(0xFF & (Addr >> 0));
+    // Send addr and 2 dummy clocks
+    spi.WriteRead(0xFF & (addr >> 16));
+    spi.WriteRead(0xFF & (addr >> 8));
+    spi.WriteRead(0xFF & (addr >> 0));
     // Write data
-    DmaTx.SetMemoryAddr(PBuf);
-    DmaTx.SetTransferDataCnt(ALen);
-    DmaTx.SetMode(DMA_TX_MODE_IRQ_INC);
+    dma_tx.SetMemoryAddr(pbuf);
+    dma_tx.SetTransferDataCnt(alen);
+    dma_tx.SetMode(DMA_TX_MODE_IRQ_INC);
     spi.EnQuadWrite();
     spi.EnTxDma();
     Sys::Lock();
-    PThd = Sys::GetSelfThd();
-    DmaTx.Enable();
+    pthd = Sys::GetSelfThd();
+    dma_tx.Enable();
     retv r = Sys::SleepS(TIME_MS2I(270)); // Wait IRQ
     // Will be here after timeout or IRQ
-    DmaTx.Disable();
+    dma_tx.Disable();
     Sys::Unlock();
     spi.PSpi->WaitForTBEHiAndTransLo(); // }
     spi.ClearRxBuf();                   // } Clear bufs and flags
-    Nss.SetHi();
+    nss_pin.SetHi();
     spi.DisTxDma();
     spi.DisQuad();
     if(r == retv::Ok) return BusyWait(); // Wait completion
     else return r;
 }
 
-retv SpiFlash_t::EraseSector4k(uint32_t Addr) {
+retv SpiFlash::EraseSector4k(uint32_t addr) {
     WriteEnable();
-    Nss.SetLo();
-    WriteCmdAndAddr(0x20, Addr);
-    Nss.SetHi();
+    nss_pin.SetLo();
+    WriteCmdAndAddr(0x20, addr);
+    nss_pin.SetHi();
     return BusyWait(); // Wait completion
 }
 
-retv SpiFlash_t::EraseBlock32k(uint32_t Addr) {
+retv SpiFlash::EraseBlock32k(uint32_t addr) {
     WriteEnable();
-    Nss.SetLo();
-    WriteCmdAndAddr(0x52, Addr);
-    Nss.SetHi();
+    nss_pin.SetLo();
+    WriteCmdAndAddr(0x52, addr);
+    nss_pin.SetHi();
     return BusyWait(); // Wait completion
 }
 
-retv SpiFlash_t::EraseBlock64k(uint32_t Addr) {
+retv SpiFlash::EraseBlock64k(uint32_t addr) {
     WriteEnable();
-    Nss.SetLo();
-    WriteCmdAndAddr(0xD8, Addr);
-    Nss.SetHi();
+    nss_pin.SetLo();
+    WriteCmdAndAddr(0xD8, addr);
+    nss_pin.SetHi();
     return BusyWait(); // Wait completion
 }
 #endif
 
 // ========================= Control Instructions ==============================
-uint8_t SpiFlash_t::ReleasePowerDown() {
-    Nss.SetLo();
-    spi.WriteRead(0xAB); // Cmd code
+uint8_t SpiFlash::ReleasePowerDown() {
+    nss_pin.SetLo();
+    spi.WriteRead(0xAB); // cmd code
     spi.WriteRead(0x00); // }
     spi.WriteRead(0x00); // }
     spi.WriteRead(0x00); // } Three dummy bytes
     uint8_t r = spi.WriteRead(0x00);
-    Nss.SetHi();
+    nss_pin.SetHi();
     return r;
 }
 
 
 /* UNUSED, left for dbg purposes
-SpiFlash_t::MfrDevId_t SpiFlash_t::ReadMfrDevId() {
+SpiFlash::MfrDevId_t SpiFlash::ReadMfrDevId() {
     MfrDevId_t r;
     Nss.SetLo();
     spi.WriteRead(0x90);
@@ -243,7 +243,7 @@ SpiFlash_t::MfrDevId_t SpiFlash_t::ReadMfrDevId() {
     return r;
 }
 
-SpiFlash_t::MfrDevId_t SpiFlash_t::ReadMfrDevIdQ() {
+SpiFlash::MfrDevId_t SpiFlash::ReadMfrDevIdQ() {
     MfrDevId_t r;
     Nss.SetLo();
     spi.WriteRead(0x94); // Write cmd in single mode
@@ -270,47 +270,47 @@ SpiFlash_t::MfrDevId_t SpiFlash_t::ReadMfrDevIdQ() {
 */
 
 #if 1 // ========================== Service ====================================
-void SpiFlash_t::Reset() {
+void SpiFlash::Reset() {
     // Software Reset sequence: Enable Reset (66h) & Reset (99h).
     Sys::Lock();
-    Nss.SetLo();
+    nss_pin.SetLo();
     spi.WriteRead(0x66); // Enable Reset
-    Nss.SetHi();
+    nss_pin.SetHi();
     __NOP(); __NOP(); __NOP(); __NOP();
-    Nss.SetLo();
+    nss_pin.SetLo();
     spi.WriteRead(0x99); // Do Reset
-    Nss.SetHi();
+    nss_pin.SetHi();
     Sys::Unlock();
     Sys::SleepMilliseconds(1); // device will take approximately 30μS (tRST) to reset
 }
 
-void SpiFlash_t::WriteCmdAndAddr(uint8_t Cmd, uint32_t Addr) {
-    spi.WriteRead(Cmd);
-    spi.WriteRead(0xFF & (Addr >> 16));
-    spi.WriteRead(0xFF & (Addr >> 8));
-    spi.WriteRead(0xFF & (Addr >> 0));
+void SpiFlash::WriteCmdAndAddr(uint8_t cmd, uint32_t addr) {
+    spi.WriteRead(cmd);
+    spi.WriteRead(0xFF & (addr >> 16));
+    spi.WriteRead(0xFF & (addr >> 8));
+    spi.WriteRead(0xFF & (addr >> 0));
 }
 
 // Write cmd and then read next byte
-uint8_t SpiFlash_t::WriteCmdRead1Byte(uint8_t Cmd) {
-    Nss.SetLo();
-    spi.WriteRead(Cmd);
+uint8_t SpiFlash::WriteCmdRead1Byte(uint8_t cmd) {
+    nss_pin.SetLo();
+    spi.WriteRead(cmd);
     uint8_t r = spi.WriteRead(0x00);
-    Nss.SetHi();
+    nss_pin.SetHi();
     return r;
 }
 
-void SpiFlash_t::WriteEnable() {
-    Nss.SetLo();
+void SpiFlash::WriteEnable() {
+    nss_pin.SetLo();
     spi.WriteRead(0x06);
-    Nss.SetHi();
+    nss_pin.SetHi();
 }
 
-retv SpiFlash_t::BusyWait() {
+retv SpiFlash::BusyWait() {
     Sys::SleepMilliseconds(1);
     systime_t Start = Sys::GetSysTimeX();
     retv r = retv::Timeout;
-    Nss.SetLo();
+    nss_pin.SetLo();
     spi.WriteRead(0x05); // Read StatusReg1
     while(Sys::TimeElapsedSince(Start) < TIME_MS2I(SPIFLASH_TIMEOUT_ms)) {
         Sys::SleepMilliseconds(1);
@@ -321,7 +321,7 @@ retv SpiFlash_t::BusyWait() {
             break;
         }
     }
-    Nss.SetHi();
+    nss_pin.SetHi();
     return r;
 }
 #endif

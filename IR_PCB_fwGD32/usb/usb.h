@@ -40,7 +40,7 @@ union SetupPkt_t {
             struct { // From LSB to MSB
                 uint8_t Number : 4;
                 uint8_t __reserved46 : 3;
-                uint8_t Dir : 1;
+                uint8_t dir : 1;
             } Ep;
         };
         uint16_t wLength;   // [6;7]

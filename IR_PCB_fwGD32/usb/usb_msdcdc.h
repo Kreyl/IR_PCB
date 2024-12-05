@@ -21,8 +21,8 @@ public:
     void Disconnect();
     bool IsActive();
     retv TryParseRxBuff(); // Call this when something ip received
-    retv ReceiveBinaryToBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_ms);
-    retv TransmitBinaryFromBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_ms);
+    retv ReceiveBinaryToBuf(uint8_t *ptr, uint32_t Len, uint32_t timeout_ms);
+    retv TransmitBinaryFromBuf(uint8_t *ptr, uint32_t Len, uint32_t timeout_ms);
 };
 
 extern UsbMsdCdc usb_msd_cdc;

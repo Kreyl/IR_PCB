@@ -50,7 +50,7 @@ const Usb::EpConfig_t* EpCfg[USBFS_MAX_EP_COUNT]; // Include Ep0
 #if 1 // ========================== Ep Buffers =================================
 struct EpState_t {
     uint32_t Sz = 0;         // Requested transmit transfer size
-    uint32_t Cnt = 0;        // Transmitted bytes so far
+    uint32_t cnt = 0;        // Transmitted bytes so far
     uint8_t *pBuf = nullptr; // Pointer to the transmission linear buffer
     uint32_t TotalSz = 0;    // Total transmit transfer size
 };
@@ -116,16 +116,16 @@ public:
     void Fill(uint32_t ep) { // otg_txfifo_handler
         EpState_t *isp = &InEpState[ep];
         // The TXFIFO is filled until there is space left and data to be transmitted
-        while(isp->Cnt < isp->Sz) { // Do until all the data will be sent
+        while(isp->cnt < isp->Sz) { // Do until all the data will be sent
             // Number of bytes remaining in the current transaction
-            uint32_t n = isp->Sz - isp->Cnt;
+            uint32_t n = isp->Sz - isp->cnt;
             if(n > EpCfg[ep]->InMaxPktSz) n = EpCfg[ep]->InMaxPktSz;
             // Check that the TXFIFO has enough space for the next packet
             if(((USB->ie[ep].DIEPTFSTAT & DTXFSTS_INEPTFSAV_MASK) * 4) < n) return;
             // Fill it
             volatile uint32_t *fifop = USB->FIFO[ep]; // Destination
-            uint8_t *buf = &isp->pBuf[isp->Cnt]; // Src
-            isp->Cnt += n; // prepare for next time
+            uint8_t *buf = &isp->pBuf[isp->cnt]; // Src
+            isp->cnt += n; // prepare for next time
             while(true) {
                 *fifop = *((uint32_t*)buf);
                 if(n <= 4) break;
@@ -344,9 +344,9 @@ void OutCallback() {
     EpState_t *osp = &OutEpState[0];
     /* If the transaction only covers part of the total transfer,
      * another transaction is immediately initiated to cover the remainder */
-    if(((osp->Cnt % EP0_SZ) == 0) and (osp->Sz < osp->TotalSz)) {
+    if(((osp->cnt % EP0_SZ) == 0) and (osp->Sz < osp->TotalSz)) {
         osp->Sz = osp->TotalSz - osp->Sz;
-        osp->Cnt = 0;
+        osp->cnt = 0;
         Sys::LockFromIRQ();
         StartOutTransfer(0);
         Sys::UnlockFromIRQ();
@@ -364,7 +364,7 @@ void OutCallback() {
             return;
         // Status packet received, it must be zero sized, invoking the callback if defined
         case Sta::OUT_WAITING_STS:
-            if(osp->Cnt != 0U) break;
+            if(osp->cnt != 0U) break;
             if(EndTransactionCallback) EndTransactionCallback();
             State = Sta::STP_WAITING;
             return;
@@ -391,10 +391,10 @@ void OutCallback() {
 
 void Reset() {
     InEpState[0].Sz = 0;
-    InEpState[0].Cnt = 0;
+    InEpState[0].cnt = 0;
     InEpState[0].TotalSz = 0;
     OutEpState[0].Sz = 0;
-    OutEpState[0].Cnt = 0;
+    OutEpState[0].cnt = 0;
     OutEpState[0].TotalSz = 0;
 }
 } // Ep0 namespace
@@ -528,7 +528,7 @@ static retv DefaultRequestHandler() {
             return retv::Ok;
 
         case REC_REQ(USB_REQ_RECPNT_EP, USB_REQ_GET_STATUS):
-            if(Usb::SetupPkt.Ep.Dir == 1) { // IN ep
+            if(Usb::SetupPkt.Ep.dir == 1) { // IN ep
                 switch(GetStatusIn(Usb::SetupPkt.Ep.Number)) {
                     case EpSta::STALLED:
                         Ep0::PrepareSetupTransfer((uint8_t*)halted_status, 2, nullptr);
@@ -557,7 +557,7 @@ static retv DefaultRequestHandler() {
             if(Usb::SetupPkt.epFeatureSelector != USB_FEATURE_ENDPOINT_HALT) return retv::Fail;
             // Clear the EP status, not valid for EP0, it is ignored in that case
             if(Usb::SetupPkt.Ep.Number != 0U) {
-                if(Usb::SetupPkt.Ep.Dir == 1) ClearIn(Usb::SetupPkt.Ep.Number);
+                if(Usb::SetupPkt.Ep.dir == 1) ClearIn(Usb::SetupPkt.Ep.Number);
                 else ClearOut(Usb::SetupPkt.Ep.Number);
             }
             Ep0::PrepareSetupTransfer(nullptr, 0, nullptr);
@@ -567,7 +567,7 @@ static retv DefaultRequestHandler() {
             if(Usb::SetupPkt.epFeatureSelector != USB_FEATURE_ENDPOINT_HALT) return retv::Fail;
             // Stall the EP, not valid for EP0, it is ignored in that case
             if(Usb::SetupPkt.Ep.Number != 0U) {
-                if(Usb::SetupPkt.Ep.Dir == 1) StallIn(Usb::SetupPkt.Ep.Number);
+                if(Usb::SetupPkt.Ep.dir == 1) StallIn(Usb::SetupPkt.Ep.Number);
                 else StallOut(Usb::SetupPkt.Ep.Number);
             }
             Ep0::PrepareSetupTransfer(nullptr, 0, nullptr);
@@ -722,7 +722,7 @@ static void OnIrqIsoOutFailed() {
             /*otgp->oe[ep].DOEPCTL |= (DOEPCTL_EPDIS | DOEPCTL_SNAK);
              while (otgp->oe[ep].DOEPCTL & DOEPCTL_EPENA); */
             EpReceivingFlag &= ~(1UL << ep);
-            CallOutTransferEndCallback(ep, OutEpState[ep].Cnt); // Prepare transfer for next frame
+            CallOutTransferEndCallback(ep, OutEpState[ep].cnt); // Prepare transfer for next frame
         }
     }
 }
@@ -743,8 +743,8 @@ static void OnIrqRxFifoNotEmpty() {
             break;
         case GRSTATP_OUT_DATA:
             osp = &OutEpState[ep];
-            RxFifo.ReadToBuf(&osp->pBuf[osp->Cnt], cnt, osp->Sz - osp->Cnt);
-            osp->Cnt += cnt;
+            RxFifo.ReadToBuf(&osp->pBuf[osp->cnt], cnt, osp->Sz - osp->cnt);
+            osp->cnt += cnt;
             break;
         case GRSTATP_OUT_COMP:
             break;
@@ -774,7 +774,7 @@ static void OnIrqEpOut(uint32_t ep) {
         } // ep0
         else {
             EpReceivingFlag &= ~(1UL << ep);
-            CallOutTransferEndCallback(ep, OutEpState[ep].Cnt);
+            CallOutTransferEndCallback(ep, OutEpState[ep].cnt);
         }
     } // if XFRC
 }
@@ -792,7 +792,7 @@ static void OnIrqEpIn(uint32_t ep) {
              * another transaction is immediately initiated to cover the remainder */
             isp->pBuf += isp->Sz;
             isp->Sz = isp->TotalSz - isp->Sz;
-            isp->Cnt = 0;
+            isp->cnt = 0;
             Sys::LockFromIRQ();
             StartInTransfer(ep);
             Sys::UnlockFromIRQ();
@@ -879,7 +879,7 @@ void StartReceiveI(uint32_t ep, uint8_t *pBuf, uint32_t MaxSz) {
     EpState_t *osp = &OutEpState[ep];
     osp->pBuf = pBuf;
     osp->Sz = MaxSz;
-    osp->Cnt = 0;
+    osp->cnt = 0;
     StartOutTransfer(ep);
 }
 
@@ -892,7 +892,7 @@ void StartTransmitI(uint32_t ep, uint8_t *pBuf, uint32_t Sz) {
     EpState_t *isp = &InEpState[ep];
     isp->pBuf = pBuf;
     isp->Sz = Sz;
-    isp->Cnt = 0;
+    isp->cnt = 0;
     StartInTransfer(ep);
 }
 

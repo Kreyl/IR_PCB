@@ -18,23 +18,23 @@
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
-const char* FWVersion = XSTRINGIFY(BUILD_TIME);
-EvtMsgQ<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
-static const UartParams_t CmdUartParams(115200, CMD_UART_PARAMS);
-CmdUart_t dbg_uart{CmdUartParams};
-extern void OnCmd(Shell *PShell); // See Command.cpp
+extern const char *kBuildTime, *kBuildCfgName;
+EvtMsgQ<EvtMsg, MAIN_EVT_Q_LEN> evt_q_main;
+static const UartParams cmd_uart_params(115200, CMD_UART_PARAMS);
+CmdUart dbg_uart{cmd_uart_params};
+extern void OnCmd(Shell *pshell); // See Command.cpp
 
 LedBlinker sys_LED{LUMOS_PIN};
 LedSmooth side_LEDs[SIDE_LEDS_CNT] = { {LED_PWM1}, {LED_PWM2}, {LED_PWM3}, {LED_PWM4} };
 LedSmooth front_LEDs[FRONT_LEDS_CNT] = { {LED_FRONT1}, {LED_FRONT2} };
 
 static const NpxParams nparams{NPX_PARAMS, NPX_DMA, 17, NpxParams::ClrType::RGB};
-Neopixels_t NpxLeds{&nparams};
+Neopixels npx_leds{&nparams};
 
 Beeper beeper {BEEPER_PIN};
 
-SpiFlash_t SpiFlash(SPI0);
-FATFS FlashFS;
+SpiFlash spi_flash(SPI0);
+FATFS flash_fs;
 
 EvtTimer tmr_uart_check(TIME_MS2I(UART_RX_POLL_MS), EvtId::UartCheckTime, EvtTimer::Type::Periodic);
 EvtTimer tmr_testing(TIME_MS2I(540), EvtId::TestingTime, EvtTimer::Type::Periodic);
@@ -106,8 +106,8 @@ void main(void) {
     // ==== UART, RTOS & Event queue ====
     dbg_uart.Init();
     Sys::Init();
-    EvtQMain.Init();
-    Printf("\r%S %S\r\n", APP_NAME, FWVersion);
+    evt_q_main.Init();
+    Printf("\r%S %S\r\n", APP_NAME, kBuildTime);
     Clk::PrintFreqs();
 
     // ==== LEDs ====
@@ -115,9 +115,9 @@ void main(void) {
     sys_LED.StartOrRestart(lbsqStart);
     for(auto &led : side_LEDs) led.Init();
     for(auto &led : front_LEDs) led.Init();
-    NpxLeds.Init();
-    NpxLeds.SetAll(clBlack);
-    NpxLeds.SetCurrentColors();
+    npx_leds.Init();
+    npx_leds.SetAll(clBlack);
+    npx_leds.SetCurrentColors();
 
     // ==== Audio ====
     Codec::Init();
@@ -125,24 +125,24 @@ void main(void) {
 
     // ==== Spi Flash, MsdGlue, filesystem ====
     AFIO->RemapSPI0_PB345();
-    SpiFlash.Init();
-    SpiFlash.Reset();
-    SpiFlash_t::MemParams_t mp = SpiFlash.GetParams();
-    MsdMem::BlockCnt = mp.SectorCnt;
-    MsdMem::BlockSz = mp.SectorSz;
-    Printf("Flash: %u sectors of %u bytes\r", mp.SectorCnt, mp.SectorSz);
-    if(mp.SectorCnt == 0 or mp.SectorSz == 0) Reboot();
+    spi_flash.Init();
+    spi_flash.Reset();
+    SpiFlash::MemParams mp = spi_flash.GetParams();
+    MsdMem::block_cnt = mp.sector_cnt;
+    MsdMem::block_sz = mp.sector_sz;
+    Printf("Flash: %u sectors of %u bytes\r", mp.sector_cnt, mp.sector_sz);
+    if(mp.sector_cnt == 0 or mp.sector_sz == 0) Reboot();
     // Init filesystem
-    if(f_mount(&FlashFS, "", 0) != FR_OK) Printf("FS error\r\n");
+    if(f_mount(&flash_fs, "", 0) != FR_OK) Printf("FS error\r\n");
 
     // ==== USB ====
     usb_msd_cdc.Init();
     usb_msd_cdc.Connect();
 
     // ==== IR ==== TX LED SetFreq is called within App Reset, which is called within AppInit
-    irLed::Init();
-    irRcvr::Init();
-    irRcvr::callbackI = IrRxCallbackI;
+    IRLed::Init();
+    IRRcvr::Init();
+    IRRcvr::callbackI = IrRxCallbackI;
 
     // ==== App ====
     settings.Load();
@@ -152,8 +152,8 @@ void main(void) {
     // ==== Main evt cycle ====
     tmr_uart_check.StartOrRestart();
     while(true) {
-        EvtMsg_t msg = EvtQMain.Fetch(TIME_INFINITE);
-        switch(msg.ID) {
+        EvtMsg msg = evt_q_main.Fetch(TIME_INFINITE);
+        switch(msg.id) {
             case EvtId::UartCheckTime:
                 Watchdog::Reload();
                 while(dbg_uart.TryParseRxBuff() == retv::Ok) OnCmd((Shell*)&dbg_uart);
@@ -167,24 +167,24 @@ void main(void) {
                 if(is_testing) {
                     // Npx
                     switch(tst_indx) {
-                        case 0: NpxLeds.SetAll({TESTING_NPX_BRT, 0, 0}); break;
-                        case 1: NpxLeds.SetAll({0, TESTING_NPX_BRT, 0}); break;
-                        case 2: NpxLeds.SetAll({0, 0, TESTING_NPX_BRT}); break;
-                        case 3: NpxLeds.SetAll({TESTING_NPX_BRT, TESTING_NPX_BRT, TESTING_NPX_BRT}); break;
-                        default: NpxLeds.SetAll(clCyan); break;
+                        case 0: npx_leds.SetAll({TESTING_NPX_BRT, 0, 0}); break;
+                        case 1: npx_leds.SetAll({0, TESTING_NPX_BRT, 0}); break;
+                        case 2: npx_leds.SetAll({0, 0, TESTING_NPX_BRT}); break;
+                        case 3: npx_leds.SetAll({TESTING_NPX_BRT, TESTING_NPX_BRT, TESTING_NPX_BRT}); break;
+                        default: npx_leds.SetAll(clCyan); break;
                     }
-                    NpxLeds.SetCurrentColors();
+                    npx_leds.SetCurrentColors();
                     // Send IR pkt
-                    irLed::TransmitWord(0xCA11, 16, 180, nullptr);
+                    IRLed::TransmitWord(0xCA11, 16, 180, nullptr);
                     // Side Leds
                     side_LEDs[tst_indx].StartOrRestart(lsqFadeInOut);
                     // Front LEDs
                     front_LEDs[tst_indx & 0x01].StartOrRestart(lsqFadeInOut);
                     // Gpios
-                    gpio::Set(Gpio1, tst_indx == 0);
-                    gpio::Set(Gpio2, tst_indx == 1);
-                    gpio::Set(Gpio3, tst_indx == 2);
-                    gpio::Set(Gpio4, tst_indx == 3);
+                    Gpio::Set(Gpio1, tst_indx == 0);
+                    Gpio::Set(Gpio2, tst_indx == 1);
+                    Gpio::Set(Gpio3, tst_indx == 2);
+                    Gpio::Set(Gpio4, tst_indx == 3);
                     // Buzzer
                     if(tst_indx == 0 and !beeped) {
                         beeper.StartOrRestart(bsqBeepBeep);

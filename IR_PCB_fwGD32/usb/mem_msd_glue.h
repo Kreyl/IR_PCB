@@ -12,10 +12,10 @@
 
 namespace MsdMem {
 
-extern uint32_t BlockCnt, BlockSz;
+extern uint32_t block_cnt, block_sz;
 
-retv Read(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt);
-retv Write(uint32_t BlockAddress, uint8_t *Ptr, uint32_t BlocksCnt);
+retv Read(uint32_t BlockAddress, uint8_t *ptr, uint32_t BlocksCnt);
+retv Write(uint32_t BlockAddress, uint8_t *ptr, uint32_t BlocksCnt);
 
 } // namespace
 

@@ -21,11 +21,11 @@
  * Example of msg:
  * union RMsg_t {
     uint32_t DWord[3];
-    CmdUniversal_t Cmd;
-    RMsg_t& operator = (const RMsg_t &Right) {
-        DWord[0] = Right.DWord[0];
-        DWord[1] = Right.DWord[1];
-        DWord[2] = Right.DWord[2];
+    CmdUniversal_t cmd;
+    RMsg_t& operator = (const RMsg_t &right) {
+        DWord[0] = right.DWord[0];
+        DWord[1] = right.DWord[1];
+        DWord[2] = right.DWord[2];
         return *this;
     }
     RMsg_t() {
@@ -34,11 +34,11 @@
         DWord[2] = 0;
     }
     RMsg_t(CmdUniversal_t *PCmd) {
-        Cmd.CmdID = PCmd->CmdID;
-        Cmd.SnsID = PCmd->SnsID;
-        Cmd.w16[0] = PCmd->w16[0];
-        Cmd.w16[1] = PCmd->w16[1];
-        Cmd.w16[2] = PCmd->w16[2];
+        cmd.CmdID = PCmd->CmdID;
+        cmd.SnsID = PCmd->SnsID;
+        cmd.w16[0] = PCmd->w16[0];
+        cmd.w16[1] = PCmd->w16[1];
+        cmd.w16[2] = PCmd->w16[2];
     }
 } __attribute__((__packed__));
 [...]
@@ -49,14 +49,14 @@ EvtMsgQ_t<RMsg_t, RMSG_Q_LEN> MsgQ;
 #define EMSG_DATA8_CNT      7   // ID + 7 bytes = 8 = 2x DWord32
 #define EMSG_DATA16_CNT     3   // ID + 3x2bytes = 3
 
-union EvtMsg_t {
-    uint32_t dword[2];
+union EvtMsg {
+    uint32_t dw32[2];
     struct {
         union {
-            void* Ptr;
+            void* ptr;
             struct {
-                int32_t Value;
-                uint8_t ValueID;
+                int32_t value;
+                uint8_t value_id;
             } __attribute__((__packed__));
 //            uint8_t b[EMSG_DATA8_CNT];
 //            uint16_t w16[EMSG_DATA16_CNT];
@@ -64,19 +64,19 @@ union EvtMsg_t {
             BtnEvtInfo_t BtnEvtInfo;
 #endif
         } __attribute__((__packed__));
-        EvtId ID;
+        EvtId id;
     } __attribute__((__packed__));
 
-    EvtMsg_t& operator = (const EvtMsg_t &Right) {
-        dword[0] = Right.dword[0];
-        dword[1] = Right.dword[1];
+    EvtMsg& operator = (const EvtMsg &right) {
+        dw32[0] = right.dw32[0];
+        dw32[1] = right.dw32[1];
         return *this;
     }
-    EvtMsg_t() : Ptr(nullptr), ID(EvtId::None) {}
-    EvtMsg_t(EvtId AID) : Ptr(nullptr), ID(AID) {}
-    EvtMsg_t(EvtId AID, void *APtr) : Ptr(APtr), ID(AID) {}
-    EvtMsg_t(EvtId AID, int32_t AValue) : Value(AValue), ID(AID) {}
-    EvtMsg_t(EvtId AID, uint8_t AValueID, int32_t AValue) : Value(AValue), ValueID(AValueID), ID(AID) {}
+    EvtMsg() : ptr(nullptr), id(EvtId::None) {}
+    EvtMsg(EvtId aid) : ptr(nullptr), id(aid) {}
+    EvtMsg(EvtId aid, void *aptr) : ptr(aptr), id(aid) {}
+    EvtMsg(EvtId aid, int32_t avalue) : value(avalue), id(aid) {}
+    EvtMsg(EvtId aid, uint8_t avalue_id, int32_t avalue) : value(avalue), value_id(avalue_id), id(aid) {}
 } __attribute__((__packed__));
 
 
@@ -84,73 +84,71 @@ template<typename T, uint32_t sz>
 class EvtMsgQ {
 private:
     union {
-        uint64_t __Align;
-        T IBuf[sz];
+        uint64_t __align;
+        T ibuf[sz];
     };
     T *read_ptr, *write_ptr;
     Semaphore full_sem;    // Full slots counter
     Semaphore empty_sem;   // Empty slots counter
 public:
-    EvtMsgQ() : __Align(0), read_ptr(IBuf), write_ptr(IBuf) {}
+    EvtMsgQ() : __align(0), read_ptr(ibuf), write_ptr(ibuf) {}
     void Init() {
-        read_ptr = IBuf;
-        write_ptr = IBuf;
+        read_ptr = ibuf;
+        write_ptr = ibuf;
         empty_sem.Init(sz);
         full_sem.Init(0);
     }
 
-    /* Retrieves a message from a mailbox, returns empty Msg if failed.
+    /* Retrieves a message from a mailbox, returns empty msg if failed.
      * The invoking thread waits until a message is posted in the mailbox
      * for a timeout (may be TIME_INFINITE or TIME_IMMEDIATE) */
-    T Fetch(systime_t Timeout) {
-        T Msg;
+    T Fetch(systime_t timeout) {
+        T msg;
         Sys::Lock();
-        if(full_sem.WaitTimeoutS(Timeout) == retv::Ok) {
+        if(full_sem.WaitTimeoutS(timeout) == retv::Ok) {
             // There is something in the queue, get it
-            Msg = *read_ptr++;
-            if(read_ptr >= &IBuf[sz]) read_ptr = IBuf;  // Circulate pointer
+            msg = *read_ptr++;
+            if(read_ptr >= &ibuf[sz]) read_ptr = ibuf;  // Circulate pointer
             empty_sem.SignalI();
             Sys::RescheduleS();
         }
         Sys::Unlock();
-        return Msg;
+        return msg;
     }
 
     /* Post a message into a mailbox.
      * The function returns a timeout condition if the queue is full */
-    retv SendNowOrExitI(const T &Msg) {
+    retv SendNowOrExitI(const T &msg) {
         if(empty_sem.GetCntI() <= 0L) return retv::Timeout; // Q is full
         empty_sem.FastWaitI();
-        *write_ptr++ = Msg;
-        if(write_ptr >= &IBuf[sz]) write_ptr = IBuf;  // Circulate pointer
+        *write_ptr++ = msg;
+        if(write_ptr >= &ibuf[sz]) write_ptr = ibuf;  // Circulate pointer
         full_sem.SignalI();
         return retv::Ok;
     }
 
-    retv SendNowOrExit(const T &Msg) {
+    retv SendNowOrExit(const T &msg) {
         Sys::Lock();
-        retv Rslt = SendNowOrExitI(Msg);
+        retv rslt = SendNowOrExitI(msg);
         Sys::RescheduleS();
         Sys::Unlock();
-        return Rslt;
+        return rslt;
     }
 
     /* Posts a message into a mailbox.
      * The invoking thread waits until a empty slot in the mailbox becomes available
      * or the specified time runs out. */
-    retv SendWaitingAbility(const T &Msg, systime_t timeout) {
+    retv SendWaitingAbility(const T &msg, systime_t timeout) {
         Sys::Lock();
-        retv msg = empty_sem.WaitTimeoutS(timeout);
-        if(msg == retv::Ok) {
-            *write_ptr++ = Msg;
-            if(write_ptr >= &IBuf[sz]) write_ptr = IBuf;  // Circulate pointer
+        retv rslt = empty_sem.WaitTimeoutS(timeout);
+        if(rslt == retv::Ok) {
+            *write_ptr++ = msg;
+            if(write_ptr >= &ibuf[sz]) write_ptr = ibuf;  // Circulate pointer
             full_sem.SignalI();
             Sys::RescheduleS();
         }
         Sys::Unlock();
-        if(msg == retv::Timeout) return retv::Timeout;
-        else if(msg == retv::Ok) return retv::Ok;
-        else return retv::Fail;
+        return rslt;
     }
 
     uint32_t GetFullCnt() {
@@ -162,18 +160,18 @@ public:
 };
 
 /* Always presents in main:
- * EvtMsgQ_t<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
+ * EvtMsgQ_t<EvtMsg, MAIN_EVT_Q_LEN> evt_q_main;
  * ...
- * EvtQMain.Init();
+ * evt_q_main.Init();
  * ...
- * EvtMsg_t Msg = EvtQMain.Fetch(TIME_INFINITE);
- * switch(Msg.ID) {
+ * EvtMsg msg = evt_q_main.Fetch(TIME_INFINITE);
+ * switch(msg.id) {
         case evtIdButtons:
         break;
         ...
-        default: Printf("Unhandled Msg %u\r", Msg.ID); break;
+        default: Printf("Unhandled msg %u\r", msg.id); break;
     } // Switch
  */
-extern EvtMsgQ<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
+extern EvtMsgQ<EvtMsg, MAIN_EVT_Q_LEN> evt_q_main;
 
 #endif // MSGQ_H_

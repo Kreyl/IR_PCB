@@ -1,8 +1,8 @@
 /*
  * app.h
  *
- *  Created on: 14 авг. 2023 г.
- *      Author: layst
+ *  Created on: 14.08.2023
+ *      Author: Kreyl
  */
 
 #ifndef APP_H_
@@ -13,7 +13,7 @@
 extern int32_t hit_cnt, rounds_cnt, magazines_cnt;
 
 void AppInit();
-void SetInputs(uint32_t AIn[2]);
+void SetInputs(uint32_t ainputs[2]);
 void Reset(bool quiet = false);
 
 void FireSingleShot();

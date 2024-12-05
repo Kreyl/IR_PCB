@@ -2,7 +2,7 @@
  * ir_pkt.h
  *
  *  Created on: 13.08.2023
- *      Author: layst
+ *      Author: Kreyl
  */
 
 #ifndef IR_PKT_H_

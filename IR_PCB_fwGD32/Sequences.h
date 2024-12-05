@@ -1,7 +1,7 @@
 /*
  * Sequences.h
  *
- *  Created on: 09 ���. 2015 �.
+ *  Created on: 2015
  *      Author: Kreyl
  */
 

@@ -16,33 +16,33 @@
 
 #endif
 
-void NpxDmaDone(void *p, uint32_t flags) { ((Neopixels_t*)p)->OnDmaDone(); }
+void NpxDmaDone(void *p, uint32_t flags) { ((Neopixels*)p)->OnDmaDone(); }
 
-Neopixels_t::Neopixels_t(const NpxParams *APParams) :
-    Params(APParams), Tim(APParams->PTim),
-    DmaTx(APParams->DmaChnlTx, NpxDmaDone, this) {}
+Neopixels::Neopixels(const NpxParams *apparams) :
+    params(apparams), itim(apparams->ptim),
+    dma_tx(apparams->dma_chnl_tx, NpxDmaDone, this) {}
 
-void Neopixels_t::Init() {
-    gpio::SetupAlterFunc(Params->PGpio, Params->Pin, gpio::PushPull, gpio::speed50MHz);
-    Tim.Init();
-    Tim.SetTopValue(TIM_TOP_ticks);
-//    Tim.SetInputFreqChangingPrescaler(2500000);
+void Neopixels::Init() {
+    Gpio::SetupAlterFunc(params->pgpio, params->pin_n, Gpio::PushPull, Gpio::speed50MHz);
+    itim.Init();
+    itim.SetTopValue(TIM_TOP_ticks);
+//    itim.SetInputFreqChangingPrescaler(2500000);
     // Setup output in PWM mode
-    Tim.EnPrimaryOutput();
-    Tim.SetChnlMode(Params->TimChnl, HwTim::ChnlMode::Output);
-    Tim.SetOutputCmpMode(Params->TimChnl, HwTim::CmpMode::PWM0HiLo);
-    Tim.EnableOutputShadow(Params->TimChnl);
-    Tim.EnChnl(Params->TimChnl);
-    Tim.EnableDmaOnUpdate();
+    itim.EnPrimaryOutput();
+    itim.SetChnlMode(params->tim_chnl, TimHw::ChnlMode::Output);
+    itim.SetOutputCmpMode(params->tim_chnl, TimHw::CmpMode::PWM0HiLo);
+    itim.EnableOutputShadow(params->tim_chnl);
+    itim.EnChnl(params->tim_chnl);
+    itim.EnableDmaOnUpdate();
     // Allocate memory
-    ClrBuf.resize(Params->NpxCnt);
-    IBitBufCnt = RESET_BITS_CNT + (Params->NpxCnt * (uint32_t)Params->Type);
-    Printf("LedCnt: %u; BitBufCnt: %u\r", Params->NpxCnt, IBitBufCnt);
-    IBitBuf = (uint16_t*)malloc(IBitBufCnt * sizeof(uint16_t));
-    for(uint32_t i=0; i<IBitBufCnt; i++) IBitBuf[i] = 0; // Zero it all, to zero head and tail
+    clr_buf.resize(params->npx_cnt);
+    ibitbuf_cnt = RESET_BITS_CNT + (params->npx_cnt * (uint32_t)params->clr_type);
+    Printf("LedCnt: %u; BitBufCnt: %u\r", params->npx_cnt, ibitbuf_cnt);
+    ibitbuf = (uint16_t*)malloc(ibitbuf_cnt * sizeof(uint16_t));
+    for(uint32_t i=0; i<ibitbuf_cnt; i++) ibitbuf[i] = 0; // Zero it all, to zero head and tail
     // ==== DMA ====
-    DmaTx.Init(Tim.GetChnlRegAddr(Params->TimChnl), NPX_DMA_MODE);
-    TransmitDone = true;
+    dma_tx.Init(itim.GetChnlRegAddr(params->tim_chnl), NPX_DMA_MODE);
+    transmit_done = true;
 }
 
 __attribute__((always_inline))
@@ -66,37 +66,37 @@ static inline void PutBits(uint16_t **ptr, uint8_t byte) {
     *ptr = p;
 }
 
-void Neopixels_t::SetCurrentColors() {
-    TransmitDone = false;
+void Neopixels::SetCurrentColors() {
+    transmit_done = false;
     // Fill bit buffer
-    uint16_t *p = IBitBuf + (RESET_BITS_CNT / 2); // First and last bits are zero to form reset
-    if(Params->Type == NpxParams::ClrType::RGB) {
-        for(auto &Color : ClrBuf) {
-            PutBits(&p, Color.G);
-            PutBits(&p, Color.R);
-            PutBits(&p, Color.B);
+    uint16_t *p = ibitbuf + (RESET_BITS_CNT / 2); // First and last bits are zero to form reset
+    if(params->clr_type == NpxParams::ClrType::RGB) {
+        for(auto &color : clr_buf) {
+            PutBits(&p, color.G);
+            PutBits(&p, color.R);
+            PutBits(&p, color.B);
         }
     }
     else {
-        for(auto &Color : ClrBuf) {
-            PutBits(&p, Color.G);
-            PutBits(&p, Color.R);
-            PutBits(&p, Color.B);
-            PutBits(&p, Color.W);
+        for(auto &color : clr_buf) {
+            PutBits(&p, color.G);
+            PutBits(&p, color.R);
+            PutBits(&p, color.B);
+            PutBits(&p, color.W);
         }
     }
     // Start transmission
-    Tim.Disable();
-    DmaTx.Disable();
-    DmaTx.SetMemoryAddr(IBitBuf);
-    DmaTx.SetTransferDataCnt(IBitBufCnt);
-    DmaTx.Enable();
-    Tim.Enable();
+    itim.Disable();
+    dma_tx.Disable();
+    dma_tx.SetMemoryAddr(ibitbuf);
+    dma_tx.SetTransferDataCnt(ibitbuf_cnt);
+    dma_tx.Enable();
+    itim.Enable();
 }
 
-void Neopixels_t::OnDmaDone() {
-    Tim.Disable();
-    DmaTx.Disable();
-    TransmitDone = true;
-    if(OnTransmitEnd) OnTransmitEnd();
+void Neopixels::OnDmaDone() {
+    itim.Disable();
+    dma_tx.Disable();
+    transmit_done = true;
+    if(cb_on_transmit_end) cb_on_transmit_end();
 }
