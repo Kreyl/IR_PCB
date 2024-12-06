@@ -4,3 +4,4 @@ IR_PCB_hw/#auto_saved_files#
 *.ses
 *.xml
 __pycache__/
+*.lck

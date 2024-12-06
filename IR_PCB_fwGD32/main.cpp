@@ -7,16 +7,13 @@
 #include "led.h"
 #include "beeper.h"
 #include "Sequences.h"
-#include "ir.h"
 #include "ws2812bTim.h"
 #include "max98357.h"
 #include "mem_msd_glue.h"
-#include "Settings.h"
 #include "kl_fs_utils.h"
-#include "app.h"
 #include "ir_pkt.h"
 
-#if 1 // ======================== Variables and defines ========================
+#pragma region // ======================== Variables and defines ========================
 // Forever
 extern const char *kBuildTime, *kBuildCfgName;
 EvtMsgQ<EvtMsg, MAIN_EVT_Q_LEN> evt_q_main;
@@ -28,7 +25,8 @@ LedBlinker sys_LED{LUMOS_PIN};
 LedSmooth side_LEDs[SIDE_LEDS_CNT] = { {LED_PWM1}, {LED_PWM2}, {LED_PWM3}, {LED_PWM4} };
 LedSmooth front_LEDs[FRONT_LEDS_CNT] = { {LED_FRONT1}, {LED_FRONT2} };
 
-static const NpxParams nparams{NPX_PARAMS, NPX_DMA, 17, NpxParams::ClrType::RGB};
+static const int32_t kLedCnt = 36L;
+static const NpxParams nparams{NPX_PARAMS, NPX_DMA, kLedCnt, NpxParams::ClrType::RGB};
 Neopixels npx_leds{&nparams};
 
 Beeper beeper {BEEPER_PIN};
@@ -37,14 +35,8 @@ SpiFlash spi_flash(SPI0);
 FATFS flash_fs;
 
 EvtTimer tmr_uart_check(TIME_MS2I(UART_RX_POLL_MS), EvtId::UartCheckTime, EvtTimer::Type::Periodic);
-EvtTimer tmr_testing(TIME_MS2I(540), EvtId::TestingTime, EvtTimer::Type::Periodic);
-
-// Testing variables
-#define TESTING_NPX_BRT     72
-bool is_testing = false;
-uint32_t tst_indx = 0;
-bool beeped = false;
-#endif
+TimHw tmr_enc{TIM2};
+#pragma endregion
 
 // Use watchdog to reset
 void Reboot() {
@@ -96,13 +88,65 @@ static inline void InitClk() {
     Clk::UpdateFreqValues();
 }
 
+const int32_t kTicsPerLed = 3L;
+const int32_t kTopVal = kLedCnt * kTicsPerLed;
+
+enum class LedsMode { 
+    OneColor,
+    GradientZeroTop,
+    GradientBand
+} mode = LedsMode::GradientZeroTop;
+
+
+const Color_t kOneColor = Color_t(0, 7, 0);
+const int32_t kGradStartH = 240, kGradEndH = 0;
+
+void ProcessEncValue(int32_t value) {
+    value = kTopVal - value;
+    value /= kTicsPerLed;
+    // Protect us
+    if(value < 0) value = 0;
+    if(value >= kLedCnt) value = kLedCnt-1;
+    Printf("%d\r", value);
+
+    switch(mode) {
+        case LedsMode::OneColor:
+            for(int32_t i = 0; i < kLedCnt; i++) {
+                npx_leds.clr_buf[i] = i < value ? kOneColor : clBlack; 
+            }
+            break;
+
+        case LedsMode::GradientZeroTop:
+            for(int32_t i = 0; i < kLedCnt; i++) {
+                if(i < value) {
+                    int32_t H = (i * (kGradEndH - kGradStartH)) / kLedCnt + kGradStartH;
+                    if(kGradStartH > kGradEndH) H = 360 - H;
+                    npx_leds.clr_buf[i].FromHSV(H, 100, 100);
+                }
+                else npx_leds.clr_buf[i] = clBlack; 
+            }
+            break;
+
+        case LedsMode::GradientBand: {
+
+            }
+            break;
+
+        default:
+            break;
+    } // switch
+    // Update LEDs 
+    npx_leds.SetCurrentColors();
+}
+
+
 void main(void) {
     Watchdog::InitAndStart(999);
     InitClk();
     // ==== Disable JTAG ====
     RCU->EnAFIO();
     AFIO->DisableJtagDP(); // Disable JTAG, leaving SWD. Otherwise PB3 & PB4 are occupied by JTDO & JTRST
-
+  
     // ==== UART, RTOS & Event queue ====
     dbg_uart.Init();
     Sys::Init();
@@ -139,15 +183,17 @@ void main(void) {
     usb_msd_cdc.Init();
     usb_msd_cdc.Connect();
 
-    // ==== IR ==== TX LED SetFreq is called within App Reset, which is called within AppInit
-    IRLed::Init();
-    IRRcvr::Init();
-    IRRcvr::callbackI = IrRxCallbackI;
-
-    // ==== App ====
-    settings.Load();
-    Printf("Pkt type: 0x%04X\r", settings.pkt_type.v);
-    AppInit();
+    // ==== Encoder ====
+    Gpio::SetupInput(PA6, Gpio::PullDown);
+    Gpio::SetupInput(PA7, Gpio::PullDown);
+    tmr_enc.Init();
+    // tmr_enc.SetTopValue(0xFFFF);
+    tmr_enc.SetTopValue(kTopVal);
+    tmr_enc.SetFilterBits(0b1111);
+    tmr_enc.SetQEncoderMode0();
+    tmr_enc.SetCounter(0);
+    tmr_enc.Enable();
+    uint32_t enc_old_value = 0, enc_new_value = 0;
 
     // ==== Main evt cycle ====
     tmr_uart_check.StartOrRestart();
@@ -157,43 +203,17 @@ void main(void) {
             case EvtId::UartCheckTime:
                 Watchdog::Reload();
                 while(dbg_uart.TryParseRxBuff() == retv::Ok) OnCmd((Shell*)&dbg_uart);
+                // Check encoder
+                enc_new_value = tmr_enc.GetCounter();
+                if(enc_new_value != enc_old_value) {
+                    enc_old_value = enc_new_value;
+                    ProcessEncValue(enc_old_value);
+                    // Printf("Enc: %u %u\r", enc_old_value, tmr_enc.GetDir());
+                }
                 break;
 
             case EvtId::UsbCdcDataRcvd:
                 while(usb_msd_cdc.TryParseRxBuff() == retv::Ok) OnCmd((Shell*)&usb_msd_cdc);
-                break;
-
-            case EvtId::TestingTime:
-                if(is_testing) {
-                    // Npx
-                    switch(tst_indx) {
-                        case 0: npx_leds.SetAll({TESTING_NPX_BRT, 0, 0}); break;
-                        case 1: npx_leds.SetAll({0, TESTING_NPX_BRT, 0}); break;
-                        case 2: npx_leds.SetAll({0, 0, TESTING_NPX_BRT}); break;
-                        case 3: npx_leds.SetAll({TESTING_NPX_BRT, TESTING_NPX_BRT, TESTING_NPX_BRT}); break;
-                        default: npx_leds.SetAll(clCyan); break;
-                    }
-                    npx_leds.SetCurrentColors();
-                    // Send IR pkt
-                    IRLed::TransmitWord(0xCA11, 16, 180, nullptr);
-                    // Side Leds
-                    side_LEDs[tst_indx].StartOrRestart(lsqFadeInOut);
-                    // Front LEDs
-                    front_LEDs[tst_indx & 0x01].StartOrRestart(lsqFadeInOut);
-                    // Gpios
-                    Gpio::Set(Gpio1, tst_indx == 0);
-                    Gpio::Set(Gpio2, tst_indx == 1);
-                    Gpio::Set(Gpio3, tst_indx == 2);
-                    Gpio::Set(Gpio4, tst_indx == 3);
-                    // Buzzer
-                    if(tst_indx == 0 and !beeped) {
-                        beeper.StartOrRestart(bsqBeepBeep);
-                        beeped = true;
-                    }
-                    // Increment TstIndx
-                    if(tst_indx < 3) tst_indx++;
-                    else tst_indx = 0;
-                }
                 break;
 
             case EvtId::UsbReady:

@@ -605,20 +605,20 @@ static DmaIrqHandler_t DmaIrqHandler[DMA_CHNL_CNT];
 
 DMA_t::DMA_t(DMAChannel_t *APChnl, ftVoidPVoidW32 PIrqFunc, void *PIrqParam, uint32_t AIrqPrio) {
     PChnl = APChnl;
-    // Calculate ChnlN
+    // Calculate chnl_n
     if((uint32_t)APChnl <= (uint32_t)DMA0_Channel6_BASE)
-        ChnlN = ((uint32_t)APChnl - (uint32_t)DMA0_Channel0_BASE) / 0x14UL; // 0x14 is distance between channels, see datasheet
-    else ChnlN = DMA0_CHNL_CNT + ((uint32_t)APChnl - (uint32_t)DMA1_Channel0_BASE) / 0x14UL;
+        chnl_n = ((uint32_t)APChnl - (uint32_t)DMA0_Channel0_BASE) / 0x14UL; // 0x14 is distance between channels, see datasheet
+    else chnl_n = DMA0_CHNL_CNT + ((uint32_t)APChnl - (uint32_t)DMA1_Channel0_BASE) / 0x14UL;
     // Setup IRQ
-    DmaIrqHandler[ChnlN].Handler = PIrqFunc;
-    DmaIrqHandler[ChnlN].Param = PIrqParam;
-    DmaIrqHandler[ChnlN].Prio = AIrqPrio;
+    DmaIrqHandler[chnl_n].Handler = PIrqFunc;
+    DmaIrqHandler[chnl_n].Param = PIrqParam;
+    DmaIrqHandler[chnl_n].Prio = AIrqPrio;
 }
 
 void DMA_t::Init() const {
     RCU->EnDMAs(); // En DMA1 & DMA2 clocking
-    if(DmaIrqHandler[ChnlN].Handler != nullptr) {
-        Nvic::EnableVector(DmaIrqNum[ChnlN], DmaIrqHandler[ChnlN].Prio);
+    if(DmaIrqHandler[chnl_n].Handler != nullptr) {
+        Nvic::EnableVector(DmaIrqNum[chnl_n], DmaIrqHandler[chnl_n].Prio);
     } // if irq
     PChnl->CTL = 0; // Reset value
 }
@@ -638,8 +638,8 @@ void DMA_t::Init(volatile void* PeriphAddr, void* MemAddr, uint32_t AMode, uint1
 }
 
 void DMA_t::ClearIrq() const { // DMA0: chnls [0;6]; DMA1: chnls [7;11]
-    if(ChnlN <= 6) DMA0->INTC = 0b1111UL << ChnlN;  // [0;6]
-    else DMA1->INTC = 0b1111UL << (ChnlN - 7);      // [7;11]
+    if(chnl_n <= 6) DMA0->INTC = 0b1111UL << chnl_n;  // [0;6]
+    else DMA1->INTC = 0b1111UL << (chnl_n - 7);      // [7;11]
 }
 
 void DMA_t::DisableAndClearIRQ() const {
@@ -648,13 +648,13 @@ void DMA_t::DisableAndClearIRQ() const {
 }
 
 // ==== IRQs ====
-#define DMA_IRQ_HANDLER(DmaN, ChnlN) \
-    void DMA##DmaN##_Channel##ChnlN##_IRQHandler() { \
+#define DMA_IRQ_HANDLER(DmaN, chnl_n) \
+    void DMA##DmaN##_Channel##chnl_n##_IRQHandler() { \
         Sys::IrqPrologue(); \
-        uint32_t flags = (DMA##DmaN->INTF >> (ChnlN * 4)) & 0b1111UL; \
-        DMA##DmaN->INTC = 1UL << (ChnlN * 4); /* Clear all irq flags */ \
-        ftVoidPVoidW32 func = DmaIrqHandler[DMA_CHNL(DmaN, ChnlN)].Handler; \
-        if(func) func(DmaIrqHandler[DMA_CHNL(DmaN, ChnlN)].Param, flags); \
+        uint32_t flags = (DMA##DmaN->INTF >> (chnl_n * 4)) & 0b1111UL; \
+        DMA##DmaN->INTC = 1UL << (chnl_n * 4); /* Clear all irq flags */ \
+        ftVoidPVoidW32 func = DmaIrqHandler[DMA_CHNL(DmaN, chnl_n)].Handler; \
+        if(func) func(DmaIrqHandler[DMA_CHNL(DmaN, chnl_n)].Param, flags); \
         Sys::IrqEpilogue(); \
     }
 

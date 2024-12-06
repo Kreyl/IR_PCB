@@ -94,16 +94,16 @@ public:
         ToggleOnMatch=0b011UL, ForceLo=0b100UL, ForceHi=0b101UL, PWM0HiLo=0b110UL,
         PWM1LoHi=0b111};
 
-    TimHw(TIM_TypeDef *APTimer) : itmr(APTimer) {}
+    TimHw(TIM_TypeDef *ptimer) : itmr(ptimer) {}
     void Init()    const { RCU->EnTimer(itmr);  }
     void Deinit()  const { RCU->DisTimer(itmr); }
     void Enable()  const { itmr->Enable(); }
     void Disable() const { itmr->Disable(); }
-    void SetInputFreqChangingPrescaler(uint32_t FreqHz) const;
+    void SetInputFreqChangingPrescaler(uint32_t freq_Hz) const;
 
-    void SetUpdateFreqChangingPrescaler(uint32_t FreqHz) const;
-    void SetUpdateFreqChangingTopValue(uint32_t FreqHz) const;
-    void SetUpdateFreqChangingBoth(uint32_t FreqHz) const;
+    void SetUpdateFreqChangingPrescaler(uint32_t freq_Hz) const;
+    void SetUpdateFreqChangingTopValue(uint32_t freq_Hz) const;
+    void SetUpdateFreqChangingBoth(uint32_t freq_Hz) const;
     void SetTopValue(uint32_t value) const { itmr->SetTopValue(value); }
     uint32_t GetTopValue() const { return itmr->GetTopValue(); }
     void EnableAutoreloadBuffering()  const { itmr->CTL0 |=  TIM_CTL0_ARSE; }
@@ -114,13 +114,13 @@ public:
     uint32_t GetCounter() const { return itmr->CNT; }
 
     // Compare
-    void SetChnlValue(uint32_t ChnlN, uint32_t AValue) const {
-        *((uint32_t*)(&itmr->CH0CV) + ChnlN) = AValue;
+    void SetChnlValue(uint32_t chnl_n, uint32_t avalue) const {
+        *((uint32_t*)(&itmr->CH0CV) + chnl_n) = avalue;
     }
-    void SetChnl0Value(uint32_t AValue) const { itmr->CH0CV = AValue; }
-    void SetChnl1Value(uint32_t AValue) const { itmr->CH1CV = AValue; }
-    void SetChnl2Value(uint32_t AValue) const { itmr->CH2CV = AValue; }
-    void SetChnl3Value(uint32_t AValue) const { itmr->CH3CV = AValue; }
+    void SetChnl0Value(uint32_t avalue) const { itmr->CH0CV = avalue; }
+    void SetChnl1Value(uint32_t avalue) const { itmr->CH1CV = avalue; }
+    void SetChnl2Value(uint32_t avalue) const { itmr->CH2CV = avalue; }
+    void SetChnl3Value(uint32_t avalue) const { itmr->CH3CV = avalue; }
 
     uint32_t GetChnl0Value() const { return itmr->CH0CV; }
     uint32_t GetChnl1Value() const { return itmr->CH1CV; }
@@ -128,64 +128,71 @@ public:
     uint32_t GetChnl3Value() const { return itmr->CH3CV; }
 
     // Master/Slave
-    void SetTriggerInput(TriggerIn TrgInput) const { itmr->SMCFG = (itmr->SMCFG & ~(0b111UL << 4)) | (uint32_t)TrgInput; }
-    void SetEtrPolarity(Inverted_t AInverted) {
-        if(AInverted == invInverted) itmr->SMCFG |= TIM_SMCFG_ETP;
+    void SetTriggerInput(TriggerIn trg_input) const { itmr->SMCFG = (itmr->SMCFG & ~(0b111UL << 4)) | (uint32_t)trg_input; }
+    void SetEtrPolarity(Inverted_t ainverted) {
+        if(ainverted == invInverted) itmr->SMCFG |= TIM_SMCFG_ETP;
         else itmr->SMCFG &= ~TIM_SMCFG_ETP;
     }
-    void SelectMasterMode(MasterMode Mode) const { itmr->CTL1 = (itmr->CTL1 & ~(0b111UL << 4)) | (uint32_t)Mode; }
-    void SelectSlaveMode(SlaveMode Mode) const { itmr->SMCFG = (itmr->SMCFG & ~0b111UL) | (uint32_t)Mode; }
+    void SelectMasterMode(MasterMode mode) const { itmr->CTL1 = (itmr->CTL1 & ~(0b111UL << 4)) | (uint32_t)mode; }
+    void SelectSlaveMode(SlaveMode mode) const { itmr->SMCFG = (itmr->SMCFG & ~0b111UL) | (uint32_t)mode; }
+    // Encoder
+    void SetQEncoderMode0() { SET_BITS(itmr->SMCFG, 0b111UL, 0b001UL, 0); }
+    void SetQEncoderMode1() { SET_BITS(itmr->SMCFG, 0b111UL, 0b010UL, 0); }
+    void SetQEncoderMode2() { SET_BITS(itmr->SMCFG, 0b111UL, 0b011UL, 0); }
+    void SetFilterBits(uint32_t bits) { SET_BITS(itmr->SMCFG, 0b1111UL, bits, 8); }
+    // Dir bit: 0 is count up, 1 is count down
+    uint32_t GetDir() { return (itmr->CTL0 >> 4) & 0x01; }
 
     // Channels setup
     void EnPrimaryOutput() const { itmr->CCHP = 0xC000; }
-    void SetChnlMode(uint32_t ChnlN, ChnlMode Mode) const {
-        if     (ChnlN == 0) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)Mode, 0);
-        else if(ChnlN == 1) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)Mode, 8);
-        else if(ChnlN == 2) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)Mode, 0);
-        else if(ChnlN == 3) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)Mode, 8);
+    void SetChnlMode(uint32_t chnl_n, ChnlMode mode) const {
+        if     (chnl_n == 0) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)mode, 0);
+        else if(chnl_n == 1) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)mode, 8);
+        else if(chnl_n == 2) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)mode, 0);
+        else if(chnl_n == 3) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)mode, 8);
     }
-    void SetInputPsc(uint32_t ChnlN, InputPsc Psc) const {
-        if     (ChnlN == 0) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)Psc, 2);
-        else if(ChnlN == 1) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)Psc, 10);
-        else if(ChnlN == 2) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)Psc, 2);
-        else if(ChnlN == 3) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)Psc, 10);
+    void SetInputPsc(uint32_t chnl_n, InputPsc psc) const {
+        if     (chnl_n == 0) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)psc, 2);
+        else if(chnl_n == 1) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)psc, 10);
+        else if(chnl_n == 2) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)psc, 2);
+        else if(chnl_n == 3) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)psc, 10);
     }
-    void SetInputActiveEdge(uint32_t InputN, RiseFall Rsfll) const {
-        uint32_t bits = (Rsfll == RiseFall::Rising)? 0b0000UL : (Rsfll == RiseFall::Falling)? 0b0010UL : 0b1010L;
-        if     (InputN == 0) SET_BITS(itmr->CHCTL2, 0b1010UL, bits, 0);  // CI0FE0 and CI1FE0
-        else if(InputN == 1) SET_BITS(itmr->CHCTL2, 0b1010UL, bits, 4);  // CI1FE1 and CI0FE1
-        else if(InputN == 2) SET_BITS(itmr->CHCTL2, 0b1010UL, bits, 8);  // CI2FE2 and CI3FE2
-        else if(InputN == 3) SET_BITS(itmr->CHCTL2, 0b1010UL, bits, 12); // CI3FE3 and CI2FE3
+    void SetInputActiveEdge(uint32_t input_n, RiseFall rise_fall) const {
+        uint32_t bits = (rise_fall == RiseFall::Rising)? 0b0000UL : (rise_fall == RiseFall::Falling)? 0b0010UL : 0b1010L;
+        if     (input_n == 0) SET_BITS(itmr->CHCTL2, 0b1010UL, bits, 0);  // CI0FE0 and CI1FE0
+        else if(input_n == 1) SET_BITS(itmr->CHCTL2, 0b1010UL, bits, 4);  // CI1FE1 and CI0FE1
+        else if(input_n == 2) SET_BITS(itmr->CHCTL2, 0b1010UL, bits, 8);  // CI2FE2 and CI3FE2
+        else if(input_n == 3) SET_BITS(itmr->CHCTL2, 0b1010UL, bits, 12); // CI3FE3 and CI2FE3
     }
-    void SetOutputCmpMode(uint32_t ChnlN, CmpMode Mode) const {
-        if     (ChnlN == 0) SET_BITS(itmr->CHCTL0, 0b111UL, (uint32_t)Mode, 4);
-        else if(ChnlN == 1) SET_BITS(itmr->CHCTL0, 0b111UL, (uint32_t)Mode, 12);
-        else if(ChnlN == 2) SET_BITS(itmr->CHCTL1, 0b111UL, (uint32_t)Mode, 4);
-        else if(ChnlN == 3) SET_BITS(itmr->CHCTL1, 0b111UL, (uint32_t)Mode, 12);
+    void SetOutputCmpMode(uint32_t chnl_n, CmpMode mode) const {
+        if     (chnl_n == 0) SET_BITS(itmr->CHCTL0, 0b111UL, (uint32_t)mode, 4);
+        else if(chnl_n == 1) SET_BITS(itmr->CHCTL0, 0b111UL, (uint32_t)mode, 12);
+        else if(chnl_n == 2) SET_BITS(itmr->CHCTL1, 0b111UL, (uint32_t)mode, 4);
+        else if(chnl_n == 3) SET_BITS(itmr->CHCTL1, 0b111UL, (uint32_t)mode, 12);
     }
-    void EnableOutputShadow(uint32_t ChnlN) const {
-        if     (ChnlN == 0) itmr->CHCTL0 |= 1UL << 3;
-        else if(ChnlN == 1) itmr->CHCTL0 |= 1UL << 11;
-        else if(ChnlN == 2) itmr->CHCTL1 |= 1UL << 3;
-        else if(ChnlN == 3) itmr->CHCTL1 |= 1UL << 11;
+    void EnableOutputShadow(uint32_t chnl_n) const {
+        if     (chnl_n == 0) itmr->CHCTL0 |= 1UL << 3;
+        else if(chnl_n == 1) itmr->CHCTL0 |= 1UL << 11;
+        else if(chnl_n == 2) itmr->CHCTL1 |= 1UL << 3;
+        else if(chnl_n == 3) itmr->CHCTL1 |= 1UL << 11;
     }
 
-    void EnChnl(uint32_t ChnlN) const {
-        if     (ChnlN == 0) itmr->CHCTL2 |= 1UL << 0;
-        else if(ChnlN == 1) itmr->CHCTL2 |= 1UL << 4;
-        else if(ChnlN == 2) itmr->CHCTL2 |= 1UL << 8;
-        else if(ChnlN == 3) itmr->CHCTL2 |= 1UL << 12;
+    void EnChnl(uint32_t chnl_n) const {
+        if     (chnl_n == 0) itmr->CHCTL2 |= 1UL << 0;
+        else if(chnl_n == 1) itmr->CHCTL2 |= 1UL << 4;
+        else if(chnl_n == 2) itmr->CHCTL2 |= 1UL << 8;
+        else if(chnl_n == 3) itmr->CHCTL2 |= 1UL << 12;
     }
 
     // DMA
-    volatile uint32_t* GetChnlRegAddr(uint32_t ChnlN) const {
-        if     (ChnlN == 0) return &itmr->CH0CV;
-        else if(ChnlN == 1) return &itmr->CH1CV;
-        else if(ChnlN == 2) return &itmr->CH2CV;
+    volatile uint32_t* GetChnlRegAddr(uint32_t chnl_n) const {
+        if     (chnl_n == 0) return &itmr->CH0CV;
+        else if(chnl_n == 1) return &itmr->CH1CV;
+        else if(chnl_n == 2) return &itmr->CH2CV;
         else                return &itmr->CH3CV;
     }
     void EnableDmaOnTrigger() const { itmr->DMAINTEN |= TIM_DMAINTEN_TRGDEN; }
-    void EnableDmaOnCapture(uint32_t ChnlN) const { itmr->DMAINTEN |= TIM_DMAINTEN_DMAEN(ChnlN); }
+    void EnableDmaOnCapture(uint32_t chnl_n) const { itmr->DMAINTEN |= TIM_DMAINTEN_DMAEN(chnl_n); }
     void EnableDmaOnUpdate()  const { itmr->DMAINTEN |= TIM_DMAINTEN_UPDEN; }
     // Evt
     void GenerateUpdateEvt()   const { itmr->GenerateUpdateEvt(); }
@@ -228,14 +235,13 @@ public:
     static bool IsCompare1FlagSet(uint32_t flags) { return flags & TIM_INTF_CH1IF; }
     static bool IsCompare2FlagSet(uint32_t flags) { return flags & TIM_INTF_CH2IF; }
     static bool IsCompare3FlagSet(uint32_t flags) { return flags & TIM_INTF_CH3IF; }
-
 };
 #endif
 
-static inline void GetMcuSerialNum(uint32_t Ser[3]) {
-    Ser[0] = *(volatile uint32_t *)(0x1FFFF7E8);
-    Ser[1] = *(volatile uint32_t *)(0x1FFFF7EC);
-    Ser[2] = *(volatile uint32_t *)(0x1FFFF7F0);
+static inline void GetMcuSerialNum(uint32_t serial[3]) {
+    serial[0] = *(volatile uint32_t *)(0x1FFFF7E8);
+    serial[1] = *(volatile uint32_t *)(0x1FFFF7EC);
+    serial[2] = *(volatile uint32_t *)(0x1FFFF7F0);
 }
 
 namespace Gpio { // ========================== GPIO ============================
@@ -310,10 +316,10 @@ struct PwmSetup {
     Gpio::OutMode output_mode;
     uint32_t top_value;
     PwmSetup(GPIO_TypeDef *APGpio, uint16_t APin,
-            TIM_TypeDef *APTimer, uint32_t ATimerChnl,
-            Inverted_t AInverted, Gpio::OutMode AOutputType,
-            uint32_t ATopValue) : pgpio(APGpio), Pin(APin), PTimer(APTimer),
-                    TimerChnl(ATimerChnl), Inverted(AInverted), output_mode(AOutputType),
+            TIM_TypeDef *ptimer, uint32_t ATimerChnl,
+            Inverted_t ainverted, Gpio::OutMode AOutputType,
+            uint32_t ATopValue) : pgpio(APGpio), Pin(APin), PTimer(ptimer),
+                    TimerChnl(ATimerChnl), Inverted(ainverted), output_mode(AOutputType),
                     top_value(ATopValue) {}
 };
 
@@ -475,7 +481,7 @@ extern i2c_t i2c0, i2c1;
 class DMA_t {
 private:
     DMAChannel_t *PChnl;
-    uint32_t ChnlN; // Required for IRQ flags cleanup
+    uint32_t chnl_n; // Required for IRQ flags cleanup
 public:
     DMA_t(DMAChannel_t *APChnl,
             ftVoidPVoidW32 PIrqFunc = nullptr,
@@ -648,22 +654,22 @@ class PinOutputPWM_t {
 private:
     const PwmSetup ISetup;
 public:
-    void Set(uint32_t AValue) const { ISetup.PTimer->SetChnlValue(ISetup.TimerChnl, AValue); }
+    void Set(uint32_t avalue) const { ISetup.PTimer->SetChnlValue(ISetup.TimerChnl, avalue); }
 //    uint32_t Get() const { return *TMR_PCCR(ITmr, ISetup.TimerChnl); }
     void Init() const;
 //    void Deinit() const { Timer_t::Deinit(); PinSetupAnalog(ISetup.pgpio, ISetup.Pin); }
-    void SetFrequencyHz(uint32_t FreqHz) const { // Set freq changing prescaler
+    void SetFrequencyHz(uint32_t freq_Hz) const { // Set freq changing prescaler
         // Figure out input timer freq
         uint32_t UpdFreqMax = Clk::GetTimInputFreq(ISetup.PTimer) / (ISetup.PTimer->CAR + 1);
-        uint32_t Psc = UpdFreqMax / FreqHz;
-        if(Psc != 0) Psc--;
+        uint32_t psc = UpdFreqMax / freq_Hz;
+        if(psc != 0) psc--;
     //    Printf("InputFreq=%u; UpdFreqMax=%u; div=%u; ARR=%u\r", InputFreq, UpdFreqMax, div, ITmr->ARR);
-        ISetup.PTimer->PSC = Psc;
+        ISetup.PTimer->PSC = psc;
         ISetup.PTimer->CNT = 0;  // Reset counter to start from scratch
         ISetup.PTimer->GenerateUpdateEvt();
     }
     void SetTopValue(uint32_t value) const { ISetup.PTimer->SetTopValue(value); }
-//    void SetTmrClkFreq(uint32_t FreqHz) const { Timer_t::SetTmrClkFreq(FreqHz); }
+//    void SetTmrClkFreq(uint32_t freq_Hz) const { Timer_t::SetTmrClkFreq(freq_Hz); }
 //    void SetPrescaler(uint32_t PrescalerValue) const { Timer_t::SetPrescaler(PrescalerValue); }
     PinOutputPWM_t(const PwmSetup &ASetup) : ISetup(ASetup) {}
 //    PinOutputPWM_t(GPIO_TypeDef *pgpio, uint16_t Pin,
