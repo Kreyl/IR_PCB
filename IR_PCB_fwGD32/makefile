@@ -58,8 +58,8 @@ COMMON_FLAGS += -Os # -flto
 LINKER_FLAGS +=
 LD_SCRIPT = GD32E103xB_FromBoot.ld
 # Comment / uncomment the following lines to produce .hex, .bin, .lst output
-HEX_NAME = $(OUT_DIR)/fw$(TIMESTAMP).hex
-BIN_NAME = $(OUT_DIR)/fw$(TIMESTAMP).bin
+HEX_NAME = $(OUT_DIR)/fwIRPCB_$(TIMESTAMP).hex
+BIN_NAME = $(OUT_DIR)/fwIRPCB_$(TIMESTAMP).bin
 # OUTPUT_ASM = -Wa,-adhlns="$@.lst"
 endif
 
