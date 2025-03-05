@@ -603,16 +603,16 @@ struct DmaIrqHandler_t {
 
 static DmaIrqHandler_t DmaIrqHandler[DMA_CHNL_CNT];
 
-DMA_t::DMA_t(DMAChannel_t *APChnl, ftVoidPVoidW32 PIrqFunc, void *PIrqParam, uint32_t AIrqPrio) {
-    PChnl = APChnl;
+DMA_t::DMA_t(DMAChannel_t *apchnl, ftVoidPVoidW32 pirq_func, void *pirq_param, uint32_t airq_prio) {
+    pchnl = apchnl;
     // Calculate chnl_n
-    if((uint32_t)APChnl <= (uint32_t)DMA0_Channel6_BASE)
-        chnl_n = ((uint32_t)APChnl - (uint32_t)DMA0_Channel0_BASE) / 0x14UL; // 0x14 is distance between channels, see datasheet
-    else chnl_n = DMA0_CHNL_CNT + ((uint32_t)APChnl - (uint32_t)DMA1_Channel0_BASE) / 0x14UL;
+    if((uint32_t)apchnl <= (uint32_t)DMA0_Channel6_BASE)
+        chnl_n = ((uint32_t)apchnl - (uint32_t)DMA0_Channel0_BASE) / 0x14UL; // 0x14 is distance between channels, see datasheet
+    else chnl_n = DMA0_CHNL_CNT + ((uint32_t)apchnl - (uint32_t)DMA1_Channel0_BASE) / 0x14UL;
     // Setup IRQ
-    DmaIrqHandler[chnl_n].Handler = PIrqFunc;
-    DmaIrqHandler[chnl_n].Param = PIrqParam;
-    DmaIrqHandler[chnl_n].Prio = AIrqPrio;
+    DmaIrqHandler[chnl_n].Handler = pirq_func;
+    DmaIrqHandler[chnl_n].Param = pirq_param;
+    DmaIrqHandler[chnl_n].Prio = airq_prio;
 }
 
 void DMA_t::Init() const {
@@ -620,7 +620,7 @@ void DMA_t::Init() const {
     if(DmaIrqHandler[chnl_n].Handler != nullptr) {
         Nvic::EnableVector(DmaIrqNum[chnl_n], DmaIrqHandler[chnl_n].Prio);
     } // if irq
-    PChnl->CTL = 0; // Reset value
+    pchnl->CTL = 0; // Reset value
 }
 
 void DMA_t::Init(volatile void* PeriphAddr, uint32_t AMode) const {
@@ -643,7 +643,7 @@ void DMA_t::ClearIrq() const { // DMA0: chnls [0;6]; DMA1: chnls [7;11]
 }
 
 void DMA_t::DisableAndClearIRQ() const {
-    PChnl->CTL &= ~0b1111UL; // TEIE | HTIE | TCIE | EN
+    pchnl->CTL &= ~0b1111UL; // TEIE | HTIE | TCIE | EN
     ClearIrq();
 }
 

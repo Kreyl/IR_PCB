@@ -114,8 +114,8 @@ public:
     uint32_t GetCounter() const { return itmr->CNT; }
 
     // Compare
-    void SetChnlValue(uint32_t ChnlN, uint32_t avalue) const {
-        *((uint32_t*)(&itmr->CH0CV) + ChnlN) = avalue;
+    void SetChnlValue(uint32_t chnl_n, uint32_t avalue) const {
+        *((uint32_t*)(&itmr->CH0CV) + chnl_n) = avalue;
     }
     void SetChnl0Value(uint32_t avalue) const { itmr->CH0CV = avalue; }
     void SetChnl1Value(uint32_t avalue) const { itmr->CH1CV = avalue; }
@@ -138,17 +138,17 @@ public:
 
     // Channels setup
     void EnPrimaryOutput() const { itmr->CCHP = 0xC000; }
-    void SetChnlMode(uint32_t ChnlN, ChnlMode Mode) const {
-        if     (ChnlN == 0) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)Mode, 0);
-        else if(ChnlN == 1) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)Mode, 8);
-        else if(ChnlN == 2) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)Mode, 0);
-        else if(ChnlN == 3) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)Mode, 8);
+    void SetChnlMode(uint32_t chnl_n, ChnlMode Mode) const {
+        if     (chnl_n == 0) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)Mode, 0);
+        else if(chnl_n == 1) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)Mode, 8);
+        else if(chnl_n == 2) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)Mode, 0);
+        else if(chnl_n == 3) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)Mode, 8);
     }
-    void SetInputPsc(uint32_t ChnlN, InputPsc psc) const {
-        if     (ChnlN == 0) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)psc, 2);
-        else if(ChnlN == 1) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)psc, 10);
-        else if(ChnlN == 2) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)psc, 2);
-        else if(ChnlN == 3) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)psc, 10);
+    void SetInputPsc(uint32_t chnl_n, InputPsc psc) const {
+        if     (chnl_n == 0) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)psc, 2);
+        else if(chnl_n == 1) SET_BITS(itmr->CHCTL0, 0b11UL, (uint32_t)psc, 10);
+        else if(chnl_n == 2) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)psc, 2);
+        else if(chnl_n == 3) SET_BITS(itmr->CHCTL1, 0b11UL, (uint32_t)psc, 10);
     }
     void SetInputActiveEdge(uint32_t InputN, RiseFall Rsfll) const {
         uint32_t bits = (Rsfll == RiseFall::Rising)? 0b0000UL : (Rsfll == RiseFall::Falling)? 0b0010UL : 0b1010L;
@@ -157,35 +157,35 @@ public:
         else if(InputN == 2) SET_BITS(itmr->CHCTL2, 0b1010UL, bits, 8);  // CI2FE2 and CI3FE2
         else if(InputN == 3) SET_BITS(itmr->CHCTL2, 0b1010UL, bits, 12); // CI3FE3 and CI2FE3
     }
-    void SetOutputCmpMode(uint32_t ChnlN, CmpMode Mode) const {
-        if     (ChnlN == 0) SET_BITS(itmr->CHCTL0, 0b111UL, (uint32_t)Mode, 4);
-        else if(ChnlN == 1) SET_BITS(itmr->CHCTL0, 0b111UL, (uint32_t)Mode, 12);
-        else if(ChnlN == 2) SET_BITS(itmr->CHCTL1, 0b111UL, (uint32_t)Mode, 4);
-        else if(ChnlN == 3) SET_BITS(itmr->CHCTL1, 0b111UL, (uint32_t)Mode, 12);
+    void SetOutputCmpMode(uint32_t chnl_n, CmpMode Mode) const {
+        if     (chnl_n == 0) SET_BITS(itmr->CHCTL0, 0b111UL, (uint32_t)Mode, 4);
+        else if(chnl_n == 1) SET_BITS(itmr->CHCTL0, 0b111UL, (uint32_t)Mode, 12);
+        else if(chnl_n == 2) SET_BITS(itmr->CHCTL1, 0b111UL, (uint32_t)Mode, 4);
+        else if(chnl_n == 3) SET_BITS(itmr->CHCTL1, 0b111UL, (uint32_t)Mode, 12);
     }
-    void EnableOutputShadow(uint32_t ChnlN) const {
-        if     (ChnlN == 0) itmr->CHCTL0 |= 1UL << 3;
-        else if(ChnlN == 1) itmr->CHCTL0 |= 1UL << 11;
-        else if(ChnlN == 2) itmr->CHCTL1 |= 1UL << 3;
-        else if(ChnlN == 3) itmr->CHCTL1 |= 1UL << 11;
+    void EnableOutputShadow(uint32_t chnl_n) const {
+        if     (chnl_n == 0) itmr->CHCTL0 |= 1UL << 3;
+        else if(chnl_n == 1) itmr->CHCTL0 |= 1UL << 11;
+        else if(chnl_n == 2) itmr->CHCTL1 |= 1UL << 3;
+        else if(chnl_n == 3) itmr->CHCTL1 |= 1UL << 11;
     }
 
-    void EnChnl(uint32_t ChnlN) const {
-        if     (ChnlN == 0) itmr->CHCTL2 |= 1UL << 0;
-        else if(ChnlN == 1) itmr->CHCTL2 |= 1UL << 4;
-        else if(ChnlN == 2) itmr->CHCTL2 |= 1UL << 8;
-        else if(ChnlN == 3) itmr->CHCTL2 |= 1UL << 12;
+    void EnChnl(uint32_t chnl_n) const {
+        if     (chnl_n == 0) itmr->CHCTL2 |= 1UL << 0;
+        else if(chnl_n == 1) itmr->CHCTL2 |= 1UL << 4;
+        else if(chnl_n == 2) itmr->CHCTL2 |= 1UL << 8;
+        else if(chnl_n == 3) itmr->CHCTL2 |= 1UL << 12;
     }
 
     // DMA
-    volatile uint32_t* GetChnlRegAddr(uint32_t ChnlN) const {
-        if     (ChnlN == 0) return &itmr->CH0CV;
-        else if(ChnlN == 1) return &itmr->CH1CV;
-        else if(ChnlN == 2) return &itmr->CH2CV;
+    volatile uint32_t* GetChnlRegAddr(uint32_t chnl_n) const {
+        if     (chnl_n == 0) return &itmr->CH0CV;
+        else if(chnl_n == 1) return &itmr->CH1CV;
+        else if(chnl_n == 2) return &itmr->CH2CV;
         else                return &itmr->CH3CV;
     }
     void EnableDmaOnTrigger() const { itmr->DMAINTEN |= TIM_DMAINTEN_TRGDEN; }
-    void EnableDmaOnCapture(uint32_t ChnlN) const { itmr->DMAINTEN |= TIM_DMAINTEN_DMAEN(ChnlN); }
+    void EnableDmaOnCapture(uint32_t chnl_n) const { itmr->DMAINTEN |= TIM_DMAINTEN_DMAEN(chnl_n); }
     void EnableDmaOnUpdate()  const { itmr->DMAINTEN |= TIM_DMAINTEN_UPDEN; }
     // Evt
     void GenerateUpdateEvt()   const { itmr->GenerateUpdateEvt(); }
@@ -457,13 +457,13 @@ public:
 
     void ScanBus(Shell *PShell);
     retv CheckBusAndResume();
-    retv CheckAddress(uint32_t Addr);
-    retv Write    (uint8_t Addr, uint8_t *WPtr,  uint32_t WLength, uint32_t Timeout_ms = 999);
-    retv WriteRead(uint8_t Addr, uint8_t *WPtr,  uint32_t WLength, uint8_t *RPtr, uint32_t RLength, uint32_t Timeout_ms = 999);
-    retv Read     (uint8_t Addr, uint8_t *RPtr, uint32_t RLength, uint32_t Timeout_ms = 999);
-    retv WriteBytes(uint8_t Addr, uint32_t ByteCnt, ...);
+    retv CheckAddress(uint32_t addr);
+    retv Write    (uint8_t addr, uint8_t *WPtr,  uint32_t WLength, uint32_t Timeout_ms = 999);
+    retv WriteRead(uint8_t addr, uint8_t *WPtr,  uint32_t WLength, uint8_t *RPtr, uint32_t RLength, uint32_t Timeout_ms = 999);
+    retv Read     (uint8_t addr, uint8_t *RPtr, uint32_t RLength, uint32_t Timeout_ms = 999);
+    retv WriteBytes(uint8_t addr, uint32_t ByteCnt, ...);
 
-//    retv WriteWrite(uint32_t Addr, uint8_t *WPtr1, uint32_t WLength1, uint8_t *WPtr2, uint32_t WLength2);
+//    retv WriteWrite(uint32_t addr, uint8_t *WPtr1, uint32_t WLength1, uint8_t *WPtr2, uint32_t WLength2);
     // Inner use
     void IProcessIRQ();
 };
@@ -474,25 +474,25 @@ extern i2c_t i2c0, i2c1;
 #if 1 // =========================== DMA =======================================
 class DMA_t {
 private:
-    DMAChannel_t *PChnl;
-    uint32_t ChnlN; // Required for IRQ flags cleanup
+    DMAChannel_t *pchnl;
+    uint32_t chnl_n; // Required for IRQ flags cleanup
 public:
-    DMA_t(DMAChannel_t *APChnl,
-            ftVoidPVoidW32 PIrqFunc = nullptr,
-            void *PIrqParam = nullptr,
-            uint32_t AIrqPrio = IRQ_PRIO_MEDIUM);
+    DMA_t(DMAChannel_t *apchnl,
+            ftVoidPVoidW32 pirq_func = nullptr,
+            void *pirq_param = nullptr,
+            uint32_t airq_prio = IRQ_PRIO_MEDIUM);
     void Init() const;
-    void Init(volatile void* PeriphAddr, uint32_t AMode) const;
-    void Init(volatile void* PeriphAddr, void* MemAddr, uint32_t AMode, uint16_t cnt) const;
-    void SetPeriphAddr(volatile void* Addr) const { PChnl->CPADDR  = (uint32_t)Addr; }
-    void SetMemoryAddr(void* Addr)          const { PChnl->CMADDR  = (uint32_t)Addr; }
-    void* GetMemoryAddr()                   const { return (void*)PChnl->CMADDR; }
-    void SetMode(uint32_t AMode)            const { PChnl->CTL = AMode; }
-    void SetTransferDataCnt(uint16_t cnt)   const { PChnl->CNT = cnt; }
-    uint16_t GetTransferDataCnt()           const { return PChnl->CNT; }
+    void Init(volatile void* periph_addr, uint32_t amode) const;
+    void Init(volatile void* periph_addr, void* mem_addr, uint32_t amode, uint16_t cnt) const;
+    void SetPeriphAddr(volatile void* addr) const { pchnl->CPADDR  = (uint32_t)addr; }
+    void SetMemoryAddr(void* addr)          const { pchnl->CMADDR  = (uint32_t)addr; }
+    void* GetMemoryAddr()                   const { return (void*)pchnl->CMADDR; }
+    void SetMode(uint32_t amode)            const { pchnl->CTL = amode; }
+    void SetTransferDataCnt(uint16_t cnt)   const { pchnl->CNT = cnt; }
+    uint16_t GetTransferDataCnt()           const { return pchnl->CNT; }
 
-    void Enable()                           const { PChnl->CTL |=  DMA_CHNL_EN; }
-    void Disable()                          const { PChnl->CTL &= ~DMA_CHNL_EN; }
+    void Enable()                           const { pchnl->CTL |=  DMA_CHNL_EN; }
+    void Disable()                          const { pchnl->CTL &= ~DMA_CHNL_EN; }
     void ClearIrq() const;
     void DisableAndClearIRQ() const;
 };
@@ -615,7 +615,7 @@ void ClearPendingFlags();
 retv WaitForLastOperation(uint32_t Timeout_ms);
 retv ErasePage(uint32_t PageAddress);
 retv ProgramWord(uint32_t Address, uint32_t Data);
-retv ProgramBuf(uint32_t *ptr, uint32_t ByteSz, uint32_t Addr);
+retv ProgramBuf(uint32_t *ptr, uint32_t ByteSz, uint32_t addr);
 bool FirmwareIsLocked();
 void LockFirmware();
 void UnlockFirmware();
