@@ -1,22 +1,17 @@
 {
     "configurations": [
         {
-            "name": "Release",
-            "compilerPath": "C:/YaStudio/arm-none-eabi-gcc/bin/arm-none-eabi-gcc.exe",
+            "name": "Win32",
             "includePath": [
-                "C:/YaStudio/arm-none-eabi-gcc",
-                "${workspaceRoot}/**",
-                "${workspaceRoot}/kl_lib/**",
-                "${workspaceRoot}/os/**",
-                "${workspaceRoot}/os/hal/**",
-                "${workspaceRoot}/os/include/**",
-                "${workspaceRoot}/os/stm32f072/**"
+                "${workspaceFolder}/**"
             ],
-            "defines": [],
-            "intelliSenseMode": "gcc-arm",
+            "defines": [
+                "-D_GNU_SOURCE"
+            ],
+            "windowsSdkVersion": "10.0.22621.0",
             "cStandard": "gnu17",
-            "cppStandard": "gnu++17",
-            "configurationProvider": "ms-vscode.makefile-tools"
+            "cppStandard": "gnu++20",
+            "compilerPath": "C:/YaStudio/arm-none-eabi-gcc/bin/arm-none-eabi-g++.exe"
         }
     ],
     "version": 4

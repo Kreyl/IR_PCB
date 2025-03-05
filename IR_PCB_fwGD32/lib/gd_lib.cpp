@@ -706,7 +706,7 @@ void Init(const params& Setup) {
     ADC0->SetSequenceLength(Setup.Channels.size());
     uint32_t SeqIndx = 0;    // First sequence item is 0
     for(auto& Chnl : Setup.Channels) {
-        if(Chnl.GPIO != nullptr) Gpio::SetupAnalog(Chnl.GPIO, Chnl.Pin);
+        if(Chnl.GPIO != nullptr) Gpio::SetupAnalog(Chnl.GPIO, Chnl.pin);
         ADC0->SetChannelSampleTime(Chnl.ChannelN, Setup.SampleTime);
         ADC0->SetSequenceItem(SeqIndx++, Chnl.ChannelN);
     }
@@ -938,14 +938,14 @@ void UpdateFreqValues() {
     uint32_t CkSysHz = RCU->GetCkSys();
     // Calculate AHB freq
     const uint8_t AHB_div[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
-    uint32_t Indx = GET_BITS(RCU->CFG0, 0b1111UL, 4);
-    AHBFreqHz = CkSysHz >> AHB_div[Indx];
+    uint32_t indx = GET_BITS(RCU->CFG0, 0b1111UL, 4);
+    AHBFreqHz = CkSysHz >> AHB_div[indx];
     // Calculate APB freq
     const uint8_t APB_div[8] = {0, 0, 0, 0, 1, 2, 3, 4};
-    Indx = GET_BITS(RCU->CFG0, 0b111UL, 8);
-    APB1FreqHz = AHBFreqHz >> APB_div[Indx];
-    Indx = GET_BITS(RCU->CFG0, 0b111UL, 11);
-    APB2FreqHz = AHBFreqHz >> APB_div[Indx];
+    indx = GET_BITS(RCU->CFG0, 0b111UL, 8);
+    APB1FreqHz = AHBFreqHz >> APB_div[indx];
+    indx = GET_BITS(RCU->CFG0, 0b111UL, 11);
+    APB2FreqHz = AHBFreqHz >> APB_div[indx];
 }
 
 void PrintFreqs() {
@@ -955,23 +955,23 @@ void PrintFreqs() {
 
 uint32_t GetTimInputFreq(const uint32_t TimerN) {
     if(TimerN == 0 or (TimerN >= 7 and TimerN <= 10)) {
-        uint32_t Indx = GET_BITS(RCU->CFG0, 0b111UL, 11); // APB2 divider
-        return (Indx < 0b100UL)? APB2FreqHz : APB2FreqHz * 2; // x1 if no divider, x2 if divided
+        uint32_t indx = GET_BITS(RCU->CFG0, 0b111UL, 11); // APB2 divider
+        return (indx < 0b100UL)? APB2FreqHz : APB2FreqHz * 2; // x1 if no divider, x2 if divided
     }
     else {
-        uint32_t Indx = GET_BITS(RCU->CFG0, 0b111UL, 8); // APB1 divider
-        return (Indx < 0b100UL)? APB1FreqHz : APB1FreqHz * 2; // x1 if no divider, x2 if divided
+        uint32_t indx = GET_BITS(RCU->CFG0, 0b111UL, 8); // APB1 divider
+        return (indx < 0b100UL)? APB1FreqHz : APB1FreqHz * 2; // x1 if no divider, x2 if divided
     }
 }
 
-uint32_t GetTimInputFreq(const TIM_TypeDef *PTimer) {
-    if(PTimer == TIM0 or PTimer == TIM7 or PTimer == TIM8 or PTimer == TIM9 or PTimer == TIM10) {
-        uint32_t Indx = GET_BITS(RCU->CFG0, 0b111UL, 11); // APB2 divider
-        return (Indx < 0b100UL)? APB2FreqHz : APB2FreqHz * 2; // x1 if no divider, x2 if divided
+uint32_t GetTimInputFreq(const TIM_TypeDef *ptimer) {
+    if(ptimer == TIM0 or ptimer == TIM7 or ptimer == TIM8 or ptimer == TIM9 or ptimer == TIM10) {
+        uint32_t indx = GET_BITS(RCU->CFG0, 0b111UL, 11); // APB2 divider
+        return (indx < 0b100UL)? APB2FreqHz : APB2FreqHz * 2; // x1 if no divider, x2 if divided
     }
     else {
-        uint32_t Indx = GET_BITS(RCU->CFG0, 0b111UL, 8); // APB1 divider
-        return (Indx < 0b100UL)? APB1FreqHz : APB1FreqHz * 2; // x1 if no divider, x2 if divided
+        uint32_t indx = GET_BITS(RCU->CFG0, 0b111UL, 8); // APB1 divider
+        return (indx < 0b100UL)? APB1FreqHz : APB1FreqHz * 2; // x1 if no divider, x2 if divided
     }
 }
 
@@ -979,8 +979,8 @@ uint32_t GetTimInputFreq(const TIM_TypeDef *PTimer) {
 
 namespace Nvic { // ======================== NVIC ==============================
 
-void EnableVector(IRQn_Type IrqN, uint32_t prio) {
-    uint32_t n = (uint32_t)IrqN;
+void EnableVector(IRQn_Type irq_n, uint32_t prio) {
+    uint32_t n = (uint32_t)irq_n;
 #if defined(__CORE_CM0_H_GENERIC)
     NVIC->IP[_IP_IDX(n)] = (NVIC->IP[_IP_IDX(n)] & ~(0xFFU << _BIT_SHIFT(n))) |
                          (NVIC_PRIORITY_MASK(prio) << _BIT_SHIFT(n));
@@ -991,8 +991,8 @@ void EnableVector(IRQn_Type IrqN, uint32_t prio) {
     NVIC->ISER[n >> 5U] = 1U << (n & 0x1FU);
 }
 
-void DisableVector(IRQn_Type IrqN) {
-    uint32_t n = (uint32_t)IrqN;
+void DisableVector(IRQn_Type irq_n) {
+    uint32_t n = (uint32_t)irq_n;
     NVIC->ICER[n >> 5U] = 1U << (n & 0x1FU);
 #if defined(__CORE_CM0_H_GENERIC)
     NVIC->IP[_IP_IDX(n)] = NVIC->IP[_IP_IDX(n)] & ~(0xFFU << _BIT_SHIFT(n));
@@ -1012,69 +1012,69 @@ void SetSystemHandlerPriority(uint32_t handler, uint32_t prio) {
 #endif
 }
 
-void ClearPending(IRQn_Type IrqN) { NVIC->ICPR[(uint32_t)IrqN >> 5] = 1 << ((uint32_t)IrqN & 0x1F); }
+void ClearPending(IRQn_Type irq_n) { NVIC->ICPR[(uint32_t)irq_n >> 5] = 1 << ((uint32_t)irq_n & 0x1F); }
 
 } // namespace
 
 #if 1 // ========================== HW Timer ===================================
-void TimHw::SetInputFreqChangingPrescaler(uint32_t FreqHz) const {
-    itmr->PSC = (Clk::GetTimInputFreq(itmr) / FreqHz) - 1;
+void TimHw::SetInputFreqChangingPrescaler(uint32_t freq_Hz) const {
+    itmr->PSC = (Clk::GetTimInputFreq(itmr) / freq_Hz) - 1;
 }
 
-void TimHw::SetUpdateFreqChangingPrescaler(uint32_t FreqHz) const {
+void TimHw::SetUpdateFreqChangingPrescaler(uint32_t freq_Hz) const {
     // Figure out input timer freq
-    uint32_t UpdFreqMax = Clk::GetTimInputFreq(itmr) / (GetTopValue() + 1);
-    uint32_t Psc = UpdFreqMax / FreqHz;
-    if(Psc != 0) Psc--;
-    SetPrescaler(Psc);
+    uint32_t upd_freq_max = Clk::GetTimInputFreq(itmr) / (GetTopValue() + 1);
+    uint32_t psc = upd_freq_max / freq_Hz;
+    if(psc != 0) psc--;
+    SetPrescaler(psc);
     SetCounter(0); // Reset counter to start from scratch
     GenerateUpdateEvt();
 }
 
-void TimHw::SetUpdateFreqChangingTopValue(uint32_t FreqHz) const {
-    uint32_t UpdFreqMax = Clk::GetTimInputFreq(itmr) / (GetPrescaler() + 1);
-    uint32_t TopVal  = (UpdFreqMax / FreqHz);
-    if(TopVal != 0) TopVal--;
-    SetTopValue(TopVal);
+void TimHw::SetUpdateFreqChangingTopValue(uint32_t freq_Hz) const {
+    uint32_t upd_freq_max = Clk::GetTimInputFreq(itmr) / (GetPrescaler() + 1);
+    uint32_t top_val  = (upd_freq_max / freq_Hz);
+    if(top_val != 0) top_val--;
+    SetTopValue(top_val);
     SetCounter(0); // Reset counter to start from scratch
     GenerateUpdateEvt();
 }
 
-void TimHw::SetUpdateFreqChangingBoth(uint32_t FreqHz) const {
-    uint32_t Psc = (Clk::GetTimInputFreq(itmr) / FreqHz) / 0x10000;
-    SetPrescaler(Psc);
-    SetUpdateFreqChangingTopValue(FreqHz);
+void TimHw::SetUpdateFreqChangingBoth(uint32_t freq_Hz) const {
+    uint32_t psc = (Clk::GetTimInputFreq(itmr) / freq_Hz) / 0x10000;
+    SetPrescaler(psc);
+    SetUpdateFreqChangingTopValue(freq_Hz);
 }
 #endif
 
 // PWM
 void PinOutputPWM_t::Init() const {
     // GPIO
-    Gpio::SetupAlterFunc(ISetup.pgpio, ISetup.Pin, ISetup.output_mode);
+    Gpio::SetupAlterFunc(isetup.pgpio, isetup.pin, isetup.output_mode);
     // Timer
-    RCU->EnTimer(ISetup.PTimer);
-    ISetup.PTimer->CCHP = 0xC000;
-    ISetup.PTimer->CTL0 |= 1UL << 7; // Auto-reload shadow enable
-    ISetup.PTimer->SetTopValue(ISetup.top_value);
-    uint32_t tmp = (ISetup.Inverted == invInverted)? 0b111UL : 0b110UL; // PWM mode 1 or 2
-    switch(ISetup.TimerChnl) {
+    RCU->EnTimer(isetup.ptimer);
+    isetup.ptimer->CCHP = 0xC000;
+    isetup.ptimer->CTL0 |= 1UL << 7; // Auto-reload shadow enable
+    isetup.ptimer->SetTopValue(isetup.top_value);
+    uint32_t tmp = (isetup.inverted == invInverted)? 0b111UL : 0b110UL; // PWM mode 1 or 2
+    switch(isetup.timer_chnl) {
         case 0:
-            ISetup.PTimer->CHCTL0 |= (tmp << 4);
-            ISetup.PTimer->CHCTL2 |= 1UL << 0; // Set CH0EN
+            isetup.ptimer->CHCTL0 |= (tmp << 4);
+            isetup.ptimer->CHCTL2 |= 1UL << 0; // Set CH0EN
             break;
         case 1:
-            ISetup.PTimer->CHCTL0 |= (tmp << 12);
-            ISetup.PTimer->CHCTL2 |= 1UL << 4; // Set CH1EN
+            isetup.ptimer->CHCTL0 |= (tmp << 12);
+            isetup.ptimer->CHCTL2 |= 1UL << 4; // Set CH1EN
             break;
         case 2:
-            ISetup.PTimer->CHCTL1 |= (tmp << 4);
-            ISetup.PTimer->CHCTL2 |= 1UL << 8; // Set CH2EN
+            isetup.ptimer->CHCTL1 |= (tmp << 4);
+            isetup.ptimer->CHCTL2 |= 1UL << 8; // Set CH2EN
             break;
         case 3:
-            ISetup.PTimer->CHCTL1 |= (tmp << 12);
-            ISetup.PTimer->CHCTL2 |= 1UL << 12; // Set CH0EN
+            isetup.ptimer->CHCTL1 |= (tmp << 12);
+            isetup.ptimer->CHCTL2 |= 1UL << 12; // Set CH0EN
             break;
         default: break;
     }
-    ISetup.PTimer->Enable();
+    isetup.ptimer->Enable();
 }

@@ -17,8 +17,8 @@
                 "isDefault": true
             },
             "presentation": { 
-                "showReuseMessage": false,
-                "clear": true 
+                "clear": true,
+                "showReuseMessage": false
             }
         },
         {
@@ -36,8 +36,8 @@
                 "isDefault": true
             },
             "presentation": { 
-                "showReuseMessage": false,
-                "clear": true 
+                "clear": true,
+                "showReuseMessage": false
             }
         },
         // Flash using BMP
@@ -51,14 +51,10 @@
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }, 
-            "presentation": {
-                // "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": false,
-                "clear": true
+            },
+            "presentation": { 
+                "clear": true,
+                "showReuseMessage": false
             }
         },
         // Flash using OpenOCD
@@ -78,8 +74,8 @@
                 "isDefault": true
             },
             "presentation": { 
-                "showReuseMessage": false,
-                "clear": true 
+                "clear": true,
+                "showReuseMessage": false
             }
         },
         // ==== Debug ====
@@ -98,8 +94,8 @@
                 "isDefault": true
             },
             "presentation": { 
-                "showReuseMessage": false,
-                "clear": true 
+                "clear": true,
+                "showReuseMessage": false
             }
         },
         {
@@ -117,8 +113,8 @@
                 "isDefault": true
             },
             "presentation": { 
-                "showReuseMessage": false,
-                "clear": true 
+                "clear": true,
+                "showReuseMessage": false
             }
         },
         {
@@ -136,8 +132,8 @@
                 "isDefault": true
             },
             "presentation": { 
-                "showReuseMessage": false,
-                "clear": true 
+                "clear": true,
+                "showReuseMessage": false
             }
         },
         // ==== FromBoot ====
@@ -156,8 +152,8 @@
                 "isDefault": true
             },
             "presentation": { 
-                "showReuseMessage": false,
-                "clear": true 
+                "clear": true,
+                "showReuseMessage": false
             }
         },
         {
@@ -175,8 +171,8 @@
                 "isDefault": true
             },
             "presentation": { 
-                "showReuseMessage": false,
-                "clear": true 
+                "clear": true,
+                "showReuseMessage": false
             }
         },
         {
@@ -194,8 +190,8 @@
                 "isDefault": true
             },
             "presentation": { 
-                "showReuseMessage": false,
-                "clear": true 
+                "clear": true,
+                "showReuseMessage": false
             }
         }
     ]
