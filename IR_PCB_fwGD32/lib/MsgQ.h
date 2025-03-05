@@ -1,5 +1,5 @@
 /*
- * MsgQ.h
+ * EvtMsg.h
  *
  *  Created on: 21 ���. 2017 �.
  *      Author: Kreyl
