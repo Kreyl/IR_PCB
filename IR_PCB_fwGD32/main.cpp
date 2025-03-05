@@ -97,7 +97,9 @@ static inline void InitClk() {
 }
 
 void main(void) {
+#ifndef BUILD_CFG_DEBUG // Defined in makefile
     Watchdog::InitAndStart(999);
+#endif
     InitClk();
     // ==== Disable JTAG ====
     RCU->EnAFIO();

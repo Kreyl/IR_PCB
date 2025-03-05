@@ -245,7 +245,7 @@ public:
     // ==== IR TX ====
     ValueMinMaxDef ir_tx_pwr   {     90,     1,    255, kGrpIrTx, "TXPwr", "Power of IR output" };
     ValueMinMaxDef ir_tx_freq  {  56000, 30000,  56000, kGrpIrTx, "TXFreq", "IR transmission modulation frequency, Hz" };
-    ValuePktType   tx_pkt_type { 0x0000,                kGrpIrTx, "PktType", "Supported types: Shot = 0x0000, NewGame = 0x8305, AddHealth = 0x8000, AddRounds = 0x8100" };
+    ValuePktType   tx_pkt_type { 0x0000,                kGrpIrTx, "TXPktType", "Supported types: Shot = 0x0000, NewGame = 0x8305, AddHealth = 0x8000, AddRounds = 0x8100" };
     ValueDamage    tx_damage   {                        kGrpIrTx, "TXDamage" };
     ValueMinMaxDef tx_amount   {      1,     1,    100, kGrpIrTx, "Amount", "Number of things to be added by special packets: AddHealth, AddRounds, etc." };
     // ==== Gpio control ====
