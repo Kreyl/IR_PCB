@@ -20,16 +20,16 @@
 // Forever
 extern const char *kBuildTime, *kBuildCfgName;
 EvtMsgQ<EvtMsg, MAIN_EVT_Q_LEN> evt_q_main;
-static const UartParams cmd_uart_params(115200, CMD_UART_PARAMS);
-CmdUart dbg_uart{cmd_uart_params};
+static const UartParams kCmdUartParams(115200, CMD_UART_PARAMS);
+CmdUart dbg_uart{kCmdUartParams};
 extern void OnCmd(Shell *pshell); // See Command.cpp
 
 LedBlinker sys_LED{LUMOS_PIN};
 LedSmooth side_LEDs[SIDE_LEDS_CNT] = { {LED_PWM1}, {LED_PWM2}, {LED_PWM3}, {LED_PWM4} };
 LedSmooth front_LEDs[FRONT_LEDS_CNT] = { {LED_FRONT1}, {LED_FRONT2} };
 
-static const NpxParams nparams{NPX_PARAMS, NPX_DMA, 17, NpxParams::ClrType::RGB};
-Neopixels npx_leds{&nparams};
+static const NpxParams kNpxParams{NPX_PARAMS, NPX_DMA, 17, NpxParams::ClrType::RGB};
+Neopixels npx_leds{&kNpxParams};
 
 Beeper beeper {BEEPER_PIN};
 
@@ -146,7 +146,7 @@ void main(void) {
 
     // ==== App ====
     settings.Load();
-    Printf("Pkt type: 0x%04X\r", settings.pkt_type.v);
+    Printf("Pkt type: 0x%04X\r", settings.tx_pkt_type.v);
     AppInit();
 
     // ==== Main evt cycle ====

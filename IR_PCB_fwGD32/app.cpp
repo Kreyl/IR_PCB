@@ -320,8 +320,8 @@ void Fire() {
         if(!settings.rounds_in_magaz.IsInfinity()) rounds_cnt--;
         // Prepare pkt
         pkt_tx.bits_cnt = 16; // All pkts excluding shot one
-        pkt_tx.word16 = static_cast<uint16_t>(*settings.pkt_type);
-        switch(*settings.pkt_type) { // Modify pkt if needed
+        pkt_tx.word16 = static_cast<uint16_t>(*settings.tx_pkt_type);
+        switch(*settings.tx_pkt_type) { // Modify pkt if needed
             case static_cast<uint16_t>(PktType::Shot):
                 pkt_tx.word16 = 0;
                 pkt_tx.player_id = *settings.player_id;

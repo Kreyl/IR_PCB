@@ -160,29 +160,31 @@ public:
 
 class ValuePktType : public ValueBase {
 public:
-    ValuePktType(int32_t adefault, const char* asection, const char* aname) :
-        ValueBase(adefault, asection, aname,
-                "Supported types: Shot = 0x0000, NewGame = 0x8305, "
-                "AddHealth = 0x8000, AddRounds = 0x8100"
-              ) {}
+    ValuePktType(int32_t adefault, const char* asection, const char* aname, const char *acomment) :
+        ValueBase(adefault, asection, aname, acomment) {}
     retv CheckAndSetIfOk(int32_t avalue) {
-        if(avalue < 0 or avalue > 0xFFFF) return retv::BadValue;
+        if(avalue > 0xFFFF) return retv::BadValue;
+        if(v_default >= 0 and avalue < 0) return retv::BadValue; // Allow negative value if default is negative
         v = avalue;
         return retv::Ok;
     }
     void PrintOnGet(Shell *pshell) {
-        pshell->Print("%*S = 0x%04X; Def = 0x%04X; %S\r\n", kValueNameSz, name, v, v_default, comment);
+        pshell->Print("%*S = ", kValueNameSz, name);
+        if(v < 0) pshell->Print("%4d; ",    v);
+        else      pshell->Print("0x%04X; ", v);
+        if(v_default < 0) pshell->Print("Def = %d; ",     v_default);
+        else              pshell->Print("Def = 0x%04X; ", v_default);
+        pshell->Print("%S\r\n", comment);
     }
     void Save(FIL* pfile) {
-        f_printf(pfile,
-                    "# PktType to transmit:\r\n"
-                    "#   * Shot is 0x0000 (PlayerID, TeamID and Damage added automatically)\r\n"
-                    "#   * NewGame is 0x8305\r\n"
-                    "#   * AddHealth is 0x8000 (number of added health points set in the amount value)\r\n"
-                    "#   * AddRounds is 0x8100 (number of added rounds set in the amount value)\r\n");
-        f_printf(pfile, "%S = 0x%04X\r\n\r\n", name, v);
+        f_printf(pfile, "# %S\r\n", comment);
+        if(v < 0) f_printf(pfile, "%S = %d\r\n\r\n", name, v);
+        else      f_printf(pfile, "%S = 0x%04X\r\n\r\n", name, v);
     }
-    void PrintOnNew(Shell *pshell) { pshell->Print("%S = 0x%04X\r\n", name, v); }
+    void PrintOnNew(Shell *pshell) {
+        if(v < 0) pshell->Print("%S = %d\r\n", name, v);
+        else      pshell->Print("%S = 0x%04X\r\n", name, v, comment);
+    }
 };
 
 class ValueDamage : public ValueBase {
@@ -224,31 +226,35 @@ private:
     static constexpr const char* kGrpGpio = "Gpio";
     static constexpr const char* kGrpBehavior = "Behavior";
 public:
-    // IDs
+    // ==== IDs ====
     ValueMinMax player_id          {  0, 0, 127, kGrpIDs, "PlayerID", "Player ID, must be unique" };
     ValueMinMax team_id            {  0, 0,   3, kGrpIDs, "TeamID", "Team ID, must be unique" };
     ValueMinMaxDef super_damage_id { 70, 0, 127, kGrpIDs, "SuperDamageID", "A shot from him completely removes all hits" };
-    // Counts
+    // ==== Counts ====
     ValueMinMaxDefInf hit_cnt          { 4, 1, 254, kGrpCounts, "HitCnt", "Number of hits, can be unlimited" };
     ValueMinMaxDefInf rounds_in_magaz  { 9, 1, 254, kGrpCounts, "RoundsInMagazine", "Number of rounds in a single magazine, can be unlimited" };
     ValueMinMaxDefInf magazines_cnt    { 4, 1, 254, kGrpCounts, "MagazinesCnt", "Number of magazines, can be unlimited" };
-    // Delays
+    // ==== Delays ====
     ValueMinMaxDef shots_period_ms      { 252, 0, 9999, kGrpDelays, "ShotsPeriod_ms", "Interval between shots in burst fire, ms" };
     ValueMinMaxDef magaz_reload_delay_s {   4, 0,   60, kGrpDelays, "MagazReloadDelay", "Interval between autoreloading of magazines, s" };
     ValueMinMaxDef min_delay_btw_hits_s {   0, 0,   60, kGrpDelays, "MinDelayBetwHits", "Minimum delay between hits loss, s (when 0, it is possible to loose all within a second)" };
-    // IR RX
+    // ==== IR RX ====
     ValueMinMaxDef ir_rx_deviation      { 150, 1,  600, kGrpIrRx, "Deviation", "Deviation of received pulse length, us. Larger is more tolerant" };
-    // IR TX
-    ValueMinMaxDef ir_tx_pwr  {     90,     1,    255, kGrpIrTx, "TXPwr", "Power of IR output" };
-    ValueMinMaxDef ir_tx_freq {  56000, 30000,  56000, kGrpIrTx, "TXFreq", "IR transmission modulation frequency, Hz" };
-    ValuePktType   pkt_type   { 0x0000,                kGrpIrTx, "PktType" };
-    ValueDamage    tx_damage  {                        kGrpIrTx, "TXDamage" };
-    ValueMinMaxDef tx_amount  {      1,     1,    100, kGrpIrTx, "Amount", "Number of things to be added by special packets: AddHealth, AddRounds, etc." };
-    // Gpio control
+    // Custom pkt for applying SuperDamage on reception
+    // ValuePktType
+    // ==== IR TX ====
+    ValueMinMaxDef ir_tx_pwr   {     90,     1,    255, kGrpIrTx, "TXPwr", "Power of IR output" };
+    ValueMinMaxDef ir_tx_freq  {  56000, 30000,  56000, kGrpIrTx, "TXFreq", "IR transmission modulation frequency, Hz" };
+    ValuePktType   tx_pkt_type { 0x0000,                kGrpIrTx, "PktType", "Supported types: Shot = 0x0000, NewGame = 0x8305, AddHealth = 0x8000, AddRounds = 0x8100" };
+    ValueDamage    tx_damage   {                        kGrpIrTx, "TXDamage" };
+    ValueMinMaxDef tx_amount   {      1,     1,    100, kGrpIrTx, "Amount", "Number of things to be added by special packets: AddHealth, AddRounds, etc." };
+    // ==== Gpio control ====
     ValueGpioMode pin_mode_gpio3 { PinMode::PushPullActiveHi, kGrpGpio, "Gpio3Mode", "Gpio3 (hits_present)",  &output_hits_present };
-    // Behavior, Modes of operation
+    // ====  Behavior, Modes of operation ====
     ValueEnable fire_always {0, kGrpBehavior, "FireAlways", "Burst fire always: 1 is enabled, 0 is disabled" };
     ValueEnable transmit_what_rcvd {0, kGrpBehavior, "TransmitWhatRcvd", "Transmit last received pkt when firing; 1 is enabled, 0 is disabled" };
+
+
 
     // Array of value pointers
     std::vector<ValueBase*> values_arr = {
@@ -256,7 +262,7 @@ public:
             &hit_cnt, &rounds_in_magaz, &magazines_cnt,
             &shots_period_ms, &magaz_reload_delay_s, &min_delay_btw_hits_s,
             &ir_rx_deviation,
-            &ir_tx_pwr, &ir_tx_freq, &pkt_type, &tx_damage, &tx_amount,
+            &ir_tx_pwr, &ir_tx_freq, &tx_pkt_type, &tx_damage, &tx_amount,
             &pin_mode_gpio3,
             &fire_always, &transmit_what_rcvd
     };

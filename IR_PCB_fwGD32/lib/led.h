@@ -40,27 +40,27 @@ public:
 #if 1 // ======================== Single Led Smooth ============================
 class LedSmooth : public BaseSequencer<LedSmoothChunk> {
 protected:
-    const PinOutputPWM_t IChnl;
-    uint32_t ICurrentValue;
-    const uint32_t PWMFreq;
+    const PinOutputPWM_t ichnl;
+    uint32_t curr_value;
+    const uint32_t kPWMFreq;
     void ISwitchOff() { Set(0); }
     SequencerLoopTask ISetup() {
-        if(ICurrentValue != pcurrent_chunk->brightness) {
+        if(curr_value != pcurrent_chunk->brightness) {
             if(pcurrent_chunk->value == 0) {     // If smooth time is zero,
-                ICurrentValue = pcurrent_chunk->brightness;
+                curr_value = pcurrent_chunk->brightness;
                 SetCurrent();
                 pcurrent_chunk++;                // and goto next chunk
             }
             else {
-                if     (ICurrentValue < pcurrent_chunk->brightness) ICurrentValue++;
-                else if(ICurrentValue > pcurrent_chunk->brightness) ICurrentValue--;
+                if     (curr_value < pcurrent_chunk->brightness) curr_value++;
+                else if(curr_value > pcurrent_chunk->brightness) curr_value--;
                 SetCurrent();
                 // Check if completed now
-                if(ICurrentValue == pcurrent_chunk->brightness) pcurrent_chunk++;
+                if(curr_value == pcurrent_chunk->brightness) pcurrent_chunk++;
                 else { // Not completed
                     // Calculate time to next adjustment
-                    uint32_t Delay = ClrCalcDelay(ICurrentValue, pcurrent_chunk->value);
-                    SetupDelay(Delay);
+                    uint32_t delay = ClrCalcDelay(curr_value, pcurrent_chunk->value);
+                    SetupDelay(delay);
                     return sltBreak;
                 } // Not completed
             } // if time > 256
@@ -68,18 +68,18 @@ protected:
         else pcurrent_chunk++; // Color is the same, goto next chunk
         return sltProceed;
     }
-    void SetCurrent() { IChnl.Set(ICurrentValue); }
+    void SetCurrent() { ichnl.Set(curr_value); }
 public:
-    LedSmooth(const PwmSetup APinSetup, const uint32_t AFreq = 0xFFFFFFFF) :
-        BaseSequencer(), IChnl(APinSetup), ICurrentValue(0), PWMFreq(AFreq) {}
+    LedSmooth(const PwmSetup apin_setup, const uint32_t afreq = 0xFFFFFFFF) :
+        BaseSequencer(), ichnl(apin_setup), curr_value(0), kPWMFreq(afreq) {}
     void Init() {
-        IChnl.Init();
-        IChnl.SetFrequencyHz(PWMFreq);
+        ichnl.Init();
+        ichnl.SetFrequencyHz(kPWMFreq);
         Set(0);
     }
-    void Set(uint32_t AValue) {
-        ICurrentValue = AValue;
-        IChnl.Set(ICurrentValue);
+    void Set(uint32_t avalue) {
+        curr_value = avalue;
+        ichnl.Set(curr_value);
     }
 };
 #endif
@@ -90,19 +90,19 @@ class LedSmoothWBrt_t : public LedSmooth {
 private:
     uint32_t CurrBrt = 0;
     void SetCurrent() {
-        // CurrBrt=[0;LED_SMOOTH_MAX_BRT]; ICurrentValue=[0;255]
-        uint32_t FValue = ICurrentValue * CurrBrt;
+        // CurrBrt=[0;LED_SMOOTH_MAX_BRT]; curr_value=[0;255]
+        uint32_t FValue = curr_value * CurrBrt;
         ipin.Set(FValue);
 //        Printf("v=%u\r", FValue);
     }
 public:
-    LedSmoothWBrt_t(const PwmSetup APinSetup, const uint32_t AFreq = 0xFFFFFFFF) : LedSmooth(APinSetup, AFreq) {}
+    LedSmoothWBrt_t(const PwmSetup apin_setup, const uint32_t afreq = 0xFFFFFFFF) : LedSmooth(apin_setup, afreq) {}
     void SetBrightness(uint32_t NewBrt) {
         CurrBrt = NewBrt;
         SetCurrent();
     }
-    void Set(uint32_t AValue) {
-        ICurrentValue = AValue;
+    void Set(uint32_t avalue) {
+        curr_value = avalue;
         SetCurrent();
     }
 };
@@ -140,7 +140,7 @@ public:
 class LedRGBParent_t : public BaseSequencer<LedRGBChunk_t> {
 protected:
     const PinOutputPWM_t  R, G, B;
-    const uint32_t PWMFreq;
+    const uint32_t kPWMFreq;
     Color_t ICurrColor;
     void ISwitchOff() {
         SetColor(clBlack);
@@ -160,8 +160,8 @@ protected:
                 if(ICurrColor == IPCurrentChunk->Color) IPCurrentChunk++;
                 else { // Not completed
                     // Calculate time to next adjustment
-                    uint32_t Delay = ICurrColor.DelayToNextAdj(IPCurrentChunk->Color, IPCurrentChunk->value);
-                    SetupDelay(Delay);
+                    uint32_t delay = ICurrColor.DelayToNextAdj(IPCurrentChunk->Color, IPCurrentChunk->value);
+                    SetupDelay(delay);
                     return sltBreak;
                 } // Not completed
             } // if time > 256
@@ -175,14 +175,14 @@ public:
             const PwmSetup AGreen,
             const PwmSetup ABlue,
             const uint32_t APWMFreq) :
-        BaseSequencer(), R(ARed), G(AGreen), B(ABlue), PWMFreq(APWMFreq) {}
+        BaseSequencer(), R(ARed), G(AGreen), B(ABlue), kPWMFreq(APWMFreq) {}
     void Init() {
         R.Init();
-        R.SetFrequencyHz(PWMFreq);
+        R.SetFrequencyHz(kPWMFreq);
         G.Init();
-        G.SetFrequencyHz(PWMFreq);
+        G.SetFrequencyHz(kPWMFreq);
         B.Init();
-        B.SetFrequencyHz(PWMFreq);
+        B.SetFrequencyHz(kPWMFreq);
         SetColor(clBlack);
     }
     bool IsOff() { return (ICurrColor == clBlack) and IsIdle(); }
@@ -197,8 +197,8 @@ public:
             const PwmSetup ARed,
             const PwmSetup AGreen,
             const PwmSetup ABlue,
-            const uint32_t AFreq = 0xFFFFFFFF) :
-                LedRGBParent_t(ARed, AGreen, ABlue, AFreq) {}
+            const uint32_t afreq = 0xFFFFFFFF) :
+                LedRGBParent_t(ARed, AGreen, ABlue, afreq) {}
 
     void SetColor(Color_t AColor) {
         R.Set(AColor.R);
@@ -218,8 +218,8 @@ public:
             const PwmSetup AGreen,
             const PwmSetup ABlue,
             const PinOutput_t APwrPin,
-            const uint32_t AFreq = 0xFFFFFFFF) :
-                LedRGBParent_t(ARed, AGreen, ABlue, AFreq), PwrPin(APwrPin) {}
+            const uint32_t afreq = 0xFFFFFFFF) :
+                LedRGBParent_t(ARed, AGreen, ABlue, afreq), PwrPin(APwrPin) {}
     void Init() {
         PwrPin.Init();
         LedRGBParent_t::Init();
@@ -241,8 +241,8 @@ public:
             const PwmSetup ARed,
             const PwmSetup AGreen,
             const PwmSetup ABlue,
-            const uint32_t AFreq = 0xFFFFFFFF) :
-                LedRGBParent_t(ARed, AGreen, ABlue, AFreq) {}
+            const uint32_t afreq = 0xFFFFFFFF) :
+                LedRGBParent_t(ARed, AGreen, ABlue, afreq) {}
 
     void SetColor(Color_t AColor) {
         R.Set(AColor.R * AColor.Brt);
@@ -256,7 +256,7 @@ public:
 class LedHSV_t : public BaseSequencer<LedHSVChunk_t> {
 protected:
     const PinOutputPWM_t  R, G, B;
-    const uint32_t PWMFreq;
+    const uint32_t kPWMFreq;
     ColorHSV_t ICurrColor;
     void ISwitchOff() {
         SetColor(clBlack);
@@ -276,8 +276,8 @@ protected:
                 if(ICurrColor == IPCurrentChunk->Color) IPCurrentChunk++;
                 else { // Not completed
                     // Calculate time to next adjustment
-                    uint32_t Delay = ICurrColor.DelayToNextAdj(IPCurrentChunk->Color, IPCurrentChunk->value);
-                    SetupDelay(Delay);
+                    uint32_t delay = ICurrColor.DelayToNextAdj(IPCurrentChunk->Color, IPCurrentChunk->value);
+                    SetupDelay(delay);
                     return sltBreak;
                 } // Not completed
             } // if time > 256
@@ -291,14 +291,14 @@ public:
             const PwmSetup AGreen,
             const PwmSetup ABlue,
             const uint32_t APWMFreq = 0xFFFFFFFF) :
-        BaseSequencer(), R(ARed), G(AGreen), B(ABlue), PWMFreq(APWMFreq) {}
+        BaseSequencer(), R(ARed), G(AGreen), B(ABlue), kPWMFreq(APWMFreq) {}
     void Init() {
         R.Init();
-        R.SetFrequencyHz(PWMFreq);
+        R.SetFrequencyHz(kPWMFreq);
         G.Init();
-        G.SetFrequencyHz(PWMFreq);
+        G.SetFrequencyHz(kPWMFreq);
         B.Init();
-        B.SetFrequencyHz(PWMFreq);
+        B.SetFrequencyHz(kPWMFreq);
         SetColor(clBlack);
     }
     bool IsOff() { return (ICurrColor == hsvBlack) and IsIdle(); }
