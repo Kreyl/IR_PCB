@@ -28,7 +28,7 @@ static bool burst_from_cmd = false;
 AppMsgQueue evt_q_app;
 
 
-#if 1 // ============================== Controls ===============================
+#pragma region // ============================== Controls ===============================
 // Outputs
 CustomOutPin output_hits_present {Output_HitsPresent};
 
@@ -66,9 +66,9 @@ bool DoBurstFire() {
             input_burst_fire.IsHi() or
             iinputs[0] == 1;
 }
-#endif
+#pragma endregion
 
-#if 1 // =========================== Indication ================================
+#pragma region // =========================== Indication ================================
 extern LedSmooth side_LEDs[SIDE_LEDS_CNT];
 extern LedSmooth front_LEDs[FRONT_LEDS_CNT];
 
@@ -212,9 +212,9 @@ void Reset(bool quiet) {
 }
 
 } // namespace
-#endif
+#pragma endregion
 
-#if 1 // ========================= Reception processing ========================
+#pragma region // ========================= Reception processing ========================
 static systime_t prev_hit_time_st = 0;
 static IRPkt last_rcvd_pkt;
 
@@ -223,7 +223,9 @@ void IrRxCallbackI(uint8_t bit_cnt, uint16_t rcvd) { evt_q_app.SendNowOrExitI(Ap
 void ProcessRxPkt(IRPkt rx_pkt) {
     rx_pkt.Print((Shell*)&dbg_uart, "PktRx");
     rx_pkt.Print((Shell*)&usb_msd_cdc, "PktRx");
+    static const int32_t kSuperDamage = 9999999L;
 
+    // If retransmission is enabled, just retrtansmit & exit
     if(settings.transmit_what_rcvd.IsEnabled()) {
         last_rcvd_pkt = rx_pkt;
         Indication::IrPktReceived();
@@ -236,7 +238,7 @@ void ProcessRxPkt(IRPkt rx_pkt) {
         int32_t damage;
         // Special case: SuperDamageID - remove all hits if shot from him
         if(rx_pkt.player_id == *settings.super_damage_id) {
-            damage = 9999999;
+            damage = kSuperDamage;
             hit_cnt = 0;
         }
         else {
@@ -253,11 +255,19 @@ void ProcessRxPkt(IRPkt rx_pkt) {
         Indication::Hit(rx_pkt.player_id, damage);
         if(hit_cnt > 0) prev_hit_time_st = Sys::GetSysTimeX();
         else Indication::HitsEnded();
-    } // if 14 bit & zero
+    } // if 14/16 bit & zero
     else if(rx_pkt.bits_cnt == 16) {
         // Reset
-        if(rx_pkt.word16 == static_cast<uint16_t>(PktType::NewGame))
+        if(rx_pkt.word16 == static_cast<uint16_t>(PktType::NewGame)) {
             evt_q_app.SendNowOrExit(AppEvt::Reset);
+        }
+        // Custom pkt for applying SuperDamage on reception. Will never be equal if rx_pkt_super_damage==-1 <=> disabled.
+        else if(static_cast<int32_t>(rx_pkt.word16) == *settings.rx_pkt_super_damage) {
+            hit_cnt = 0;
+            Indication::Hit(rx_pkt.player_id, kSuperDamage);
+            Indication::HitsEnded();
+        }
+        // Maybe, AddHealth or AddCartridges
         else {
             uint16_t pkt_type = rx_pkt.word16 & 0xFF00U; // Zero MSB
             uint16_t pkt_value = rx_pkt.word16 & 0x00FF; // Zero LSB
@@ -286,9 +296,9 @@ void ProcessRxPkt(IRPkt rx_pkt) {
         }
     } // if bit_cnt == 16
 }
-#endif
+#pragma endregion
 
-#if 1 // =============================== Firing ================================
+#pragma region // =============================== Firing ================================
 VirtualTimer fire_tmr;
 IRPkt pkt_tx;
 systime_t fire_start_time_st;
@@ -345,7 +355,7 @@ void Fire() {
     fire_start_time_st = Sys::GetSysTimeX();
     Indication::Shot();
 }
-#endif
+#pragma endregion
 
 void Reset(bool quiet) {
     Sys::Lock();

@@ -241,7 +241,7 @@ public:
     // ==== IR RX ====
     ValueMinMaxDef ir_rx_deviation      { 150, 1,  600, kGrpIrRx, "Deviation", "Deviation of received pulse length, us. Larger is more tolerant" };
     // Custom pkt for applying SuperDamage on reception
-    // ValuePktType
+    ValuePktType   rx_pkt_super_damage  { -1,           kGrpIrRx, "RXPktSuperDamage", "RX pkt applying SuperDamage; -1 means disabled" };
     // ==== IR TX ====
     ValueMinMaxDef ir_tx_pwr   {     90,     1,    255, kGrpIrTx, "TXPwr", "Power of IR output" };
     ValueMinMaxDef ir_tx_freq  {  56000, 30000,  56000, kGrpIrTx, "TXFreq", "IR transmission modulation frequency, Hz" };
@@ -254,17 +254,15 @@ public:
     ValueEnable fire_always {0, kGrpBehavior, "FireAlways", "Burst fire always: 1 is enabled, 0 is disabled" };
     ValueEnable transmit_what_rcvd {0, kGrpBehavior, "TransmitWhatRcvd", "Transmit last received pkt when firing; 1 is enabled, 0 is disabled" };
 
-
-
     // Array of value pointers
     std::vector<ValueBase*> values_arr = {
-            &player_id, &team_id, &super_damage_id,
-            &hit_cnt, &rounds_in_magaz, &magazines_cnt,
-            &shots_period_ms, &magaz_reload_delay_s, &min_delay_btw_hits_s,
-            &ir_rx_deviation,
-            &ir_tx_pwr, &ir_tx_freq, &tx_pkt_type, &tx_damage, &tx_amount,
-            &pin_mode_gpio3,
-            &fire_always, &transmit_what_rcvd
+            &player_id, &team_id, &super_damage_id,  // IDs
+            &hit_cnt, &rounds_in_magaz, &magazines_cnt, // Counts
+            &shots_period_ms, &magaz_reload_delay_s, &min_delay_btw_hits_s, // Delays
+            &ir_rx_deviation, &rx_pkt_super_damage, // IR RX
+            &ir_tx_pwr, &ir_tx_freq, &tx_pkt_type, &tx_damage, &tx_amount, // IR TX
+            &pin_mode_gpio3, // Gpio
+            &fire_always, &transmit_what_rcvd // Behavior
     };
 
     void Load();
