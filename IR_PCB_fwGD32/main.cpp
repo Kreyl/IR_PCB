@@ -112,9 +112,9 @@ bool Beeped = false;
 
 FlameSettings_t Setup = {
     .Core = {
-            .Sz = 9,
+            .Sz = 17,
             .ClrHMin = 290, .ClrHMax = 290,
-            .ClrV = 27
+            .ClrV = 18
     },
     .Sparks = {
             .Cnt = 7,

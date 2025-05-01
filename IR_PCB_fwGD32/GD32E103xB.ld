@@ -51,4 +51,4 @@ REGION_ALIAS("BSS_RAM", ram);
 REGION_ALIAS("HEAP_RAM", ram);
 
 /* Generic rules inclusion.*/
-INCLUDE ../rules.ld
+INCLUDE ./rules.ld
